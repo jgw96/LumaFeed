@@ -6,7 +6,8 @@ export class NotFoundPage extends LitElement {
   static styles = css`
     :host {
       display: block;
-      padding: 2rem;
+      padding: 1.5rem;
+      background-color: var(--md-sys-color-background);
     }
 
     .container {
@@ -16,29 +17,41 @@ export class NotFoundPage extends LitElement {
     }
 
     h1 {
-      color: #333;
-      font-size: 4rem;
+      color: var(--md-sys-color-on-background);
+      font-size: var(--md-sys-typescale-display-large-font-size);
+      line-height: var(--md-sys-typescale-display-large-line-height);
+      font-weight: var(--md-sys-typescale-display-large-font-weight);
       margin-bottom: 0.5rem;
     }
 
     h2 {
-      color: #666;
+      color: var(--md-sys-color-on-surface-variant);
       margin-bottom: 1.5rem;
+      font-size: var(--md-sys-typescale-headline-large-font-size);
+      font-weight: var(--md-sys-typescale-headline-large-font-weight);
     }
 
     p {
-      color: #666;
+      color: var(--md-sys-color-on-surface-variant);
       margin-bottom: 2rem;
+      font-size: var(--md-sys-typescale-body-large-font-size);
     }
 
     a {
-      color: #0066cc;
+      color: var(--md-sys-color-primary);
       text-decoration: none;
       font-weight: 500;
+      padding: 0.625rem 1.5rem;
+      border-radius: var(--md-sys-shape-corner-extra-large);
+      background: var(--md-sys-color-primary-container);
+      display: inline-block;
+      transition: background-color 0.2s, box-shadow 0.2s;
     }
 
     a:hover {
-      text-decoration: underline;
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+      box-shadow: var(--md-sys-elevation-1);
     }
   `;
 
