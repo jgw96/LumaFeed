@@ -11,15 +11,19 @@ export class AppRoot extends LitElement {
     :host {
       display: block;
       min-height: 100vh;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 
         Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--md-sys-color-background);
     }
 
     header {
-      background: #0066cc;
-      color: white;
-      padding: 1rem 2rem;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      background: var(--md-sys-color-surface);
+      color: var(--md-sys-color-on-surface);
+      padding: 1rem 1.5rem;
+      box-shadow: var(--md-sys-elevation-2);
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
 
     .header-content {
@@ -32,29 +36,36 @@ export class AppRoot extends LitElement {
 
     h1 {
       margin: 0;
-      font-size: 1.5rem;
-      font-weight: 600;
+      font-size: var(--md-sys-typescale-title-large-font-size);
+      font-weight: var(--md-sys-typescale-title-large-font-weight);
+      line-height: var(--md-sys-typescale-title-large-line-height);
+      color: var(--md-sys-color-on-surface);
     }
 
     nav {
       display: flex;
-      gap: 1.5rem;
+      gap: 0.5rem;
     }
 
     nav a {
-      color: white;
+      color: var(--md-sys-color-on-surface-variant);
       text-decoration: none;
       font-weight: 500;
-      transition: opacity 0.2s;
+      font-size: var(--md-sys-typescale-label-large-font-size);
+      line-height: var(--md-sys-typescale-label-large-line-height);
+      padding: 0.625rem 1rem;
+      border-radius: var(--md-sys-shape-corner-extra-large);
+      transition: background-color 0.2s, color 0.2s;
+      position: relative;
     }
 
     nav a:hover {
-      opacity: 0.8;
+      background-color: var(--md-sys-color-surface-container-highest);
     }
 
     nav a.active {
-      text-decoration: underline;
-      text-underline-offset: 4px;
+      background-color: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
     }
 
     main {

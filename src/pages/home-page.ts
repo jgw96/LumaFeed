@@ -11,7 +11,8 @@ export class HomePage extends LitElement {
   static styles = css`
     :host {
       display: block;
-      padding: 2rem;
+      padding: 1.5rem;
+      background-color: var(--md-sys-color-background);
     }
 
     .container {
@@ -27,27 +28,37 @@ export class HomePage extends LitElement {
     }
 
     h1 {
-      color: #333;
+      color: var(--md-sys-color-on-background);
       margin: 0;
+      font-size: var(--md-sys-typescale-headline-large-font-size);
+      font-weight: var(--md-sys-typescale-headline-large-font-weight);
+      line-height: var(--md-sys-typescale-headline-large-line-height);
     }
 
     .add-btn {
-      background: #0066cc;
-      color: white;
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
       border: none;
-      padding: 0.875rem 1.75rem;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
+      padding: 0.875rem 1.5rem;
+      border-radius: var(--md-sys-shape-corner-large);
+      font-size: var(--md-sys-typescale-label-large-font-size);
+      font-weight: var(--md-sys-typescale-label-large-font-weight);
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: background-color 0.2s, box-shadow 0.2s;
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      box-shadow: var(--md-sys-elevation-1);
     }
 
     .add-btn:hover {
-      background: #0052a3;
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+      box-shadow: var(--md-sys-elevation-2);
+    }
+
+    .add-btn:active {
+      box-shadow: var(--md-sys-elevation-1);
     }
 
     .add-btn::before {
@@ -61,16 +72,17 @@ export class HomePage extends LitElement {
     }
 
     .section-title {
-      color: #333;
-      font-size: 1.125rem;
-      font-weight: 600;
+      color: var(--md-sys-color-on-surface);
+      font-size: var(--md-sys-typescale-title-large-font-size);
+      font-weight: var(--md-sys-typescale-title-large-font-weight);
+      line-height: var(--md-sys-typescale-title-large-line-height);
       margin-bottom: 1rem;
     }
 
     .loading {
       text-align: center;
       padding: 2rem;
-      color: #666;
+      color: var(--md-sys-color-on-surface-variant);
     }
   `;
 

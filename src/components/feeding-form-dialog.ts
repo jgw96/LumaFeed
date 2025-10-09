@@ -7,28 +7,31 @@ export class FeedingFormDialog extends LitElement {
   static styles = css`
     dialog {
       border: none;
-      border-radius: 12px;
+      border-radius: var(--md-sys-shape-corner-extra-large);
       padding: 0;
-      max-width: 500px;
+      max-width: 560px;
       width: 90vw;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+      background: var(--md-sys-color-surface-container-high);
+      color: var(--md-sys-color-on-surface);
+      box-shadow: var(--md-sys-elevation-3);
     }
 
     dialog::backdrop {
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.32);
     }
 
     .dialog-header {
-      background: #0066cc;
-      color: white;
+      background: var(--md-sys-color-surface);
+      color: var(--md-sys-color-on-surface);
       padding: 1.5rem;
-      border-radius: 12px 12px 0 0;
+      border-radius: var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-extra-large) 0 0;
     }
 
     .dialog-header h2 {
       margin: 0;
-      font-size: 1.25rem;
-      font-weight: 600;
+      font-size: var(--md-sys-typescale-headline-large-font-size);
+      font-weight: var(--md-sys-typescale-headline-large-font-weight);
+      line-height: var(--md-sys-typescale-headline-large-line-height);
     }
 
     .dialog-content {
@@ -43,24 +46,28 @@ export class FeedingFormDialog extends LitElement {
       display: block;
       margin-bottom: 0.5rem;
       font-weight: 500;
-      color: #333;
+      color: var(--md-sys-color-on-surface);
+      font-size: var(--md-sys-typescale-body-large-font-size);
     }
 
     input[type="number"],
     select {
       width: 100%;
-      padding: 0.75rem;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      font-size: 1rem;
+      padding: 0.875rem 1rem;
+      border: 1px solid var(--md-sys-color-outline);
+      border-radius: var(--md-sys-shape-corner-extra-small);
+      font-size: var(--md-sys-typescale-body-large-font-size);
       font-family: inherit;
+      background: var(--md-sys-color-surface-container-lowest);
+      color: var(--md-sys-color-on-surface);
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
     input[type="number"]:focus,
     select:focus {
       outline: none;
-      border-color: #0066cc;
-      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+      border-color: var(--md-sys-color-primary);
+      box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
     }
 
     .radio-group {
@@ -75,9 +82,10 @@ export class FeedingFormDialog extends LitElement {
     }
 
     input[type="radio"] {
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
       cursor: pointer;
+      accent-color: var(--md-sys-color-primary);
     }
 
     .amount-group {
@@ -91,40 +99,51 @@ export class FeedingFormDialog extends LitElement {
       gap: 0.75rem;
       justify-content: flex-end;
       padding: 1.5rem;
-      border-top: 1px solid #eee;
+      border-top: 1px solid var(--md-sys-color-outline-variant);
     }
 
     button {
-      padding: 0.75rem 1.5rem;
+      padding: 0.625rem 1.5rem;
       border: none;
-      border-radius: 6px;
-      font-size: 1rem;
-      font-weight: 500;
+      border-radius: var(--md-sys-shape-corner-extra-large);
+      font-size: var(--md-sys-typescale-label-large-font-size);
+      font-weight: var(--md-sys-typescale-label-large-font-weight);
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: background-color 0.2s, box-shadow 0.2s;
+      min-height: 40px;
     }
 
     .btn-cancel {
-      background: #f5f5f5;
-      color: #666;
+      background: transparent;
+      color: var(--md-sys-color-primary);
     }
 
     .btn-cancel:hover {
-      background: #e0e0e0;
+      background: var(--md-sys-color-primary-container);
     }
 
     .btn-save {
-      background: #0066cc;
-      color: white;
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+      box-shadow: var(--md-sys-elevation-1);
     }
 
     .btn-save:hover {
-      background: #0052a3;
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      box-shadow: var(--md-sys-elevation-2);
+    }
+
+    .btn-save:active {
+      box-shadow: var(--md-sys-elevation-1);
     }
 
     .btn-save:disabled {
-      background: #ccc;
+      background: var(--md-sys-color-surface-variant);
+      color: var(--md-sys-color-on-surface-variant);
       cursor: not-allowed;
+      box-shadow: none;
+      opacity: 0.38;
     }
   `;
 

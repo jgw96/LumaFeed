@@ -16,15 +16,16 @@ export class FeedingLogList extends LitElement {
     }
 
     .log-item {
-      background: white;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 1.25rem;
-      transition: box-shadow 0.2s;
+      background: var(--md-sys-color-surface-container-low);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: var(--md-sys-shape-corner-medium);
+      padding: 1rem 1.25rem;
+      transition: box-shadow 0.2s, background-color 0.2s;
     }
 
     .log-item:hover {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--md-sys-elevation-1);
+      background: var(--md-sys-color-surface-container);
     }
 
     .log-header {
@@ -36,12 +37,13 @@ export class FeedingLogList extends LitElement {
 
     .log-type {
       font-weight: 600;
-      color: #0066cc;
-      font-size: 1.125rem;
+      color: var(--md-sys-color-primary);
+      font-size: 1rem;
+      line-height: 1.5;
     }
 
     .log-time {
-      color: #666;
+      color: var(--md-sys-color-on-surface-variant);
       font-size: 0.875rem;
     }
 
@@ -58,15 +60,16 @@ export class FeedingLogList extends LitElement {
     }
 
     .detail-label {
-      color: #666;
+      color: var(--md-sys-color-on-surface-variant);
       font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       margin-bottom: 0.25rem;
+      font-weight: 500;
     }
 
     .detail-value {
-      color: #333;
+      color: var(--md-sys-color-on-surface);
       font-weight: 500;
       font-size: 1rem;
     }
@@ -74,26 +77,36 @@ export class FeedingLogList extends LitElement {
     .empty-state {
       text-align: center;
       padding: 3rem 1rem;
-      color: #666;
+      color: var(--md-sys-color-on-surface-variant);
+      background: var(--md-sys-color-surface-container-low);
+      border-radius: var(--md-sys-shape-corner-large);
     }
 
     .empty-state-icon {
       font-size: 3rem;
       margin-bottom: 1rem;
+      opacity: 0.7;
     }
 
     .delete-btn {
       background: none;
       border: none;
-      color: #dc3545;
+      color: var(--md-sys-color-error);
       cursor: pointer;
       padding: 0.5rem;
-      font-size: 1.125rem;
-      transition: opacity 0.2s;
+      font-size: 1.5rem;
+      transition: opacity 0.2s, background-color 0.2s;
+      border-radius: var(--md-sys-shape-corner-extra-small);
+      width: 2.5rem;
+      height: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .delete-btn:hover {
-      opacity: 0.7;
+      background-color: var(--md-sys-color-error-container);
+      opacity: 0.9;
     }
   `;
 

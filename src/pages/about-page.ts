@@ -6,7 +6,8 @@ export class AboutPage extends LitElement {
   static styles = css`
     :host {
       display: block;
-      padding: 2rem;
+      padding: 1.5rem;
+      background-color: var(--md-sys-color-background);
     }
 
     .container {
@@ -15,30 +16,44 @@ export class AboutPage extends LitElement {
     }
 
     h1 {
-      color: #333;
-      margin-bottom: 1rem;
+      color: var(--md-sys-color-on-background);
+      margin-bottom: 1.5rem;
+      font-size: var(--md-sys-typescale-headline-large-font-size);
+      font-weight: var(--md-sys-typescale-headline-large-font-weight);
+      line-height: var(--md-sys-typescale-headline-large-line-height);
     }
 
     p {
-      color: #666;
+      color: var(--md-sys-color-on-surface-variant);
       line-height: 1.6;
       margin-bottom: 1rem;
+      font-size: var(--md-sys-typescale-body-large-font-size);
     }
 
     .tech-stack {
-      background: #f5f5f5;
-      border-radius: 8px;
+      background: var(--md-sys-color-surface-container);
+      border-radius: var(--md-sys-shape-corner-large);
       padding: 1.5rem;
       margin-top: 2rem;
+      border: 1px solid var(--md-sys-color-outline-variant);
     }
 
     .tech-stack h2 {
       margin-top: 0;
-      color: #444;
+      margin-bottom: 1rem;
+      color: var(--md-sys-color-on-surface);
+      font-size: var(--md-sys-typescale-title-large-font-size);
+      font-weight: var(--md-sys-typescale-title-large-font-weight);
     }
 
     ul {
-      color: #666;
+      color: var(--md-sys-color-on-surface-variant);
+      line-height: 1.8;
+      padding-left: 1.5rem;
+    }
+
+    li {
+      margin-bottom: 0.5rem;
     }
   `;
 
