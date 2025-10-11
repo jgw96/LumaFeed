@@ -8,26 +8,36 @@ describe('AppRoot', () => {
     cleanup();
   });
 
-  it('should render the app with header', async () => {
+  it('should render the app with header brand', async () => {
     const appRoot = await mountComponent<AppRoot>('app-root');
     
     const header = queryShadow(appRoot, 'header');
     expect(header).toBeTruthy();
     
-    const h1 = queryShadow(appRoot, 'h1');
-    expect(h1?.textContent).toBe('Feeding Tracker');
+    const brand = queryShadow(appRoot, 'header .brand');
+    expect(brand?.textContent?.trim()).toBe('Feeding Tracker');
+  });
+
+  it('should render bottom navigation links on mobile layout', async () => {
+    const appRoot = await mountComponent<AppRoot>('app-root');
+
+    const bottomNav = queryShadow(appRoot, '.bottom-nav');
+    expect(bottomNav).toBeTruthy();
+
+    const links = bottomNav?.querySelectorAll('a[href]') ?? [];
+    expect(links.length).toBeGreaterThan(0);
   });
 
   it('should render navigation links', async () => {
     const appRoot = await mountComponent<AppRoot>('app-root');
     
     const homeLink = queryShadow<HTMLAnchorElement>(appRoot, 'a[href="/"]');
-    const aboutLink = queryShadow<HTMLAnchorElement>(appRoot, 'a[href="/about"]');
+    const settingsLink = queryShadow<HTMLAnchorElement>(appRoot, 'a[href="/settings"]');
     
     expect(homeLink).toBeTruthy();
-    expect(homeLink?.textContent).toBe('Home');
-    expect(aboutLink).toBeTruthy();
-    expect(aboutLink?.textContent).toBe('About');
+    expect(homeLink?.textContent?.trim()).toBe('Home');
+    expect(settingsLink).toBeTruthy();
+    expect(settingsLink?.textContent?.trim()).toBe('Settings');
   });
 
   it('should render home page by default', async () => {
@@ -42,22 +52,22 @@ describe('AppRoot', () => {
     expect(homePage).toBeTruthy();
   });
 
-  it('should navigate to about page when about link is clicked', async () => {
+  it('should navigate to settings page when settings link is clicked', async () => {
     const appRoot = await mountComponent<AppRoot>('app-root');
     
-    const aboutLink = queryShadow<HTMLAnchorElement>(appRoot, 'a[href="/about"]');
-    expect(aboutLink).toBeTruthy();
+    const settingsLink = queryShadow<HTMLAnchorElement>(appRoot, 'a[href="/settings"]');
+    expect(settingsLink).toBeTruthy();
     
     // Simulate click
-    aboutLink!.click();
+    settingsLink!.click();
     
     await waitFor(() => {
-      const aboutPage = queryShadow(appRoot, 'about-page');
-      return aboutPage !== null;
-    }, 3000, 'About page not rendered after navigation');
+      const settingsPage = queryShadow(appRoot, 'settings-page');
+      return settingsPage !== null;
+    }, 3000, 'Settings page not rendered after navigation');
     
-    const aboutPage = queryShadow(appRoot, 'about-page');
-    expect(aboutPage).toBeTruthy();
+    const settingsPage = queryShadow(appRoot, 'settings-page');
+    expect(settingsPage).toBeTruthy();
   });
 
   it('should apply active class to current navigation link', async () => {

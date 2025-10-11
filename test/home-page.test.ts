@@ -3,6 +3,7 @@ import '../src/pages/home-page.js';
 import { cleanup, mountComponent, queryShadow, queryShadowAll, waitFor } from './helpers.js';
 import type { HomePage } from '../src/pages/home-page.js';
 import type { FeedingLog } from '../src/types/feeding-log.js';
+import { calculateNextFeedTime } from '../src/types/feeding-log.js';
 
 describe('HomePage', () => {
   afterEach(() => {
@@ -12,8 +13,8 @@ describe('HomePage', () => {
   it('should render the home page', async () => {
     const homePage = await mountComponent<HomePage>('home-page');
     
-    const h1 = queryShadow(homePage, 'h1');
-    expect(h1?.textContent).toBe('Feeding Tracker');
+    const container = queryShadow(homePage, '.container');
+    expect(container).toBeTruthy();
   });
 
   it('should render add feeding button', async () => {
@@ -21,7 +22,7 @@ describe('HomePage', () => {
     
     const addButton = queryShadow<HTMLButtonElement>(homePage, '.add-btn');
     expect(addButton).toBeTruthy();
-    expect(addButton?.textContent?.trim()).toBe('Add Feeding');
+  expect(addButton?.textContent?.trim()).toBe('Start feeding');
   });
 
   it('should show loading state initially', async () => {
@@ -71,7 +72,7 @@ describe('HomePage', () => {
     expect(openSpy).toHaveBeenCalled();
   });
 
-  it('should handle log-added event', async () => {
+  it('should show toast with next feed after log-added event', async () => {
     const homePage = await mountComponent<HomePage>('home-page');
     
     await waitFor(() => {
@@ -81,6 +82,8 @@ describe('HomePage', () => {
     
     const dialog = queryShadow(homePage, 'feeding-form-dialog');
     
+    const endTime = Date.now();
+    const startTime = endTime - 15 * 60_000;
     const newLog: FeedingLog = {
       id: 'test-123',
       feedType: 'formula',
@@ -88,7 +91,10 @@ describe('HomePage', () => {
       amountOz: 4,
       durationMinutes: 15,
       isBottleFed: true,
-      timestamp: Date.now(),
+      timestamp: endTime,
+      startTime,
+      endTime,
+      nextFeedTime: calculateNextFeedTime(endTime),
     };
     
     // Dispatch log-added event
@@ -99,12 +105,13 @@ describe('HomePage', () => {
     });
     dialog!.dispatchEvent(event);
     
-    // Wait for the log to be processed
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    // The component should have processed the log (we can't easily verify internal state,
-    // but we can verify the event was dispatched and received)
-    expect(dialog).toBeTruthy();
+    await waitFor(() => {
+      const toast = queryShadow(homePage, '.toast.toast--visible');
+      return toast !== null;
+    }, 3000, 'Next feed toast not displayed');
+
+    const toast = queryShadow(homePage, '.toast');
+    expect(toast?.textContent).toContain('Next feed around');
   });
 
   it('should handle log-deleted event', async () => {

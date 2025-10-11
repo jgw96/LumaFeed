@@ -11,7 +11,8 @@ test/
 ├── router.test.ts                # Router functionality tests
 ├── app-root.test.ts              # Main app component tests
 ├── home-page.test.ts             # Home page component tests
-├── about-page.test.ts            # About page component tests
+├── settings-page.test.ts         # Settings page component tests
+├── about-page.test.ts            # Legacy export compatibility tests
 ├── not-found-page.test.ts        # 404 page component tests
 ├── feeding-form-dialog.test.ts   # Feeding form dialog component tests
 └── feeding-log-list.test.ts      # Feeding log list component tests
@@ -39,7 +40,7 @@ The test suite covers:
 
 ### Router Tests (`router.test.ts`)
 - Route initialization
-- Route matching (home, about, 404)
+- Route matching (home, settings, 404)
 - Navigation between routes
 - Route change listeners
 - Unsubscribing from route changes
@@ -60,12 +61,15 @@ The test suite covers:
 - Dialog interaction
 - Log addition handling
 - Log deletion handling
+- Next feed toast notification
+
+### Settings Page Tests (`settings-page.test.ts`)
+- Page rendering
+- Default interval display
+- Settings persistence
 
 ### About Page Tests (`about-page.test.ts`)
-- Page rendering
-- Description content
-- Technology stack section
-- Technology list display
+- Ensures the about page module re-exports the settings page class for compatibility
 
 ### Not Found Page Tests (`not-found-page.test.ts`)
 - 404 message display
@@ -91,6 +95,7 @@ The test suite covers:
 - Feeding method display
 - Delete button functionality
 - Timestamp formatting
+- Next feed detail rendering
 
 ## Test Utilities
 

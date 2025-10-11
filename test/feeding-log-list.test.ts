@@ -1,13 +1,15 @@
-import { describe, it, expect, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import '../src/components/feeding-log-list.js';
 import { cleanup, mountComponent, queryShadow, queryShadowAll } from './helpers.js';
 import type { FeedingLogList } from '../src/components/feeding-log-list.js';
 import type { FeedingLog } from '../src/types/feeding-log.js';
+import { calculateNextFeedTime } from '../src/types/feeding-log.js';
 
 describe('FeedingLogList', () => {
   let sampleLogs: FeedingLog[];
 
   beforeEach(() => {
+    const now = Date.now();
     sampleLogs = [
       {
         id: 'log-1',
@@ -16,7 +18,10 @@ describe('FeedingLogList', () => {
         amountOz: 4,
         durationMinutes: 15,
         isBottleFed: true,
-        timestamp: Date.now(),
+        timestamp: now,
+        startTime: now - 15 * 60_000,
+        endTime: now,
+        nextFeedTime: calculateNextFeedTime(now),
       },
       {
         id: 'log-2',
@@ -25,13 +30,17 @@ describe('FeedingLogList', () => {
         amountOz: 3.4,
         durationMinutes: 20,
         isBottleFed: false,
-        timestamp: Date.now() - 3600000, // 1 hour ago
+        timestamp: now - 3_600_000,
+        startTime: now - 3_600_000 - 20 * 60_000,
+        endTime: now - 3_600_000,
+        nextFeedTime: calculateNextFeedTime(now - 3_600_000),
       },
     ];
   });
 
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
   });
 
   it('should render empty state when no logs', async () => {
@@ -114,7 +123,7 @@ describe('FeedingLogList', () => {
     
     const detailValues = queryShadowAll(logList, '.detail-value');
     const methodValue = Array.from(detailValues).find(el => 
-      el.textContent === 'Bottle' || el.textContent === 'Other'
+      el.textContent === 'Bottle' || el.textContent === 'Breast'
     );
     
     expect(methodValue).toBeTruthy();
@@ -129,6 +138,37 @@ describe('FeedingLogList', () => {
     
     const deleteButtons = queryShadowAll(logList, '.delete-btn');
     expect(deleteButtons.length).toBe(2);
+  });
+
+  it('should display next feed detail', async () => {
+    const logList = await mountComponent<FeedingLogList>('feeding-log-list');
+  vi.useFakeTimers();
+  const baseTime = new Date('2024-01-01T08:00:00Z').getTime();
+  vi.setSystemTime(baseTime);
+    const customLog: FeedingLog = {
+      id: 'log-next-feed',
+      feedType: 'formula',
+      amountMl: 120,
+      amountOz: 4,
+      durationMinutes: 20,
+      isBottleFed: true,
+      timestamp: baseTime,
+      startTime: baseTime - 20 * 60_000,
+      endTime: baseTime,
+      nextFeedTime: calculateNextFeedTime(baseTime),
+    };
+
+    logList.logs = [customLog];
+  await logList.updateComplete;
+  await Promise.resolve();
+
+    const nextFeedLabel = Array
+      .from(queryShadowAll(logList, '.detail-label'))
+      .find(el => el.textContent?.includes('Next feed'));
+    expect(nextFeedLabel).toBeTruthy();
+
+    const nextFeedValue = nextFeedLabel?.parentElement?.querySelector('.detail-value');
+    expect(nextFeedValue?.textContent).toContain('Today');
   });
 
   it('should dispatch log-deleted event when delete button is clicked', async () => {
@@ -151,21 +191,25 @@ describe('FeedingLogList', () => {
     expect(event.detail).toBe('log-1');
   });
 
-  it('should format timestamp as "Today at" for current day', async () => {
+  it('should format time range with "Today" for current day', async () => {
     const logList = await mountComponent<FeedingLogList>('feeding-log-list');
     logList.logs = [sampleLogs[0]];
     
     await new Promise(resolve => setTimeout(resolve, 100));
     
     const logTime = queryShadow(logList, '.log-time');
-    expect(logTime?.textContent).toContain('Today at');
+    expect(logTime?.textContent).toContain('Today');
+    expect(logTime?.textContent).toContain('·');
+    expect(logTime?.textContent).toContain('–');
   });
 
-  it('should format timestamp with date for past days', async () => {
+  it('should format time range with date for past days', async () => {
     const logList = await mountComponent<FeedingLogList>('feeding-log-list');
     const oldLog = {
       ...sampleLogs[0],
-      timestamp: Date.now() - 86400000, // 1 day ago
+      timestamp: Date.now() - 86_400_000,
+      startTime: Date.now() - 86_400_000 - 15 * 60_000,
+      endTime: Date.now() - 86_400_000,
     };
     logList.logs = [oldLog];
     
@@ -173,7 +217,8 @@ describe('FeedingLogList', () => {
     
     const logTime = queryShadow(logList, '.log-time');
     expect(logTime?.textContent).toBeTruthy();
-    // Should contain date and time, but not "Today"
-    expect(logTime?.textContent).not.toContain('Today at');
+    expect(logTime?.textContent).not.toContain('Today');
+    expect(logTime?.textContent).toContain('·');
+    expect(logTime?.textContent).toContain('–');
   });
 });

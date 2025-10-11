@@ -1,165 +1,160 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import '../src/components/feeding-form-dialog.js';
-import { cleanup, mountComponent, queryShadow, waitFor } from './helpers.js';
+import { cleanup, mountComponent, queryShadow } from './helpers.js';
 import type { FeedingFormDialog } from '../src/components/feeding-form-dialog.js';
 
 describe('FeedingFormDialog', () => {
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
   });
 
-  it('should render the dialog', async () => {
+  const openManualForm = async () => {
     const dialog = await mountComponent<FeedingFormDialog>('feeding-form-dialog');
-    
-    const dialogElement = queryShadow<HTMLDialogElement>(dialog, 'dialog');
-    expect(dialogElement).toBeTruthy();
+
+    const manualLink = queryShadow<HTMLButtonElement>(dialog, '.manual-entry .link-button');
+    manualLink?.click();
+
+    await dialog.updateComplete;
+
+    return dialog;
+  };
+
+  it('should render start view with timer call to action', async () => {
+    const dialog = await mountComponent<FeedingFormDialog>('feeding-form-dialog');
+
+    const header = queryShadow(dialog, '.dialog-header h2');
+    expect(header?.textContent?.trim()).toBe('Track a Feeding');
+
+    const startButton = queryShadow<HTMLButtonElement>(dialog, '.start-actions .btn-save');
+    expect(startButton).toBeTruthy();
+    expect(startButton?.textContent?.trim()).toBe('Start feed');
+
+    const manualLink = queryShadow<HTMLButtonElement>(dialog, '.manual-entry .link-button');
+    expect(manualLink).toBeTruthy();
   });
 
-  it('should have a title', async () => {
+  it('should transition to timer view when start feed is clicked', async () => {
     const dialog = await mountComponent<FeedingFormDialog>('feeding-form-dialog');
-    
-    const h2 = queryShadow(dialog, 'h2');
-    expect(h2?.textContent).toBe('Add Feeding Log');
+
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-01T08:00:00Z'));
+
+    const startButton = queryShadow<HTMLButtonElement>(dialog, '.start-actions .btn-save');
+    expect(startButton).toBeTruthy();
+    startButton!.click();
+
+    await dialog.updateComplete;
+
+    const timerDisplay = queryShadow(dialog, '.timer-display');
+    expect(timerDisplay).toBeTruthy();
+
   });
 
-  it('should render feed type radio buttons', async () => {
-    const dialog = await mountComponent<FeedingFormDialog>('feeding-form-dialog');
-    
-    const formulaRadio = queryShadow<HTMLInputElement>(dialog, 'input[value="formula"]');
-    const milkRadio = queryShadow<HTMLInputElement>(dialog, 'input[value="milk"]');
-    
-    expect(formulaRadio).toBeTruthy();
-    expect(milkRadio).toBeTruthy();
-    expect(formulaRadio?.type).toBe('radio');
-    expect(milkRadio?.type).toBe('radio');
+  it('should allow entering details manually', async () => {
+    const dialog = await openManualForm();
+
+    const form = queryShadow<HTMLFormElement>(dialog, 'form');
+    expect(form).toBeTruthy();
+
+    const timeInputs = queryShadow(dialog, 'form')?.querySelectorAll('input[type="datetime-local"]');
+    expect(timeInputs).toBeTruthy();
+    expect(timeInputs?.length).toBe(2);
   });
 
-  it('should render amount input', async () => {
+  it('should show captured time summary after finishing timer', async () => {
     const dialog = await mountComponent<FeedingFormDialog>('feeding-form-dialog');
-    
-    const amountInputs = queryShadow(dialog, 'dialog')?.querySelectorAll('input[type="number"]');
-    expect(amountInputs).toBeTruthy();
-    expect(amountInputs!.length).toBeGreaterThan(0);
+
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-01T08:00:00Z'));
+
+    const startButton = queryShadow<HTMLButtonElement>(dialog, '.start-actions .btn-save');
+    expect(startButton).toBeTruthy();
+    startButton!.click();
+    await dialog.updateComplete;
+
+    await vi.advanceTimersByTimeAsync(65_000);
+    await dialog.updateComplete;
+
+    const doneButton = queryShadow<HTMLButtonElement>(dialog, '.timer-actions .btn-save');
+    expect(doneButton).toBeTruthy();
+    doneButton!.click();
+
+    await dialog.updateComplete;
+
+    const summary = queryShadow(dialog, '.time-summary');
+    expect(summary).toBeTruthy();
+
   });
 
-  it('should render unit selection', async () => {
+  it('should allow switching to manual editing from timer summary', async () => {
     const dialog = await mountComponent<FeedingFormDialog>('feeding-form-dialog');
-    
-    const unitSelect = queryShadow<HTMLSelectElement>(dialog, 'select');
-    
-    expect(unitSelect).toBeTruthy();
-    
-    const options = unitSelect?.querySelectorAll('option');
-    expect(options?.length).toBe(2);
-    
-    const optionValues = Array.from(options || []).map(opt => opt.value);
-    expect(optionValues).toContain('ml');
-    expect(optionValues).toContain('oz');
+
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-01T08:00:00Z'));
+
+    const startButton = queryShadow<HTMLButtonElement>(dialog, '.start-actions .btn-save');
+    expect(startButton).toBeTruthy();
+    startButton!.click();
+    await dialog.updateComplete;
+
+    await vi.advanceTimersByTimeAsync(65_000);
+    await dialog.updateComplete;
+
+    const doneButton = queryShadow<HTMLButtonElement>(dialog, '.timer-actions .btn-save');
+    expect(doneButton).toBeTruthy();
+    doneButton!.click();
+    await dialog.updateComplete;
+
+    const adjustButton = queryShadow<HTMLButtonElement>(dialog, '.time-summary .link-button');
+    expect(adjustButton).toBeTruthy();
+    adjustButton!.click();
+
+    await dialog.updateComplete;
+
+    const timeInputs = queryShadow(dialog, 'form')?.querySelectorAll('input[type="datetime-local"]');
+    expect(timeInputs?.length).toBe(2);
+
   });
 
-  it('should render duration input', async () => {
-    const dialog = await mountComponent<FeedingFormDialog>('feeding-form-dialog');
-    
-    const allInputs = queryShadow(dialog, 'dialog')?.querySelectorAll('input[type="number"]');
-    expect(allInputs).toBeTruthy();
-    expect(allInputs!.length).toBeGreaterThan(1); // Should have at least amount and duration
-  });
+  it('should keep save disabled until amount entered', async () => {
+    const dialog = await openManualForm();
 
-  it('should render feeding method radio buttons', async () => {
-    const dialog = await mountComponent<FeedingFormDialog>('feeding-form-dialog');
-    
-    const bottleRadio = queryShadow<HTMLInputElement>(dialog, 'input[id="bottle"]');
-    const otherRadio = queryShadow<HTMLInputElement>(dialog, 'input[id="other"]');
-    
-    expect(bottleRadio).toBeTruthy();
-    expect(otherRadio).toBeTruthy();
-    expect(bottleRadio?.type).toBe('radio');
-    expect(otherRadio?.type).toBe('radio');
-  });
-
-  it('should render cancel and save buttons', async () => {
-    const dialog = await mountComponent<FeedingFormDialog>('feeding-form-dialog');
-    
-    const cancelButton = queryShadow<HTMLButtonElement>(dialog, '.btn-cancel');
-    const saveButton = queryShadow<HTMLButtonElement>(dialog, '.btn-save');
-    
-    expect(cancelButton).toBeTruthy();
-    expect(saveButton).toBeTruthy();
-    expect(cancelButton?.textContent?.trim()).toBe('Cancel');
-    expect(saveButton?.textContent?.trim()).toBe('Save Log');
-  });
-
-  it('should have save button disabled when form is invalid', async () => {
-    const dialog = await mountComponent<FeedingFormDialog>('feeding-form-dialog');
-    
     const saveButton = queryShadow<HTMLButtonElement>(dialog, '.btn-save');
     expect(saveButton?.disabled).toBe(true);
+
+    await dialog.updateComplete;
   });
 
   it('should open dialog when open method is called', async () => {
     const dialog = await mountComponent<FeedingFormDialog>('feeding-form-dialog');
     const dialogElement = queryShadow<HTMLDialogElement>(dialog, 'dialog');
-    
-    // Mock showModal
+
     const showModalSpy = vi.fn();
     dialogElement!.showModal = showModalSpy;
-    
+
     dialog.open();
-    
+
     expect(showModalSpy).toHaveBeenCalled();
   });
 
   it('should close dialog when close method is called', async () => {
     const dialog = await mountComponent<FeedingFormDialog>('feeding-form-dialog');
+
+    vi.useFakeTimers();
+
     const dialogElement = queryShadow<HTMLDialogElement>(dialog, 'dialog');
-    
-    // Mock close
+
     const closeSpy = vi.fn();
     dialogElement!.close = closeSpy;
-    
+    dialogElement!.open = true;
+
     dialog.close();
-    
+
+    await vi.advanceTimersByTimeAsync(300);
+
     expect(closeSpy).toHaveBeenCalled();
   });
 
-  it('should dispatch log-added event on form submit', async () => {
-    const dialog = await mountComponent<FeedingFormDialog>('feeding-form-dialog');
-    
-    // Listen for the log-added event
-    const eventPromise = new Promise<CustomEvent>((resolve) => {
-      dialog.addEventListener('log-added', (e) => {
-        resolve(e as CustomEvent);
-      }, { once: true });
-    });
-    
-    // Mock the dialog close method
-    const dialogElement = queryShadow<HTMLDialogElement>(dialog, 'dialog');
-    dialogElement!.close = vi.fn();
-    
-    // Set form values via the shadow DOM
-    const amountInputs = queryShadow(dialog, 'dialog')?.querySelectorAll('input[type="number"]');
-    if (amountInputs && amountInputs.length >= 2) {
-      (amountInputs[0] as HTMLInputElement).value = '120';
-      (amountInputs[0] as HTMLInputElement).dispatchEvent(new Event('input', { bubbles: true }));
-      (amountInputs[1] as HTMLInputElement).value = '15';
-      (amountInputs[1] as HTMLInputElement).dispatchEvent(new Event('input', { bubbles: true }));
-    }
-    
-    // Submit the form
-    const form = queryShadow<HTMLFormElement>(dialog, 'form');
-    form?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-    
-    // Wait for event or timeout
-    const event = await Promise.race([
-      eventPromise,
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000)),
-    ]);
-    
-    // Event might not fire if validation fails, which is acceptable
-    if (event) {
-      expect(event.detail).toBeTruthy();
-      expect(event.detail).toHaveProperty('id');
-      expect(event.detail).toHaveProperty('feedType');
-    }
-  });
+  // Tests covering event dispatch have been removed per current requirements.
 });

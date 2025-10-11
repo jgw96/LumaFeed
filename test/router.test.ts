@@ -38,7 +38,7 @@ describe('Router', () => {
   it('should initialize with routes', () => {
     router = new Router([
       { pattern: '/', component: 'home-page' },
-      { pattern: '/about', component: 'about-page' },
+      { pattern: '/settings', component: 'settings-page' },
     ]);
 
     expect(router).toBeDefined();
@@ -48,7 +48,7 @@ describe('Router', () => {
   it('should match home route', () => {
     router = new Router([
       { pattern: '/', component: 'home-page' },
-      { pattern: '/about', component: 'about-page' },
+      { pattern: '/settings', component: 'settings-page' },
     ]);
 
     const currentRoute = router.getCurrentRoute();
@@ -58,27 +58,27 @@ describe('Router', () => {
   it('should navigate to a new route', async () => {
     router = new Router([
       { pattern: '/', component: 'home-page' },
-      { pattern: '/about', component: 'about-page' },
+      { pattern: '/settings', component: 'settings-page' },
     ]);
 
     const routeChangePromise = new Promise<string>((resolve) => {
       router.onRouteChange((route) => {
-        if (route === 'about-page') {
+        if (route === 'settings-page') {
           resolve(route);
         }
       });
     });
 
-    router.navigate('/about');
+    router.navigate('/settings');
 
     const route = await routeChangePromise;
-    expect(route).toBe('about-page');
+    expect(route).toBe('settings-page');
   });
 
   it('should handle 404 for unknown routes', () => {
     router = new Router([
       { pattern: '/', component: 'home-page' },
-      { pattern: '/about', component: 'about-page' },
+      { pattern: '/settings', component: 'settings-page' },
     ]);
 
     // Manually set location to an unknown path
@@ -91,7 +91,7 @@ describe('Router', () => {
     // Create a new router instance with the unknown path
     router = new Router([
       { pattern: '/', component: 'home-page' },
-      { pattern: '/about', component: 'about-page' },
+      { pattern: '/settings', component: 'settings-page' },
     ]);
 
     expect(router.getCurrentRoute()).toBe('not-found');
@@ -100,7 +100,7 @@ describe('Router', () => {
   it('should call route change listeners', async () => {
     router = new Router([
       { pattern: '/', component: 'home-page' },
-      { pattern: '/about', component: 'about-page' },
+      { pattern: '/settings', component: 'settings-page' },
     ]);
 
     let callCount = 0;
@@ -117,7 +117,7 @@ describe('Router', () => {
       });
     });
 
-    router.navigate('/about');
+    router.navigate('/settings');
 
     await routeChangePromise;
     expect(callCount).toBe(2);
@@ -136,7 +136,7 @@ describe('Router', () => {
     expect(callCount).toBe(1); // Called immediately
 
     unsubscribe();
-    router.navigate('/about');
+  router.navigate('/settings');
 
     // Should still be 1 since we unsubscribed
     expect(callCount).toBe(1);

@@ -1,6 +1,8 @@
-import type { FeedingLog } from '../types/feeding-log.js';
+import { calculateNextFeedTime, type FeedingLog } from '../types/feeding-log.js';
+import { settingsService } from './settings-service.js';
 
 const STORAGE_FILE_NAME = 'feeding-logs.json';
+const DEFAULT_DURATION_MINUTES = 20;
 
 export class FeedingStorageService {
   private async getFileHandle(): Promise<FileSystemFileHandle> {
@@ -30,7 +32,40 @@ export class FeedingStorageService {
         return [];
       }
       
-      return JSON.parse(contents) as FeedingLog[];
+      const rawLogs = JSON.parse(contents) as FeedingLog[];
+      const defaultInterval = await settingsService.getDefaultFeedIntervalMinutes();
+      return rawLogs.map((log) => {
+        const fallbackEnd = log.timestamp ?? Date.now();
+        const endTime = typeof log.endTime === 'number' ? log.endTime : fallbackEnd;
+
+        let startTime: number;
+        if (typeof log.startTime === 'number') {
+          startTime = log.startTime;
+        } else if (typeof log.durationMinutes === 'number' && log.durationMinutes > 0) {
+          startTime = endTime - log.durationMinutes * 60_000;
+        } else {
+          startTime = endTime - DEFAULT_DURATION_MINUTES * 60_000;
+        }
+
+        let durationMinutes = log.durationMinutes;
+        if (typeof durationMinutes !== 'number' || durationMinutes <= 0) {
+          const diffMinutes = Math.round((endTime - startTime) / 60_000);
+          durationMinutes = Math.max(1, diffMinutes);
+        }
+
+        const nextFeedTime = typeof log.nextFeedTime === 'number' && log.nextFeedTime > endTime
+          ? log.nextFeedTime
+          : calculateNextFeedTime(endTime, defaultInterval);
+
+        return {
+          ...log,
+          durationMinutes,
+          startTime,
+          endTime,
+          timestamp: log.timestamp ?? endTime,
+          nextFeedTime,
+        } satisfies FeedingLog;
+      });
     } catch (error) {
       console.error('Error loading feeding logs:', error);
       return [];
@@ -39,7 +74,16 @@ export class FeedingStorageService {
 
   async addLog(log: FeedingLog): Promise<void> {
     const logs = await this.loadLogs();
-    logs.unshift(log); // Add to beginning for most recent first
+    const baseTime = typeof log.endTime === 'number' ? log.endTime : log.timestamp;
+    const defaultInterval = await settingsService.getDefaultFeedIntervalMinutes();
+    const normalizedLog: FeedingLog = {
+      ...log,
+      nextFeedTime: typeof log.nextFeedTime === 'number' && log.nextFeedTime > baseTime
+        ? log.nextFeedTime
+        : calculateNextFeedTime(baseTime, defaultInterval),
+    };
+
+    logs.unshift(normalizedLog); // Add to beginning for most recent first
     await this.saveLogs(logs);
   }
 

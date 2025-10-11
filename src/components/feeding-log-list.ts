@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { FeedingLog } from '../types/feeding-log.js';
+import { formatNextFeedLabel } from '../utils/feed-time.js';
 
 @customElement('feeding-log-list')
 export class FeedingLogList extends LitElement {
@@ -113,27 +114,44 @@ export class FeedingLogList extends LitElement {
   @property({ type: Array })
   logs: FeedingLog[] = [];
 
-  private formatTimestamp(timestamp: number): string {
-    const date = new Date(timestamp);
+  private formatTimeRange(log: FeedingLog): string {
+    const start = new Date(log.startTime ?? log.timestamp);
+    const end = new Date(log.endTime ?? log.timestamp);
     const now = new Date();
-    const isToday = date.toDateString() === now.toDateString();
-    
-    const timeStr = date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit',
-      hour12: true 
-    });
-    
-    if (isToday) {
-      return `Today at ${timeStr}`;
+    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      const fallbackDate = new Date(log.timestamp);
+      const day = fallbackDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const time = fallbackDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      return `${day} · ${time}`;
     }
-    
-    const dateStr = date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric' 
+
+    const isSameDay = start.toDateString() === end.toDateString();
+    const isToday = start.toDateString() === now.toDateString();
+    const isYesterday = start.toDateString() === yesterday.toDateString();
+
+    const formatTime = (value: Date) => value.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
     });
-    
-    return `${dateStr} at ${timeStr}`;
+
+    const startTime = formatTime(start);
+    const endTime = formatTime(end);
+
+    if (isSameDay) {
+      const dayLabel = isToday
+        ? 'Today'
+        : isYesterday
+          ? 'Yesterday'
+          : start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return `${dayLabel} · ${startTime} – ${endTime}`;
+    }
+
+    const startDate = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const endDate = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `${startDate} ${startTime} – ${endDate} ${endTime}`;
   }
 
   private handleDelete(log: FeedingLog) {
@@ -163,7 +181,7 @@ export class FeedingLogList extends LitElement {
                 ${log.feedType === 'formula' ? '🍼 Formula' : '🤱 Breast Milk'}
               </div>
               <div style="display: flex; align-items: center; gap: 1rem;">
-                <div class="log-time">${this.formatTimestamp(log.timestamp)}</div>
+                <div class="log-time">${this.formatTimeRange(log)}</div>
                 <button 
                   class="delete-btn" 
                   @click=${() => this.handleDelete(log)}
@@ -184,7 +202,11 @@ export class FeedingLogList extends LitElement {
               </div>
               <div class="detail-item">
                 <div class="detail-label">Method</div>
-                <div class="detail-value">${log.isBottleFed ? 'Bottle' : 'Other'}</div>
+                <div class="detail-value">${log.isBottleFed ? 'Bottle' : 'Breast'}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Next feed</div>
+                <div class="detail-value">${formatNextFeedLabel(log.nextFeedTime)}</div>
               </div>
             </div>
           </div>

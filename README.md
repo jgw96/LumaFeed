@@ -61,7 +61,7 @@ feeding-tracker/
 ├── src/
 │   ├── pages/           # Page components
 │   │   ├── home-page.ts
-│   │   ├── about-page.ts
+│   │   ├── settings-page.ts
 │   │   └── not-found-page.ts
 │   ├── router/          # Custom router implementation
 │   │   └── router.ts
@@ -81,14 +81,14 @@ The custom router is based on the URL Pattern API and provides simple, declarati
 ```typescript
 const router = new Router([
   { pattern: '/', component: 'home-page' },
-  { pattern: '/about', component: 'about-page' },
+  { pattern: '/settings', component: 'settings-page' },
 ]);
 
 router.onRouteChange((route, params) => {
   // Handle route changes
 });
 
-router.navigate('/about'); // Navigate programmatically
+router.navigate('/settings'); // Navigate programmatically
 ```
 
 ## Technologies Used
