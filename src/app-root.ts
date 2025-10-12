@@ -40,15 +40,6 @@ export class AppRoot extends LitElement {
       line-height: var(--md-sys-typescale-title-large-line-height);
     }
 
-    .brand::before {
-      content: '';
-      width: 36px;
-      height: 36px;
-      border-radius: 12px;
-      background: var(--md-sys-color-secondary-container);
-      box-shadow: var(--md-sys-elevation-2);
-    }
-
     .layout {
       display: flex;
       flex-direction: column;
@@ -251,7 +242,11 @@ export class AppRoot extends LitElement {
         </aside>
         <div class="content-area">
           <header>
-            <div class="brand">Feeding Tracker</div>
+            <div class="brand">
+              <img src="/feedings-65.png" alt="Feeding Tracker" width="36" height="36" />
+
+              <span>Feeding Tracker</span>
+            </div>
           </header>
           <main>
             ${this.renderCurrentPage()}

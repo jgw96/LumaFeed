@@ -417,6 +417,8 @@ export class HomePage extends LitElement {
     const notificationOptions: NotificationOptions = {
       body: `Next feed around ${formatNextFeedLabel(log.nextFeedTime)}`,
       tag: 'next-feed-reminder',
+      icon: '/feeding-bottle.png',
+      badge: '/feeding-bottle.png',
       data: { logId: log.id ?? null, nextFeedTime: log.nextFeedTime },
     };
 

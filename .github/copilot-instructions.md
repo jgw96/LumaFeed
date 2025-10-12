@@ -12,7 +12,7 @@
 - **Styling** Components rely on Material 3 CSS custom properties (e.g. `--md-sys-color-*`); preserve those tokens when adding UI to maintain theming.
 - **Imports** This project compiles with Vite bundler mode; keep explicit `.js` extensions in intra-project imports and avoid default exports for Lit elements.
 - **TypeScript** `tsconfig.json` disables `useDefineForClassFields`; when adding reactive fields use Lit decorators (`@state`, `@property`) and initialize them as class fields.
-- **PWA** `vite.config.ts` installs `vite-plugin-pwa` with auto-update manifest; new assets should land in `public/` and be referenced via root-relative paths.
+- **PWA** `src/service-worker.ts` holds the shared worker logic (notifications, etc.); `vite.config.ts` injects precache data via `vite-plugin-pwa` only in production, while the dev build registers the same worker without enabling precache.
 - **Build** `npm run build` runs `tsc` before Vite to surface type errors; run `npm run type-check` when iterating on types without bundling.
 - **Dev Server** Use `npm run dev` for local work (Vite defaults to port 5173) and `npm run preview` to serve the built output.
 - **Testing** Vitest config (`vitest.config.ts`) targets `happy-dom`; use `npm test` for watch, `npm run test:run` CI-style, and `npm run test:coverage` for reports.

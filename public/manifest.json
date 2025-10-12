@@ -1,0 +1,32 @@
+{
+  "name": "Feeding Tracker",
+  "short_name": "FeedTracker",
+  "description": "Track feeding times and activities",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/feeding-bottle.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/feeding-128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "/feeding-256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+        "src": "/feedings-65.png",
+        "sizes": "64x64",
+        "type": "image/png"
+    }
+  ]
+}
