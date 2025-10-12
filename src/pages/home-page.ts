@@ -136,6 +136,7 @@ export class HomePage extends LitElement {
       letter-spacing: var(--md-sys-typescale-body-medium-letter-spacing);
       color: var(--md-sys-color-on-surface-variant);
     }
+
   `;
 
   @state()
@@ -222,7 +223,6 @@ export class HomePage extends LitElement {
           .logs=${this.logs}
           .loading=${this.loading}
         ></feeding-summary-card>
-
         <div class="logs-section">
           <h2 class="section-title">Recent Feedings</h2>
           ${this.loading

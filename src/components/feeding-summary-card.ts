@@ -1,6 +1,7 @@
 import { LitElement, html, css, PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { FeedingLog } from '../types/feeding-log.js';
+import './feeding-ai-summary-card.js';
 
 @customElement('feeding-summary-card')
 export class FeedingSummaryCard extends LitElement {
@@ -15,9 +16,9 @@ export class FeedingSummaryCard extends LitElement {
       border: 1px solid var(--md-sys-color-outline-variant);
       padding: 1.25rem 1.5rem;
       box-shadow: var(--md-sys-elevation-1);
-      margin-bottom: 2rem;
       display: grid;
-      gap: 0.75rem;
+      gap: 1.75rem;
+      margin-bottom: 2rem;
     }
 
     .summary-card__title {
@@ -63,6 +64,16 @@ export class FeedingSummaryCard extends LitElement {
       width: 100%;
       height: 100%;
       display: block;
+    }
+
+    .summary-card__section {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .summary-card__ai {
+      border-top: 1px solid var(--md-sys-color-outline-variant);
+      padding-top: 1.5rem;
     }
   `;
 
@@ -296,32 +307,40 @@ export class FeedingSummaryCard extends LitElement {
 
     return html`
       <div class="summary-card" role="status" aria-live="polite">
-        <span class="summary-card__title">Summary - Last 24 hours</span>
-        ${this.loading
-          ? html`<span class="summary-card__status">Loading summary…</span>`
-          : feedings > 0
-            ? html`
-                <span class="summary-card__status">${this.formatFeedingLabel(feedings)}</span>
-                <div class="summary-card__totals">
-                  <span>${this.formatNumber(totalMl)} ml</span>
-                  <span class="summary-card__secondary">(${this.formatNumber(totalOz, 1)} oz)</span>
-                </div>
-                ${hasChartData
-                  ? html`
-                      <div
-                        class="summary-card__chart"
-                        role="img"
-                        aria-label="${this.getChartDescription()}"
-                      >
-                        <canvas id="feedChart" aria-hidden="true"></canvas>
-                      </div>
-                    `
-                  : html`<div class="summary-card__empty">No chart data for the last 24 hours.</div>`}
-              `
-            : html`
-                <span class="summary-card__status">No feedings logged</span>
-                <div class="summary-card__empty">Add a feeding to see totals.</div>
-              `}
+        <div class="summary-card__section">
+          <span class="summary-card__title">Summary - Last 24 hours</span>
+          ${this.loading
+            ? html`<span class="summary-card__status">Loading summary…</span>`
+            : feedings > 0
+              ? html`
+                  <span class="summary-card__status">${this.formatFeedingLabel(feedings)}</span>
+                  <div class="summary-card__totals">
+                    <span>${this.formatNumber(totalMl)} ml</span>
+                    <span class="summary-card__secondary">(${this.formatNumber(totalOz, 1)} oz)</span>
+                  </div>
+                  ${hasChartData
+                    ? html`
+                        <div
+                          class="summary-card__chart"
+                          role="img"
+                          aria-label="${this.getChartDescription()}"
+                        >
+                          <canvas id="feedChart" aria-hidden="true"></canvas>
+                        </div>
+                      `
+                    : html`<div class="summary-card__empty">No chart data for the last 24 hours.</div>`}
+                `
+              : html`
+                  <span class="summary-card__status">No feedings logged</span>
+                  <div class="summary-card__empty">Add a feeding to see totals.</div>
+                `}
+        </div>
+
+        <feeding-ai-summary-card
+          class="summary-card__ai"
+          .logs=${this.logs}
+          .loading=${this.loading}
+        ></feeding-ai-summary-card>
       </div>
     `;
   }
