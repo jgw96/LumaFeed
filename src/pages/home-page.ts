@@ -27,19 +27,47 @@ export class HomePage extends LitElement {
       margin: 0 auto;
     }
 
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .summary-card {
+      background: var(--md-sys-color-surface-container-low);
+      border-radius: var(--md-sys-shape-corner-extra-large);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--md-sys-elevation-1);
       margin-bottom: 2rem;
+      display: grid;
+      gap: 0.75rem;
     }
 
-    h1 {
-      color: var(--md-sys-color-on-background);
-      margin: 0;
-      font-size: var(--md-sys-typescale-headline-large-font-size);
-      font-weight: var(--md-sys-typescale-headline-large-font-weight);
-      line-height: var(--md-sys-typescale-headline-large-line-height);
+    .summary-card__title {
+      font-weight: 600;
+      color: var(--md-sys-color-primary);
+      font-size: 1rem;
+      line-height: 1.5;
+    }
+
+    .summary-card__status {
+      font-size: var(--md-sys-typescale-body-medium-font-size);
+      line-height: var(--md-sys-typescale-body-medium-line-height);
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .summary-card__totals {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      font-size: var(--md-sys-typescale-title-small-font-size);
+      font-weight: var(--md-sys-typescale-title-small-font-weight);
+      color: var(--md-sys-color-on-surface);
+    }
+
+    .summary-card__secondary {
+      font-size: var(--md-sys-typescale-body-small-font-size);
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .summary-card__empty {
+      font-size: var(--md-sys-typescale-body-medium-font-size);
+      color: var(--md-sys-color-on-surface-variant);
     }
 
     .add-btn {
@@ -174,6 +202,44 @@ export class HomePage extends LitElement {
   private toastHideTimeoutId: number | null = null;
   private toastClearTimeoutId: number | null = null;
 
+  private get last24HourSummary() {
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    let feedings = 0;
+    let totalMl = 0;
+    let totalOz = 0;
+
+    for (const log of this.logs) {
+      console.log(log);
+      const comparisonTime = typeof log.endTime === 'number' ? log.endTime : log.timestamp;
+      console.log("comparisonTime:", comparisonTime, "cutoff:", cutoff);
+      if (comparisonTime >= cutoff) {
+        feedings += 1;
+        if (Number.isFinite(log.amountMl)) {
+          totalMl += log.amountMl;
+        }
+        if (Number.isFinite(log.amountOz)) {
+          totalOz += log.amountOz;
+        }
+      }
+    }
+
+    console.log("Last 24 hours summary:", { feedings, totalMl, totalOz });
+
+    return { feedings, totalMl, totalOz } as const;
+  }
+
+  private formatNumber(value: number, maxFractionDigits = 0): string {
+    const hasFraction = Math.abs(value - Math.trunc(value)) > Number.EPSILON;
+    return new Intl.NumberFormat(undefined, {
+      maximumFractionDigits: maxFractionDigits,
+      minimumFractionDigits: maxFractionDigits > 0 && hasFraction ? 1 : 0,
+    }).format(value);
+  }
+
+  private formatFeedingLabel(count: number): string {
+    return count === 1 ? '1 feeding' : `${count} feedings`;
+  }
+
   async connectedCallback() {
     super.connectedCallback();
     await this.loadLogs();
@@ -181,9 +247,9 @@ export class HomePage extends LitElement {
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
-  this.clearToastTimers();
-  this.toastData = null;
-  this.toastVisible = false;
+    this.clearToastTimers();
+    this.toastData = null;
+    this.toastVisible = false;
   }
 
   private async loadLogs(): Promise<FeedingLog[]> {
@@ -233,6 +299,8 @@ export class HomePage extends LitElement {
       supporting: `Next feed around ${formatNextFeedLabel(log.nextFeedTime)}`,
       icon: '🕒',
     });
+
+    void this.maybeShowNextFeedNotification(log);
   }
 
   private showToast(toast: ToastContent) {
@@ -264,19 +332,39 @@ export class HomePage extends LitElement {
   }
 
   render() {
+    const summary = this.last24HourSummary;
+    console.log(summary);
+
     return html`
       <div class="container">
+        <div class="summary-card" role="status" aria-live="polite">
+          <span class="summary-card__title">Summary - Last 24 hours</span>
+          ${this.loading
+        ? html`<span class="summary-card__status">Loading summary…</span>`
+        : summary.feedings > 0
+          ? html`
+                  <span class="summary-card__status">${this.formatFeedingLabel(summary.feedings)}</span>
+                  <div class="summary-card__totals">
+                    <span>${this.formatNumber(summary.totalMl)} ml</span>
+                    <span class="summary-card__secondary">(${this.formatNumber(summary.totalOz, 1)} oz)</span>
+                  </div>
+                `
+          : html`
+                  <span class="summary-card__status">No feedings logged</span>
+                  <div class="summary-card__empty">Add a feeding to see totals.</div>
+                `}
+        </div>
+
         <div class="logs-section">
           <h2 class="section-title">Recent Feedings</h2>
-          ${this.loading 
-            ? html`<div class="loading">Loading...</div>`
-            : html`
-                <feeding-log-list 
+          ${this.loading
+        ? html`<div class="loading">Loading...</div>`
+        : html`
+                <feeding-log-list
                   .logs=${this.logs}
                   @log-deleted=${this.handleLogDeleted}
                 ></feeding-log-list>
-              `
-          }
+              `}
         </div>
 
         <button class="add-btn" @click=${this.handleAddClick}>
@@ -294,8 +382,8 @@ export class HomePage extends LitElement {
               aria-atomic="true"
             >
               ${this.toastData.icon
-                ? html`<span class="toast__icon" aria-hidden="true">${this.toastData.icon}</span>`
-                : null}
+            ? html`<span class="toast__icon" aria-hidden="true">${this.toastData.icon}</span>`
+            : null}
               <div class="toast__content">
                 <span class="toast__headline">${this.toastData.headline}</span>
                 <span class="toast__supporting">${this.toastData.supporting}</span>
@@ -304,5 +392,48 @@ export class HomePage extends LitElement {
           `
         : null}
     `;
+  }
+
+  private async maybeShowNextFeedNotification(log: FeedingLog) {
+    if (!('Notification' in window) || typeof log.nextFeedTime !== 'number') {
+      return;
+    }
+
+    let permission: NotificationPermission = Notification.permission;
+
+    if (permission === 'default') {
+      try {
+        permission = await Notification.requestPermission();
+      } catch (error) {
+        console.warn('Requesting notification permission failed', error);
+        return;
+      }
+    }
+
+    if (permission !== 'granted') {
+      return;
+    }
+
+    const notificationOptions: NotificationOptions = {
+      body: `Next feed around ${formatNextFeedLabel(log.nextFeedTime)}`,
+      tag: 'next-feed-reminder',
+      data: { logId: log.id ?? null, nextFeedTime: log.nextFeedTime },
+    };
+
+    try {
+      const registration = await navigator.serviceWorker?.ready;
+      if (registration) {
+        await registration.showNotification('Feeding saved', notificationOptions);
+        return;
+      }
+    } catch (error) {
+      console.warn('Service worker notification failed', error);
+    }
+
+    try {
+      new Notification('Feeding saved', notificationOptions);
+    } catch (error) {
+      console.warn('Direct notification failed', error);
+    }
   }
 }

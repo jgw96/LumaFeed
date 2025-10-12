@@ -1,0 +1,29 @@
+# Feeding Tracker Agent Guide
+- **Architecture** `src/app-root.ts` hosts the Lit layout, binds router output, and owns nav state; `src/main.ts` only registers the root element.
+- **Routing** Custom `Router` in `src/router/router.ts` maps URLPattern paths to component tag names and reports them via `onRouteChange`; update both nav arrays and router configs when adding pages.
+- **Pages** Route components in `src/pages` register via `@customElement` and are imported with `.js` extensions; keep the `app-root.ts` side-effect imports in sync with router entries.
+- **State Source** `home-page.ts` coordinates feeding logs: loads data via `feedingStorage`, handles `log-added`/`log-deleted` events, and drives toast notifications.
+- **Dialog Workflow** `feeding-form-dialog.ts` owns timer/manual flows, normalizes amounts into ml/oz, looks up default intervals from `settingsService`, and emits `log-added`; reuse that emit instead of duplicating save logic.
+- **Log Display** `feeding-log-list.ts` renders cards and raises `log-deleted` with the log id; it expects pre-normalized numeric fields and formatted next-feed timestamps via `formatNextFeedLabel`.
+- **Data Model** `src/types/feeding-log.ts` defines the canonical `FeedingLog` shape and `calculateNextFeedTime`; always populate `startTime`, `endTime`, `durationMinutes`, and `nextFeedTime` before persisting.
+- **Persistence** `feeding-storage.ts` relies on the File System Access API through `navigator.storage.getDirectory`; always call `feedingStorage` methods so default durations and next-feed fallbacks stay consistent.
+- **Settings** `settings-service.ts` wraps `localStorage` with caching, clamping, and async helpers; use `settingsService.updateSettings` for writes and expect min/max bounds (60–360 minutes, step 15).
+- **Time Utilities** `formatNextFeedLabel` in `src/utils/feed-time.ts` centralizes user-facing time strings; prefer it over ad-hoc formatting to keep Today/Tomorrow labels consistent.
+- **Styling** Components rely on Material 3 CSS custom properties (e.g. `--md-sys-color-*`); preserve those tokens when adding UI to maintain theming.
+- **Imports** This project compiles with Vite bundler mode; keep explicit `.js` extensions in intra-project imports and avoid default exports for Lit elements.
+- **TypeScript** `tsconfig.json` disables `useDefineForClassFields`; when adding reactive fields use Lit decorators (`@state`, `@property`) and initialize them as class fields.
+- **PWA** `vite.config.ts` installs `vite-plugin-pwa` with auto-update manifest; new assets should land in `public/` and be referenced via root-relative paths.
+- **Build** `npm run build` runs `tsc` before Vite to surface type errors; run `npm run type-check` when iterating on types without bundling.
+- **Dev Server** Use `npm run dev` for local work (Vite defaults to port 5173) and `npm run preview` to serve the built output.
+- **Testing** Vitest config (`vitest.config.ts`) targets `happy-dom`; use `npm test` for watch, `npm run test:run` CI-style, and `npm run test:coverage` for reports.
+- **Test Setup** `test/setup.ts` polyfills URLPattern, File System Access, and `crypto.randomUUID`; avoid bypassing this by using plain browser globals in tests.
+- **Test Helpers** `test/helpers.ts` offers `mountComponent`, `queryShadow`, and `waitFor*`; prefer them over manual timers so assertions line up with existing suites.
+- **Events** Cross-component communication uses bubbling CustomEvents; ensure new events set `{ bubbles: true, composed: true }` so `home-page` and the router can catch them.
+- **IDs** Feeding entries rely on UUIDs; if you stub them, use the same `crypto.randomUUID` pattern so tests and storage normalization agree.
+- **Accessibility** Existing components use ARIA roles for toasts and navigation; follow that pattern when adding interactive UI.
+- **Navigation** When you add a page, update `navItems` in `app-root.ts`, import the component module, and extend the router config in the constructor.
+- **Persistence Errors** Storage calls already log to console and rethrow; surface user-facing errors in components like `home-page` if needed, but avoid duplicating console logging.
+- **Reset Patterns** Dialogs call `resetForm()` on close; reuse or extend that helper instead of sprinkling state resets.
+- **Wake Lock** `feeding-form-dialog` conditionally requests the screen wake lock; wrap new async window features in feature detection so tests pass under `happy-dom`.
+- **Testing UI** Toast assertions rely on visibility toggles (`toast--visible`); check DOM classes instead of timers to keep tests deterministic.
+- **Documentation** README covers standard commands only; treat this file as the source of truth for agent-specific practices and keep it in sync with architectural changes.

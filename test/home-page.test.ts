@@ -45,6 +45,21 @@ describe('HomePage', () => {
     expect(logList).toBeTruthy();
   });
 
+  it('should show summary card with zero state once loaded', async () => {
+    const homePage = await mountComponent<HomePage>('home-page');
+
+    await waitFor(() => {
+      const status = queryShadow(homePage, '.summary-card__status');
+      return Boolean(status && !status.textContent?.includes('Loading'));
+    });
+
+    const status = queryShadow(homePage, '.summary-card__status');
+    expect(status?.textContent?.trim()).toBe('No feedings logged');
+
+    const emptyMessage = queryShadow(homePage, '.summary-card__empty');
+    expect(emptyMessage?.textContent?.trim()).toBe('Add a feeding to see totals.');
+  });
+
   it('should render feeding form dialog', async () => {
     const homePage = await mountComponent<HomePage>('home-page');
     
@@ -112,6 +127,48 @@ describe('HomePage', () => {
 
     const toast = queryShadow(homePage, '.toast');
     expect(toast?.textContent).toContain('Next feed around');
+  });
+
+  it('should update summary when a feeding is added', async () => {
+    const homePage = await mountComponent<HomePage>('home-page');
+
+    await waitFor(() => {
+      const status = queryShadow(homePage, '.summary-card__status');
+      return Boolean(status && !status.textContent?.includes('Loading'));
+    });
+
+    const dialog = queryShadow(homePage, 'feeding-form-dialog');
+
+    const endTime = Date.now();
+    const startTime = endTime - 10 * 60_000;
+    const newLog: FeedingLog = {
+      id: 'summary-log',
+      feedType: 'milk',
+      amountMl: 120,
+      amountOz: 4,
+      durationMinutes: 10,
+      isBottleFed: true,
+      timestamp: endTime,
+      startTime,
+      endTime,
+      nextFeedTime: calculateNextFeedTime(endTime),
+    };
+
+    const event = new CustomEvent('log-added', {
+      detail: newLog,
+      bubbles: true,
+      composed: true,
+    });
+    dialog!.dispatchEvent(event);
+
+    await waitFor(() => {
+      const status = queryShadow(homePage, '.summary-card__status');
+      return Boolean(status && status.textContent?.includes('1 feeding'));
+    }, 3000, 'Summary did not update after adding log');
+
+    const totals = queryShadow(homePage, '.summary-card__totals');
+    expect(totals?.textContent).toContain('120');
+    expect(totals?.textContent).toContain('4');
   });
 
   it('should handle log-deleted event', async () => {

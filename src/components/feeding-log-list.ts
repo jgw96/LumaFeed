@@ -19,7 +19,7 @@ export class FeedingLogList extends LitElement {
     .log-item {
       background: var(--md-sys-color-surface-container-low);
       border: 1px solid var(--md-sys-color-outline-variant);
-      border-radius: var(--md-sys-shape-corner-medium);
+      border-radius: var(--md-sys-shape-corner-extra-large);
       padding: 1rem 1.25rem;
       transition: box-shadow 0.2s, background-color 0.2s;
     }
