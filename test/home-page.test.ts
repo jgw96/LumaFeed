@@ -49,14 +49,19 @@ describe('HomePage', () => {
     const homePage = await mountComponent<HomePage>('home-page');
 
     await waitFor(() => {
-      const status = queryShadow(homePage, '.summary-card__status');
+      const summaryCard = queryShadow(homePage, 'feeding-summary-card') as HTMLElement | null;
+      if (!summaryCard) {
+        return false;
+      }
+      const status = queryShadow(summaryCard, '.summary-card__status');
       return Boolean(status && !status.textContent?.includes('Loading'));
     });
 
-    const status = queryShadow(homePage, '.summary-card__status');
+    const summaryCard = queryShadow(homePage, 'feeding-summary-card') as HTMLElement;
+    const status = queryShadow(summaryCard, '.summary-card__status');
     expect(status?.textContent?.trim()).toBe('No feedings logged');
 
-    const emptyMessage = queryShadow(homePage, '.summary-card__empty');
+    const emptyMessage = queryShadow(summaryCard, '.summary-card__empty');
     expect(emptyMessage?.textContent?.trim()).toBe('Add a feeding to see totals.');
   });
 
@@ -133,7 +138,11 @@ describe('HomePage', () => {
     const homePage = await mountComponent<HomePage>('home-page');
 
     await waitFor(() => {
-      const status = queryShadow(homePage, '.summary-card__status');
+      const summaryCard = queryShadow(homePage, 'feeding-summary-card') as HTMLElement | null;
+      if (!summaryCard) {
+        return false;
+      }
+      const status = queryShadow(summaryCard, '.summary-card__status');
       return Boolean(status && !status.textContent?.includes('Loading'));
     });
 
@@ -162,11 +171,16 @@ describe('HomePage', () => {
     dialog!.dispatchEvent(event);
 
     await waitFor(() => {
-      const status = queryShadow(homePage, '.summary-card__status');
+      const summaryCard = queryShadow(homePage, 'feeding-summary-card') as HTMLElement | null;
+      if (!summaryCard) {
+        return false;
+      }
+      const status = queryShadow(summaryCard, '.summary-card__status');
       return Boolean(status && status.textContent?.includes('1 feeding'));
     }, 3000, 'Summary did not update after adding log');
 
-    const totals = queryShadow(homePage, '.summary-card__totals');
+    const summaryCard = queryShadow(homePage, 'feeding-summary-card') as HTMLElement;
+    const totals = queryShadow(summaryCard, '.summary-card__totals');
     expect(totals?.textContent).toContain('120');
     expect(totals?.textContent).toContain('4');
   });

@@ -3,15 +3,12 @@ import { customElement, state, query } from 'lit/decorators.js';
 import type { FeedingLog } from '../types/feeding-log.js';
 import { feedingStorage } from '../services/feeding-storage.js';
 import { formatNextFeedLabel } from '../utils/feed-time.js';
-
-interface ToastContent {
-  headline: string;
-  supporting: string;
-  icon?: string;
-}
+import '../components/app-toast.js';
 import '../components/feeding-form-dialog.js';
 import '../components/feeding-log-list.js';
+import '../components/feeding-summary-card.js';
 import type { FeedingFormDialog } from '../components/feeding-form-dialog.js';
+import type { AppToast } from '../components/app-toast.js';
 
 @customElement('home-page')
 export class HomePage extends LitElement {
@@ -25,49 +22,6 @@ export class HomePage extends LitElement {
     .container {
       max-width: 800px;
       margin: 0 auto;
-    }
-
-    .summary-card {
-      background: var(--md-sys-color-surface-container-low);
-      border-radius: var(--md-sys-shape-corner-extra-large);
-      border: 1px solid var(--md-sys-color-outline-variant);
-      padding: 1.25rem 1.5rem;
-      box-shadow: var(--md-sys-elevation-1);
-      margin-bottom: 2rem;
-      display: grid;
-      gap: 0.75rem;
-    }
-
-    .summary-card__title {
-      font-weight: 600;
-      color: var(--md-sys-color-primary);
-      font-size: 1rem;
-      line-height: 1.5;
-    }
-
-    .summary-card__status {
-      font-size: var(--md-sys-typescale-body-medium-font-size);
-      line-height: var(--md-sys-typescale-body-medium-line-height);
-      color: var(--md-sys-color-on-surface-variant);
-    }
-
-    .summary-card__totals {
-      display: inline-flex;
-      align-items: baseline;
-      gap: 0.5rem;
-      font-size: var(--md-sys-typescale-title-small-font-size);
-      font-weight: var(--md-sys-typescale-title-small-font-weight);
-      color: var(--md-sys-color-on-surface);
-    }
-
-    .summary-card__secondary {
-      font-size: var(--md-sys-typescale-body-small-font-size);
-      color: var(--md-sys-color-on-surface-variant);
-    }
-
-    .summary-card__empty {
-      font-size: var(--md-sys-typescale-body-medium-font-size);
-      color: var(--md-sys-color-on-surface-variant);
     }
 
     .add-btn {
@@ -190,55 +144,11 @@ export class HomePage extends LitElement {
   @state()
   private loading: boolean = true;
 
-  @state()
-  private toastData: ToastContent | null = null;
-
-  @state()
-  private toastVisible = false;
-
   @query('feeding-form-dialog')
   private dialog!: FeedingFormDialog;
 
-  private toastHideTimeoutId: number | null = null;
-  private toastClearTimeoutId: number | null = null;
-
-  private get last24HourSummary() {
-    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-    let feedings = 0;
-    let totalMl = 0;
-    let totalOz = 0;
-
-    for (const log of this.logs) {
-      console.log(log);
-      const comparisonTime = typeof log.endTime === 'number' ? log.endTime : log.timestamp;
-      console.log("comparisonTime:", comparisonTime, "cutoff:", cutoff);
-      if (comparisonTime >= cutoff) {
-        feedings += 1;
-        if (Number.isFinite(log.amountMl)) {
-          totalMl += log.amountMl;
-        }
-        if (Number.isFinite(log.amountOz)) {
-          totalOz += log.amountOz;
-        }
-      }
-    }
-
-    console.log("Last 24 hours summary:", { feedings, totalMl, totalOz });
-
-    return { feedings, totalMl, totalOz } as const;
-  }
-
-  private formatNumber(value: number, maxFractionDigits = 0): string {
-    const hasFraction = Math.abs(value - Math.trunc(value)) > Number.EPSILON;
-    return new Intl.NumberFormat(undefined, {
-      maximumFractionDigits: maxFractionDigits,
-      minimumFractionDigits: maxFractionDigits > 0 && hasFraction ? 1 : 0,
-    }).format(value);
-  }
-
-  private formatFeedingLabel(count: number): string {
-    return count === 1 ? '1 feeding' : `${count} feedings`;
-  }
+  @query('app-toast')
+  private toastElement!: AppToast;
 
   async connectedCallback() {
     super.connectedCallback();
@@ -247,9 +157,9 @@ export class HomePage extends LitElement {
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
-    this.clearToastTimers();
-    this.toastData = null;
-    this.toastVisible = false;
+    if (this.toastElement) {
+      this.toastElement.reset();
+    }
   }
 
   private async loadLogs(): Promise<FeedingLog[]> {
@@ -294,66 +204,24 @@ export class HomePage extends LitElement {
       return;
     }
 
-    this.showToast({
+    if (this.toastElement) {
+      this.toastElement.show({
       headline: 'Feeding saved',
       supporting: `Next feed around ${formatNextFeedLabel(log.nextFeedTime)}`,
       icon: '🕒',
-    });
+      });
+    }
 
     void this.maybeShowNextFeedNotification(log);
   }
 
-  private showToast(toast: ToastContent) {
-    this.clearToastTimers();
-    this.toastData = toast;
-    this.toastVisible = true;
-
-    this.toastHideTimeoutId = window.setTimeout(() => {
-      this.toastVisible = false;
-      this.toastHideTimeoutId = null;
-
-      this.toastClearTimeoutId = window.setTimeout(() => {
-        this.toastData = null;
-        this.toastClearTimeoutId = null;
-      }, 300);
-    }, 5000);
-  }
-
-  private clearToastTimers() {
-    if (this.toastHideTimeoutId !== null) {
-      window.clearTimeout(this.toastHideTimeoutId);
-      this.toastHideTimeoutId = null;
-    }
-
-    if (this.toastClearTimeoutId !== null) {
-      window.clearTimeout(this.toastClearTimeoutId);
-      this.toastClearTimeoutId = null;
-    }
-  }
-
   render() {
-    const summary = this.last24HourSummary;
-    console.log(summary);
-
     return html`
       <div class="container">
-        <div class="summary-card" role="status" aria-live="polite">
-          <span class="summary-card__title">Summary - Last 24 hours</span>
-          ${this.loading
-        ? html`<span class="summary-card__status">Loading summary…</span>`
-        : summary.feedings > 0
-          ? html`
-                  <span class="summary-card__status">${this.formatFeedingLabel(summary.feedings)}</span>
-                  <div class="summary-card__totals">
-                    <span>${this.formatNumber(summary.totalMl)} ml</span>
-                    <span class="summary-card__secondary">(${this.formatNumber(summary.totalOz, 1)} oz)</span>
-                  </div>
-                `
-          : html`
-                  <span class="summary-card__status">No feedings logged</span>
-                  <div class="summary-card__empty">Add a feeding to see totals.</div>
-                `}
-        </div>
+        <feeding-summary-card
+          .logs=${this.logs}
+          .loading=${this.loading}
+        ></feeding-summary-card>
 
         <div class="logs-section">
           <h2 class="section-title">Recent Feedings</h2>
@@ -373,24 +241,7 @@ export class HomePage extends LitElement {
 
         <feeding-form-dialog @log-added=${this.handleLogAdded}></feeding-form-dialog>
       </div>
-      ${this.toastData
-        ? html`
-            <div
-              class="toast ${this.toastVisible ? 'toast--visible' : ''}"
-              role="status"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              ${this.toastData.icon
-            ? html`<span class="toast__icon" aria-hidden="true">${this.toastData.icon}</span>`
-            : null}
-              <div class="toast__content">
-                <span class="toast__headline">${this.toastData.headline}</span>
-                <span class="toast__supporting">${this.toastData.supporting}</span>
-              </div>
-            </div>
-          `
-        : null}
+      <app-toast></app-toast>
     `;
   }
 

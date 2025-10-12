@@ -78,9 +78,15 @@ export class AppRoot extends LitElement {
       width: 260px;
       background: var(--md-sys-color-surface-container);
       color: var(--md-sys-color-on-surface);
-      padding: 2rem 1.5rem;
-      gap: 1rem;
+      padding: 0 1.5rem;
       border-right: none;
+    }
+
+    .side-nav__content {
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+      padding: 2.5rem 0;
     }
 
     .side-nav .brand::before {
@@ -149,12 +155,15 @@ export class AppRoot extends LitElement {
 
       .side-nav {
         display: flex;
-        position: sticky;
-        top: 0;
-        height: 100vh;
-        padding: 2.5rem 1.75rem;
+        padding: 0 1.75rem;
         border-right: 1px solid var(--md-sys-color-outline-variant);
         box-shadow: var(--md-sys-elevation-2);
+      }
+
+      .side-nav__content {
+        position: sticky;
+        top: 1.75rem;
+        padding-top: 0;
       }
 
       .side-nav .nav-links {
@@ -183,6 +192,10 @@ export class AppRoot extends LitElement {
 
       .bottom-nav {
         display: none;
+      }
+
+      .nav-label {
+        margin-left: 10px;
       }
     }
   `;
@@ -235,15 +248,17 @@ export class AppRoot extends LitElement {
     return html`
       <div class="layout">
         <aside class="side-nav">
-          <div class="brand">Feeding Tracker</div>
-          <nav class="nav-links" aria-label="Primary navigation" @click=${this.handleNavClick}>
-            ${this.renderNavLinks()}
-          </nav>
+          <div class="side-nav__content">
+            <div class="brand">Feeding Tracker</div>
+            <nav class="nav-links" aria-label="Primary navigation" @click=${this.handleNavClick}>
+              ${this.renderNavLinks()}
+            </nav>
+          </div>
         </aside>
         <div class="content-area">
           <header>
             <div class="brand">
-              <img src="/feedings-65.png" alt="Feeding Tracker" width="36" height="36" />
+              <img src="/feedings-65.png" alt="Feeding Tracker" width="24" height="24" />
 
               <span>Feeding Tracker</span>
             </div>
