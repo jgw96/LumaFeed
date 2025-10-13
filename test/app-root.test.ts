@@ -15,7 +15,7 @@ describe('AppRoot', () => {
     expect(header).toBeTruthy();
     
     const brand = queryShadow(appRoot, 'header .brand');
-    expect(brand?.textContent?.trim()).toBe('Feeding Tracker');
+    expect(brand?.textContent?.trim()).toBe('LumaFeed');
   });
 
   it('should render bottom navigation links on mobile layout', async () => {

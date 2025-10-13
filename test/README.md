@@ -1,6 +1,6 @@
 # E2E Testing with Vitest
 
-This directory contains end-to-end tests for the Feeding Tracker application using Vitest.
+This directory contains end-to-end tests for the LumaFeed application using Vitest.
 
 ## Test Structure
 

@@ -353,7 +353,7 @@ export class AppRoot extends LitElement {
         <aside class="side-nav">
           <div class="side-nav__content">
             <div class="side-nav__top">
-              <div class="brand">Feeding Tracker</div>
+              <div class="brand">LumaFeed</div>
               <div class="side-nav__actions">
                 <app-header-menu @import-feeds=${this.handleImportFeedsRequested}></app-header-menu>
               </div>
@@ -366,9 +366,9 @@ export class AppRoot extends LitElement {
         <div class="content-area">
           <header>
             <div class="brand">
-              <img src="/feedings-65.png" alt="Feeding Tracker" width="24" height="24" />
+              <img src="/feedings-65.png" alt="LumaFeed" width="24" height="24" />
 
-              <span>Feeding Tracker</span>
+              <span>LumaFeed</span>
             </div>
             <div class="header-actions">
               <app-header-menu @import-feeds=${this.handleImportFeedsRequested}></app-header-menu>

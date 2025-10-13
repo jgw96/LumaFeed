@@ -1,6 +1,6 @@
 {
-  "name": "Feeding Tracker",
-  "short_name": "FeedTracker",
+  "name": "LumaFeed",
+  "short_name": "LumaFeed",
   "description": "Track feeding times and activities",
   "start_url": "/",
   "display": "standalone",

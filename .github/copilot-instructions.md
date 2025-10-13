@@ -1,4 +1,4 @@
-# Feeding Tracker Agent Guide
+# LumaFeed Agent Guide
 - **Architecture** `src/app-root.ts` hosts the Lit layout, binds router output, and owns nav state; `src/main.ts` only registers the root element.
 - **Routing** Custom `Router` in `src/router/router.ts` maps URLPattern paths to component tag names and reports them via `onRouteChange`; update both nav arrays and router configs when adding pages.
 - **Pages** Route components in `src/pages` register via `@customElement` and are imported with `.js` extensions; keep the `app-root.ts` side-effect imports in sync with router entries.
