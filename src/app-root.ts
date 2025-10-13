@@ -1,9 +1,12 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { customElement, state, query } from 'lit/decorators.js';
 import { Router } from './router/router.js';
+
 import './pages/home-page.js';
-import './pages/settings-page.js';
-import './pages/not-found-page.js';
+import './components/app-header-menu.js';
+import './components/feeding-import-dialog.js';
+
+import type { HomePage } from './pages/home-page.js';
 
 @customElement('app-root')
 export class AppRoot extends LitElement {
@@ -40,6 +43,12 @@ export class AppRoot extends LitElement {
       line-height: var(--md-sys-typescale-title-large-line-height);
     }
 
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
     .layout {
       display: flex;
       flex-direction: column;
@@ -52,9 +61,10 @@ export class AppRoot extends LitElement {
       flex-direction: column;
     }
 
-    main {
+    .page-container {
       flex: 1;
       padding: 0 0 calc(1.5rem + var(--bottom-nav-height));
+      position: relative;
     }
 
     .bottom-nav {
@@ -91,6 +101,14 @@ export class AppRoot extends LitElement {
 
     .side-nav .brand::before {
       box-shadow: none;
+    }
+
+    .side-nav__top {
+      display: none;
+    }
+
+    .side-nav__actions {
+      display: none;
     }
 
     .nav-links {
@@ -171,6 +189,13 @@ export class AppRoot extends LitElement {
         gap: 0.25rem;
       }
 
+      .side-nav__top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+
       .side-nav .nav-link {
         flex: none;
         flex-direction: row;
@@ -184,6 +209,12 @@ export class AppRoot extends LitElement {
         height: 70%;
         top: 15%;
         left: 0.75rem;
+      }
+
+      .side-nav__actions {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
       }
 
       .content-area {
@@ -203,13 +234,19 @@ export class AppRoot extends LitElement {
   @state()
   private currentRoute: string | null = null;
 
+  @query('.page-container')
+  private pageContainer?: HTMLElement;
+
+  @query('feeding-import-dialog')
+  private importDialog?: HTMLElementTagNameMap['feeding-import-dialog'];
+
   private readonly navItems: Array<{
     href: string;
     component: string;
     label: string;
   }> = [
-  { href: '/', component: 'home-page', label: 'Home' },
-  { href: '/settings', component: 'settings-page', label: 'Settings' },
+    { href: '/', component: 'home-page', label: 'Home' },
+    { href: '/settings', component: 'settings-page', label: 'Settings' },
   ];
 
   private router: Router;
@@ -217,14 +254,31 @@ export class AppRoot extends LitElement {
   constructor() {
     super();
     
-    this.router = new Router([
-  { pattern: '/', component: 'home-page' },
-  { pattern: '/settings', component: 'settings-page' },
-    ]);
+    this.router = new Router(
+      [
+        { pattern: '/', component: 'home-page' },
+        {
+          pattern: '/settings',
+          component: 'settings-page',
+          loader: () => import('./pages/settings-page.js'),
+        },
+      ],
+      {
+        notFound: {
+          component: 'not-found-page',
+          loader: () => import('./pages/not-found-page.js'),
+        },
+      }
+    );
 
     this.router.onRouteChange((route) => {
-      this.currentRoute = route;
+      this.performRouteTransition(route);
     });
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    this.addEventListener('logs-imported', this.handleLogsImported);
   }
 
   private isActiveRoute(component: string): boolean {
@@ -244,12 +298,66 @@ export class AppRoot extends LitElement {
     }
   }
 
+  private performRouteTransition(route: string) {
+    const updateRoute = async () => {
+      this.currentRoute = route;
+      await this.updateComplete;
+    };
+
+    if (this.currentRoute === null) {
+      void updateRoute();
+      return;
+    }
+
+    const startTransition = this.getViewTransitionStarter();
+
+    if (!startTransition) {
+      void updateRoute();
+      return;
+    }
+
+    try {
+      const transition = startTransition(updateRoute);
+      transition?.finished?.catch(() => {});
+    } catch {
+      void updateRoute();
+    }
+  }
+
+  disconnectedCallback(): void {
+    this.removeEventListener('logs-imported', this.handleLogsImported);
+    super.disconnectedCallback();
+  }
+
+  private getViewTransitionStarter():
+    | ((updateCallback: () => Promise<void> | void) => { finished?: Promise<void> })
+    | null {
+    const container = this.pageContainer as unknown as { startViewTransition?: (cb: () => Promise<void> | void) => { finished?: Promise<void> } };
+
+    if (container && typeof container.startViewTransition === 'function') {
+      return container.startViewTransition.bind(container);
+    }
+
+    const doc = document as unknown as { startViewTransition?: (cb: () => Promise<void> | void) => { finished?: Promise<void> } };
+
+    if (typeof doc.startViewTransition === 'function') {
+      return doc.startViewTransition.bind(document);
+    }
+
+    return null;
+  }
+
   render() {
     return html`
       <div class="layout">
         <aside class="side-nav">
           <div class="side-nav__content">
-            <div class="brand">Feeding Tracker</div>
+            <div class="side-nav__top">
+              <div class="brand">Feeding Tracker</div>
+              <div class="side-nav__actions">
+                <app-header-menu @import-feeds=${this.handleImportFeedsRequested}></app-header-menu>
+              </div>
+            </div>
             <nav class="nav-links" aria-label="Primary navigation" @click=${this.handleNavClick}>
               ${this.renderNavLinks()}
             </nav>
@@ -262,8 +370,11 @@ export class AppRoot extends LitElement {
 
               <span>Feeding Tracker</span>
             </div>
+            <div class="header-actions">
+              <app-header-menu @import-feeds=${this.handleImportFeedsRequested}></app-header-menu>
+            </div>
           </header>
-          <main>
+          <main class="page-container" style="view-transition-name: page-content;">
             ${this.renderCurrentPage()}
           </main>
         </div>
@@ -271,6 +382,7 @@ export class AppRoot extends LitElement {
       <nav class="bottom-nav nav-links" aria-label="Primary navigation" @click=${this.handleNavClick}>
         ${this.renderNavLinks()}
       </nav>
+      <feeding-import-dialog></feeding-import-dialog>
     `;
   }
 
@@ -289,13 +401,28 @@ export class AppRoot extends LitElement {
     });
   }
 
+  private handleLogsImported = (event: Event) => {
+    if (this.currentRoute === 'home-page') {
+      const homePage = this.renderRoot.querySelector('home-page') as HomePage | null;
+      if (homePage?.refreshLogs) {
+        void homePage.refreshLogs();
+      }
+    }
+
+    event.stopPropagation();
+  };
+
+  private handleImportFeedsRequested = () => {
+    this.importDialog?.open();
+  };
+
   private renderCurrentPage() {
     switch (this.currentRoute) {
       case 'home-page':
         return html`<home-page></home-page>`;
       case 'settings-page':
         return html`<settings-page></settings-page>`;
-      case 'not-found':
+      case 'not-found-page':
       default:
         return html`<not-found-page></not-found-page>`;
     }

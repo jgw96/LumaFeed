@@ -34,7 +34,7 @@ export class FeedingStorageService {
       
       const rawLogs = JSON.parse(contents) as FeedingLog[];
       const defaultInterval = await settingsService.getDefaultFeedIntervalMinutes();
-      return rawLogs.map((log) => {
+      const normalized = rawLogs.map((log) => {
         const fallbackEnd = log.timestamp ?? Date.now();
         const endTime = typeof log.endTime === 'number' ? log.endTime : fallbackEnd;
 
@@ -66,6 +66,8 @@ export class FeedingStorageService {
           nextFeedTime,
         } satisfies FeedingLog;
       });
+      normalized.sort((a, b) => b.endTime - a.endTime);
+      return normalized;
     } catch (error) {
       console.error('Error loading feeding logs:', error);
       return [];
@@ -83,7 +85,12 @@ export class FeedingStorageService {
         : calculateNextFeedTime(baseTime, defaultInterval),
     };
 
-    logs.unshift(normalizedLog); // Add to beginning for most recent first
+    logs.push(normalizedLog);
+    logs.sort((a, b) => {
+      const aTime = typeof a.endTime === 'number' ? a.endTime : a.timestamp;
+      const bTime = typeof b.endTime === 'number' ? b.endTime : b.timestamp;
+      return bTime - aTime;
+    });
     await this.saveLogs(logs);
   }
 

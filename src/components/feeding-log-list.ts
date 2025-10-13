@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { FeedingLog } from '../types/feeding-log.js';
+
 import { formatNextFeedLabel } from '../utils/feed-time.js';
 
 @customElement('feeding-log-list')

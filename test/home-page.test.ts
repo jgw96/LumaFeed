@@ -45,24 +45,13 @@ describe('HomePage', () => {
     expect(logList).toBeTruthy();
   });
 
-  it('should show summary card with zero state once loaded', async () => {
+  it('should suppress summary card when no logs are loaded', async () => {
     const homePage = await mountComponent<HomePage>('home-page');
 
-    await waitFor(() => {
-      const summaryCard = queryShadow(homePage, 'feeding-summary-card') as HTMLElement | null;
-      if (!summaryCard) {
-        return false;
-      }
-      const status = queryShadow(summaryCard, '.summary-card__status');
-      return Boolean(status && !status.textContent?.includes('Loading'));
-    });
+    await waitFor(() => !queryShadow(homePage, '.loading'), 3000, 'Home page did not finish loading');
 
-    const summaryCard = queryShadow(homePage, 'feeding-summary-card') as HTMLElement;
-    const status = queryShadow(summaryCard, '.summary-card__status');
-    expect(status?.textContent?.trim()).toBe('No feedings logged');
-
-    const emptyMessage = queryShadow(summaryCard, '.summary-card__empty');
-    expect(emptyMessage?.textContent?.trim()).toBe('Add a feeding to see totals.');
+    const summaryCard = queryShadow(homePage, 'feeding-summary-card');
+    expect(summaryCard).toBeNull();
   });
 
   it('should render feeding form dialog', async () => {
@@ -126,25 +115,21 @@ describe('HomePage', () => {
     dialog!.dispatchEvent(event);
     
     await waitFor(() => {
-      const toast = queryShadow(homePage, '.toast.toast--visible');
+      const toast = queryShadow(homePage, 'app-toast.toast--visible');
       return toast !== null;
     }, 3000, 'Next feed toast not displayed');
 
-    const toast = queryShadow(homePage, '.toast');
-    expect(toast?.textContent).toContain('Next feed around');
+    const toastHost = queryShadow<HTMLElement>(homePage, 'app-toast.toast--visible');
+    expect(toastHost).toBeTruthy();
+
+    const supporting = queryShadow<HTMLSpanElement>(toastHost!, '.toast__supporting');
+    expect(supporting?.textContent).toContain('Next feed around');
   });
 
   it('should update summary when a feeding is added', async () => {
     const homePage = await mountComponent<HomePage>('home-page');
 
-    await waitFor(() => {
-      const summaryCard = queryShadow(homePage, 'feeding-summary-card') as HTMLElement | null;
-      if (!summaryCard) {
-        return false;
-      }
-      const status = queryShadow(summaryCard, '.summary-card__status');
-      return Boolean(status && !status.textContent?.includes('Loading'));
-    });
+    await waitFor(() => !queryShadow(homePage, '.loading'), 3000, 'Home page did not finish loading');
 
     const dialog = queryShadow(homePage, 'feeding-form-dialog');
 

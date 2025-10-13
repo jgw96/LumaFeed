@@ -1,12 +1,13 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state, query } from 'lit/decorators.js';
+
 import type { FeedingLog } from '../types/feeding-log.js';
-import { feedingStorage } from '../services/feeding-storage.js';
-import { formatNextFeedLabel } from '../utils/feed-time.js';
+
 import '../components/app-toast.js';
 import '../components/feeding-form-dialog.js';
 import '../components/feeding-log-list.js';
 import '../components/feeding-summary-card.js';
+
 import type { FeedingFormDialog } from '../components/feeding-form-dialog.js';
 import type { AppToast } from '../components/app-toast.js';
 
@@ -20,6 +21,7 @@ export class HomePage extends LitElement {
     }
 
     .container {
+      position: relative;
       max-width: 800px;
       margin: 0 auto;
     }
@@ -39,9 +41,10 @@ export class HomePage extends LitElement {
       gap: 0.5rem;
       box-shadow: var(--md-sys-elevation-1);
 
-      position:fixed;
-      bottom: calc(16px + var(--bottom-nav-height, 0px));
+      position: fixed;
       right: 16px;
+      bottom: calc(16px + var(--bottom-nav-height, 0px));
+      z-index: 30;
     }
 
     .add-btn:hover {
@@ -145,6 +148,9 @@ export class HomePage extends LitElement {
   @state()
   private loading: boolean = true;
 
+  @state()
+  private hasLoadedInitialData: boolean = false;
+
   @query('feeding-form-dialog')
   private dialog!: FeedingFormDialog;
 
@@ -166,15 +172,22 @@ export class HomePage extends LitElement {
   private async loadLogs(): Promise<FeedingLog[]> {
     this.loading = true;
     try {
+      const { feedingStorage } = await import('../services/feeding-storage.js');
+
       const loadedLogs = await feedingStorage.loadLogs();
       this.logs = loadedLogs;
     } catch (error) {
       console.error('Failed to load logs:', error);
     } finally {
       this.loading = false;
+      this.hasLoadedInitialData = true;
     }
 
     return this.logs;
+  }
+
+  public async refreshLogs(): Promise<void> {
+    await this.loadLogs();
   }
 
   private handleAddClick() {
@@ -183,9 +196,11 @@ export class HomePage extends LitElement {
 
   private async handleLogAdded(e: CustomEvent<FeedingLog>) {
     try {
-      await feedingStorage.addLog(e.detail);
-      const logs = await this.loadLogs();
-      this.showNextFeedToast(logs[0] ?? e.detail);
+      const { feedingStorage } = await import('../services/feeding-storage.js');
+
+  await feedingStorage.addLog(e.detail);
+  const logs = await this.loadLogs();
+  await this.showNextFeedToast(logs[0] ?? e.detail);
     } catch (error) {
       console.error('Failed to save log:', error);
     }
@@ -193,6 +208,8 @@ export class HomePage extends LitElement {
 
   private async handleLogDeleted(e: CustomEvent<string>) {
     try {
+      const { feedingStorage } = await import('../services/feeding-storage.js');
+
       await feedingStorage.deleteLog(e.detail);
       await this.loadLogs();
     } catch (error) {
@@ -200,13 +217,15 @@ export class HomePage extends LitElement {
     }
   }
 
-  private showNextFeedToast(log?: FeedingLog) {
+  private async showNextFeedToast(log?: FeedingLog) {
     if (!log || typeof log.nextFeedTime !== 'number') {
       return;
     }
 
+    const { formatNextFeedLabel } = await import('../utils/feed-time.js');
+
     if (this.toastElement) {
-      this.toastElement.show({
+      await this.toastElement.show({
       headline: 'Feeding saved',
       supporting: `Next feed around ${formatNextFeedLabel(log.nextFeedTime)}`,
       icon: '🕒',
@@ -217,12 +236,18 @@ export class HomePage extends LitElement {
   }
 
   render() {
+  const shouldShowSummary = this.hasLoadedInitialData && this.logs.length > 0;
+
     return html`
       <div class="container">
-        <feeding-summary-card
-          .logs=${this.logs}
-          .loading=${this.loading}
-        ></feeding-summary-card>
+        ${shouldShowSummary
+          ? html`
+              <feeding-summary-card
+                .logs=${this.logs}
+                .loading=${this.loading}
+              ></feeding-summary-card>
+            `
+          : null}
         <div class="logs-section">
           <h2 class="section-title">Recent Feedings</h2>
           ${this.loading
@@ -264,6 +289,8 @@ export class HomePage extends LitElement {
     if (permission !== 'granted') {
       return;
     }
+
+    const { formatNextFeedLabel } = await import('../utils/feed-time.js');
 
     const notificationOptions: NotificationOptions = {
       body: `Next feed around ${formatNextFeedLabel(log.nextFeedTime)}`,

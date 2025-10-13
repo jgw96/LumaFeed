@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Router } from '../src/router/router.js';
+import type { RouteMatch } from '../src/router/router.js';
 
 describe('Router', () => {
   let router: Router;
@@ -36,9 +37,11 @@ describe('Router', () => {
   });
 
   it('should initialize with routes', () => {
+    const settingsLoader = vi.fn().mockResolvedValue(undefined);
+
     router = new Router([
       { pattern: '/', component: 'home-page' },
-      { pattern: '/settings', component: 'settings-page' },
+      { pattern: '/settings', component: 'settings-page', loader: settingsLoader },
     ]);
 
     expect(router).toBeDefined();
@@ -56,23 +59,63 @@ describe('Router', () => {
   });
 
   it('should navigate to a new route', async () => {
+    const settingsLoader = vi.fn().mockResolvedValue(undefined);
+
     router = new Router([
       { pattern: '/', component: 'home-page' },
-      { pattern: '/settings', component: 'settings-page' },
+      { pattern: '/settings', component: 'settings-page', loader: settingsLoader },
     ]);
 
     const routeChangePromise = new Promise<string>((resolve) => {
-      router.onRouteChange((route) => {
+      let unsubscribe: (() => void) | undefined;
+      const listener = (route: string) => {
         if (route === 'settings-page') {
+          unsubscribe?.();
           resolve(route);
         }
-      });
+      };
+
+      unsubscribe = router.onRouteChange(listener);
     });
 
     router.navigate('/settings');
 
     const route = await routeChangePromise;
     expect(route).toBe('settings-page');
+    expect(settingsLoader).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not reload a component that has already been loaded', async () => {
+    const settingsLoader = vi.fn().mockResolvedValue(undefined);
+
+    router = new Router([
+      { pattern: '/', component: 'home-page' },
+      { pattern: '/settings', component: 'settings-page', loader: settingsLoader },
+    ]);
+
+    const waitForRoute = (expectedRoute: string) =>
+      new Promise<void>((resolve) => {
+        let unsubscribe: (() => void) | undefined;
+        const listener = (route: string) => {
+          if (route === expectedRoute) {
+            unsubscribe?.();
+            resolve();
+          }
+        };
+
+        unsubscribe = router.onRouteChange(listener);
+      });
+
+    router.navigate('/settings');
+    await waitForRoute('settings-page');
+
+    router.navigate('/');
+    await waitForRoute('home-page');
+
+    router.navigate('/settings');
+    await waitForRoute('settings-page');
+
+    expect(settingsLoader).toHaveBeenCalledTimes(1);
   });
 
   it('should handle 404 for unknown routes', () => {
@@ -94,7 +137,7 @@ describe('Router', () => {
       { pattern: '/settings', component: 'settings-page' },
     ]);
 
-    expect(router.getCurrentRoute()).toBe('not-found');
+    expect(router.getCurrentRoute()).toBe('not-found-page');
   });
 
   it('should call route change listeners', async () => {
@@ -103,24 +146,29 @@ describe('Router', () => {
       { pattern: '/settings', component: 'settings-page' },
     ]);
 
-    let callCount = 0;
+    const seenRoutes: string[] = [];
     const routeChangePromise = new Promise<void>((resolve) => {
-      router.onRouteChange((route, params) => {
-        callCount++;
+      let unsubscribe: (() => void) | undefined;
+      const listener = (route: string, params: RouteMatch) => {
+        seenRoutes.push(route);
         expect(route).toBeTruthy();
         expect(params).toHaveProperty('pathname');
         expect(params).toHaveProperty('search');
         
-        if (callCount === 2) {
+        if (route === 'settings-page') {
+          unsubscribe?.();
           resolve();
         }
-      });
+      };
+
+      unsubscribe = router.onRouteChange(listener);
     });
 
     router.navigate('/settings');
 
     await routeChangePromise;
-    expect(callCount).toBe(2);
+    expect(seenRoutes[0]).toBe('home-page');
+    expect(seenRoutes).toContain('settings-page');
   });
 
   it('should allow unsubscribing from route changes', () => {
@@ -136,7 +184,7 @@ describe('Router', () => {
     expect(callCount).toBe(1); // Called immediately
 
     unsubscribe();
-  router.navigate('/settings');
+    router.navigate('/settings');
 
     // Should still be 1 since we unsubscribed
     expect(callCount).toBe(1);

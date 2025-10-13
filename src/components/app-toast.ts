@@ -117,9 +117,10 @@ export class AppToast extends LitElement {
     `;
   }
 
-  public show(toast: ToastContent) {
+  public async show(toast: ToastContent) {
     this.clearTimers();
     this.content = toast;
+    await this.updateComplete;
     this.visible = true;
     this.updateVisibilityClass();
 

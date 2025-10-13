@@ -3,7 +3,7 @@ import { customElement, property, state } from 'lit/decorators.js';
 import type { FeedingLog } from '../types/feeding-log.js';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
-const AI_SUMMARY_SYSTEM_PROMPT = `You are an encouraging infant-feeding assistant. Summarize the caregiver's last 24 hours of bottle feeds in under 110 words. Highlight positives, mention any gentle watch-outs, and remind them to consult a pediatrician for medical decisions.`;
+const AI_SUMMARY_SYSTEM_PROMPT = `You are an encouraging infant-feeding assistant. Summarize the caregiver's last 24 hours of bottle feeds in UNDER 70 WORDS spread across no more than two sentences. Highlight positives, mention any gentle watch-outs, and remind them to consult a pediatrician for medical decisions.`;
 const AI_FEEDING_GUIDELINES = `General reference ranges (bottle feeding): 0-1 month: 60-90 ml (2-3 oz) every 3-4 hours; 1-2 months: 90-120 ml (3-4 oz) every 3-4 hours; 2-4 months: 120-150 ml (4-5 oz) every 3-4 hours. Babies vary - use the data as a guide, not a diagnosis.`;
 const AI_DOWNLOAD_MESSAGE = 'Chrome will download the on-device model after you press Generate. Keep this tab open until it finishes.';
 const AI_SYSTEM_CONTEXT = `${AI_SUMMARY_SYSTEM_PROMPT}\n\nReference guidance:\n${AI_FEEDING_GUIDELINES}`;
@@ -266,6 +266,16 @@ export class FeedingAiSummaryCard extends LitElement {
     return formatter.format(new Date(timestamp));
   }
 
+  private enforceSummaryLength(text: string, maxWords: number = 70): string {
+    const words = text.trim().split(/\s+/).filter(Boolean);
+    if (words.length <= maxWords) {
+      return text.trim();
+    }
+
+    const shortened = words.slice(0, maxWords).join(' ');
+    return `${shortened}…`;
+  }
+
   private buildPrompt(logs: FeedingLog[]): string {
     const stats = this.computeStats(logs);
     const details = logs
@@ -389,10 +399,10 @@ export class FeedingAiSummaryCard extends LitElement {
     this.busy = true;
 
     try {
-      const session = await this.ensureSession();
-      const prompt = this.buildPrompt(logs);
-      const response = await session.prompt([{ role: 'user', content: prompt }]);
-      this.summary = response.trim();
+  const session = await this.ensureSession();
+  const prompt = this.buildPrompt(logs);
+  const response = await session.prompt([{ role: 'user', content: prompt }]);
+  this.summary = this.enforceSummaryLength(response.trim());
       this.lastSummaryLogIds = logs.map((log) => log.id);
     } catch (error) {
       console.error('AI summary generation failed', error);
