@@ -86,7 +86,7 @@ export class AppRoot extends LitElement {
       display: none;
       flex-direction: column;
       width: 260px;
-      background: var(--md-sys-color-surface-container);
+      background: var(--md-sys-color-surface);
       color: var(--md-sys-color-on-surface);
       padding: 0 1.5rem;
       border-right: none;
@@ -95,8 +95,15 @@ export class AppRoot extends LitElement {
     .side-nav__content {
       display: flex;
       flex-direction: column;
-      gap: 1.75rem;
-      padding: 2.5rem 0;
+      gap: 2.5rem;
+      padding: 2rem 0;
+    }
+
+    .side-nav .brand {
+      font-size: 1.75rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      padding: 0.5rem 0;
     }
 
     .side-nav .brand::before {
@@ -154,8 +161,16 @@ export class AppRoot extends LitElement {
       background: var(--md-sys-color-secondary-container);
     }
 
-    .nav-link.active::before {
-      background: var(--md-sys-color-on-secondary-container);
+    .nav-icon {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+      color: inherit;
+    }
+
+    .nav-icon path {
+      fill: currentColor;
     }
 
     @media (min-width: 768px) {
@@ -173,20 +188,21 @@ export class AppRoot extends LitElement {
 
       .side-nav {
         display: flex;
-        padding: 0 1.75rem;
-        border-right: 1px solid var(--md-sys-color-outline-variant);
-        box-shadow: var(--md-sys-elevation-2);
+        padding: 0 1.25rem;
+        box-shadow: var(--md-sys-elevation-0);
+        border-right: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 50%, transparent);
       }
 
       .side-nav__content {
         position: sticky;
-        top: 1.75rem;
+        top: 2rem;
         padding-top: 0;
+        width: 100%;
       }
 
       .side-nav .nav-links {
         flex-direction: column;
-        gap: 0.25rem;
+        gap: 0.375rem;
       }
 
       .side-nav__top {
@@ -194,6 +210,7 @@ export class AppRoot extends LitElement {
         align-items: center;
         justify-content: space-between;
         gap: 1rem;
+        margin-bottom: 1.5rem;
       }
 
       .side-nav .nav-link {
@@ -201,14 +218,68 @@ export class AppRoot extends LitElement {
         flex-direction: row;
         justify-content: flex-start;
         align-items: center;
-        padding: 0.75rem 1rem;
+        padding: 0.875rem 1.5rem 0.875rem 1.25rem;
+        border-radius: 28px;
+        gap: 0.875rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+        position: relative;
+        transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+        overflow: hidden;
+        min-height: 56px;
       }
 
       .side-nav .nav-link::before {
-        width: 4px;
-        height: 70%;
-        top: 15%;
-        left: 0.75rem;
+        display: none;
+      }
+
+      .side-nav .nav-link::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: var(--md-sys-color-on-surface);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+
+      .side-nav .nav-link:hover {
+        background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+      }
+
+      .side-nav .nav-link:hover::after {
+        opacity: 0;
+      }
+
+      .side-nav .nav-link:active::after {
+        opacity: 0.12;
+      }
+
+      .side-nav .nav-link.active {
+        background: var(--md-sys-color-secondary-container);
+        color: var(--md-sys-color-on-secondary-container);
+        font-weight: 600;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.06);
+      }
+
+      .side-nav .nav-link.active::after {
+        opacity: 0;
+      }
+
+      .side-nav .nav-link.active:hover {
+        background: color-mix(in srgb, var(--md-sys-color-secondary-container) 92%, var(--md-sys-color-on-secondary-container));
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+
+      .side-nav .nav-link.active:active {
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+
+      .side-nav .nav-icon {
+        width: 24px;
+        height: 24px;
       }
 
       .side-nav__actions {
@@ -226,7 +297,8 @@ export class AppRoot extends LitElement {
       }
 
       .nav-label {
-        margin-left: 10px;
+        margin-left: 0;
+        font-size: inherit;
       }
     }
   `;
@@ -244,9 +316,10 @@ export class AppRoot extends LitElement {
     href: string;
     component: string;
     label: string;
+    icon: string;
   }> = [
-    { href: '/', component: 'home-page', label: 'Home' },
-    { href: '/settings', component: 'settings-page', label: 'Settings' },
+    { href: '/', component: 'home-page', label: 'Home', icon: 'home' },
+    { href: '/settings', component: 'settings-page', label: 'Settings', icon: 'settings' },
   ];
 
   private router: Router;
@@ -386,8 +459,32 @@ export class AppRoot extends LitElement {
     `;
   }
 
+  private getIconSvg(iconName: string, active: boolean) {
+    const icons: Record<string, { filled: string; outlined: string }> = {
+      home: {
+        outlined: 'M12 5.69l5 4.5V18h-2v-6H9v6H7v-7.81l5-4.5M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z',
+        filled: 'M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm0 2.69l5 4.5V18h-2v-6H9v6H7v-7.81l5-4.5z'
+      },
+      settings: {
+        outlined: 'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z',
+        filled: 'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z'
+      }
+    };
+
+    const icon = icons[iconName];
+    if (!icon) return html``;
+
+    const path = active ? icon.filled : icon.outlined;
+    
+    return html`
+      <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="currentColor">
+        <path d="${path}"></path>
+      </svg>
+    `;
+  }
+
   private renderNavLinks() {
-    return this.navItems.map(({ href, component, label }) => {
+    return this.navItems.map(({ href, component, label, icon }) => {
       const active = this.isActiveRoute(component);
       return html`
         <a
@@ -395,6 +492,7 @@ export class AppRoot extends LitElement {
           class="nav-link ${active ? 'active' : ''}"
           aria-current=${active ? 'page' : 'false'}
         >
+          ${this.getIconSvg(icon, active)}
           <span class="nav-label">${label}</span>
         </a>
       `;

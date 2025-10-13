@@ -7,9 +7,11 @@ import '../components/app-toast.js';
 import '../components/feeding-form-dialog.js';
 import '../components/feeding-log-list.js';
 import '../components/feeding-summary-card.js';
+import '../components/confirm-dialog.js';
 
 import type { FeedingFormDialog } from '../components/feeding-form-dialog.js';
 import type { AppToast } from '../components/app-toast.js';
+import type { ConfirmDialog } from '../components/confirm-dialog.js';
 
 @customElement('home-page')
 export class HomePage extends LitElement {
@@ -43,7 +45,7 @@ export class HomePage extends LitElement {
 
       position: fixed;
       right: 16px;
-      bottom: calc(16px + var(--bottom-nav-height, 0px));
+      bottom: calc(45px + var(--bottom-nav-height, 0px));
       z-index: 30;
     }
 
@@ -140,6 +142,12 @@ export class HomePage extends LitElement {
       color: var(--md-sys-color-on-surface-variant);
     }
 
+    @media(min-width: 640px) {
+      .add-btn {
+        bottom: calc(16px + var(--bottom-nav-height, 0px));
+      }
+    }    
+
   `;
 
   @state()
@@ -156,6 +164,9 @@ export class HomePage extends LitElement {
 
   @query('app-toast')
   private toastElement!: AppToast;
+
+  @query('confirm-dialog')
+  private confirmDialog!: ConfirmDialog;
 
   async connectedCallback() {
     super.connectedCallback();
@@ -207,6 +218,18 @@ export class HomePage extends LitElement {
   }
 
   private async handleLogDeleted(e: CustomEvent<string>) {
+    const confirmed = await this.confirmDialog.show({
+      headline: 'Delete feeding log?',
+      supportingText: 'This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      confirmDestructive: true,
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
     try {
       const { feedingStorage } = await import('../services/feeding-storage.js');
 
@@ -267,6 +290,7 @@ export class HomePage extends LitElement {
         <feeding-form-dialog @log-added=${this.handleLogAdded}></feeding-form-dialog>
       </div>
       <app-toast></app-toast>
+      <confirm-dialog></confirm-dialog>
     `;
   }
 
