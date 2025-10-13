@@ -1,4 +1,4 @@
-# feeding-tracker
+# LumaFeed
 
 A Progressive Web App for tracking feeding built with Lit web components and a custom router based on the URL Pattern API.
 
