@@ -8,8 +8,8 @@ declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<PrecacheEntry>;
 };
 
-const metaEnv = (typeof import.meta !== 'undefined' ? (import.meta as any)?.env : undefined) ?? {};
-const enablePrecache = Boolean(metaEnv.PROD) && !['localhost', '127.0.0.1'].includes(self.location.hostname);
+// Enable precache only in production (not on localhost or 127.0.0.1)
+const enablePrecache = !['localhost', '127.0.0.1'].includes(self.location.hostname);
 const precacheManifest = self.__WB_MANIFEST;
 
 self.addEventListener('install', () => {

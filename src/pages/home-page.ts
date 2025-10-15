@@ -171,6 +171,11 @@ export class HomePage extends LitElement {
   async connectedCallback() {
     super.connectedCallback();
     await this.loadLogs();
+
+    const queryParams = new URLSearchParams(window.location.search);
+    if (queryParams.get('startfeeding')) {
+      this.handleAddClick();
+    }
   }
 
   disconnectedCallback(): void {
@@ -319,8 +324,8 @@ export class HomePage extends LitElement {
     const notificationOptions: NotificationOptions = {
       body: `Next feed around ${formatNextFeedLabel(log.nextFeedTime)}`,
       tag: 'next-feed-reminder',
-      icon: '/feeding-bottle.png',
-      badge: '/feeding-bottle.png',
+      icon: '/maskable_icon_x512.png',
+      badge: '/maskable_icon_x512.png',
       data: { logId: log.id ?? null, nextFeedTime: log.nextFeedTime },
     };
 

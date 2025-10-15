@@ -5,6 +5,7 @@ import { Router } from './router/router.js';
 import './pages/home-page.js';
 import './components/app-header-menu.js';
 import './components/feeding-import-dialog.js';
+import './components/pwa-install-prompt.js';
 
 import type { HomePage } from './pages/home-page.js';
 
@@ -456,6 +457,7 @@ export class AppRoot extends LitElement {
         ${this.renderNavLinks()}
       </nav>
       <feeding-import-dialog></feeding-import-dialog>
+      <pwa-install-prompt></pwa-install-prompt>
     `;
   }
 

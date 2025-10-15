@@ -16,7 +16,9 @@ export default defineConfig({
       },
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        rollupFormat: 'es',
       },
+      useCredentials: false,
     }),
   ],
   build: {

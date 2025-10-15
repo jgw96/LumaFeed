@@ -1,18 +1,39 @@
 {
   "name": "LumaFeed",
+  "id": "com.lumafeed.pwa",
   "short_name": "LumaFeed",
   "description": "Track feeding times and activities",
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
-  "icons": [
+  "theme_color": "#1D1B20",
+  "background_color": "#1D1B20",
+  "shortcuts": [
     {
-      "src": "/feeding-bottle.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "name": "Start Feeding",
+      "short_name": "Start Feeding",
+      "url": "/?startfeeding",
+      "icons": [
+        {
+          "src": "/feeding-128.png",
+          "sizes": "128x128",
+          "type": "image/png"
+        }
+      ]
     },
+    {
+      "name": "Settings",
+      "short_name": "Settings",
+      "url": "/settings",
+      "icons": [
+        {
+          "src": "/settings-128.png",
+          "sizes": "128x128",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "icons": [
     {
       "src": "/feeding-128.png",
       "sizes": "128x128",
@@ -24,9 +45,45 @@
       "type": "image/png"
     },
     {
-        "src": "/feedings-65.png",
-        "sizes": "64x64",
-        "type": "image/png"
+      "src": "/feedings-65.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "72x72",
+      "src": "maskable_icon_x72.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "96x96",
+      "src": "maskable_icon_x96.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "128x128",
+      "src": "maskable_icon_x128.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "192x192",
+      "src": "maskable_icon_x192.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "512x512",
+      "src": "maskable_icon_x512.png",
+      "type": "image/png"
+    },
+    {
+      "src": "/feeding-bottle.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
