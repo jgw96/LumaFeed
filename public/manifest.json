@@ -2,11 +2,13 @@
   "name": "LumaFeed",
   "id": "com.lumafeed.pwa",
   "short_name": "LumaFeed",
-  "description": "Track feeding times and activities",
+  "description": "Track feeding time",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#1D1B20",
   "background_color": "#1D1B20",
+  "scope": "/",
+  "orientation": "portrait",
   "shortcuts": [
     {
       "name": "Start Feeding",
