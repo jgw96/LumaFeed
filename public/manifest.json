@@ -9,6 +9,46 @@
   "background_color": "#1D1B20",
   "scope": "/",
   "orientation": "portrait",
+  "categories": [
+    "utilities"
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/dark-mobile-screenshot-final.png",
+      "sizes": "1024x1536",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile"
+    },
+    {
+      "src": "/screenshots/home-mobile-light.png",
+      "sizes": "430x932",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Home - Mobile Light"
+    },
+    {
+      "src": "/screenshots/home-mobile-dark.png",
+      "sizes": "430x932",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Home - Mobile Dark"
+    },
+    {
+      "src": "/screenshots/home-desktop-light.png",
+      "sizes": "1440x1024",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Home - Desktop Light"
+    },
+    {
+      "src": "/screenshots/home-desktop-dark.png",
+      "sizes": "1440x1024",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Home - Desktop Dark"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Start Feeding",
@@ -28,7 +68,7 @@
       "url": "/settings",
       "icons": [
         {
-          "src": "/settings-128.png",
+          "src": "/feeding-128.png",
           "sizes": "128x128",
           "type": "image/png"
         }
@@ -36,21 +76,6 @@
     }
   ],
   "icons": [
-    {
-      "src": "/feeding-128.png",
-      "sizes": "128x128",
-      "type": "image/png"
-    },
-    {
-      "src": "/feeding-256.png",
-      "sizes": "256x256",
-      "type": "image/png"
-    },
-    {
-      "src": "/feedings-65.png",
-      "sizes": "64x64",
-      "type": "image/png"
-    },
     {
       "purpose": "maskable",
       "sizes": "72x72",
@@ -82,10 +107,12 @@
       "type": "image/png"
     },
     {
-      "src": "/feeding-bottle.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
+      "src": "feeding-bottle.png",
+      "type": "image/png"
     }
-  ]
+  ],
+  "launch_handler": {
+    "client_mode": ["focus-existing", "auto"]
+  }
 }
