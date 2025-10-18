@@ -8,10 +8,12 @@ import { settingsService } from '../services/settings-service.js';
 import '../components/app-toast.js';
 import '../components/feeding-log-list.js';
 import '../components/feeding-summary-card.js';
+import '../components/voice-control-button.js';
 
 import type { FeedingFormDialog } from '../components/feeding-form-dialog.js';
 import type { AppToast } from '../components/app-toast.js';
 import type { ConfirmDialog } from '../components/confirm-dialog.js';
+import type { VoiceRecognitionResult } from '../services/voice-recognition-service.js';
 
 @customElement('home-page')
 export class HomePage extends LitElement {
@@ -44,11 +46,6 @@ export class HomePage extends LitElement {
       align-items: center;
       gap: 0.5rem;
       box-shadow: var(--md-sys-elevation-1);
-
-      position: fixed;
-      right: 16px;
-      bottom: calc(45px + var(--bottom-nav-height, 0px));
-      z-index: 30;
     }
 
     .add-btn:hover {
@@ -146,8 +143,19 @@ export class HomePage extends LitElement {
       color: var(--md-sys-color-on-surface-variant);
     }
 
+    .fab-group {
+      position: fixed;
+      right: 16px;
+      bottom: calc(45px + var(--bottom-nav-height, 0px));
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-end;
+    }
+
     @media (min-width: 640px) {
-      .add-btn {
+      .fab-group {
         bottom: calc(16px + var(--bottom-nav-height, 0px));
       }
     }
@@ -265,6 +273,35 @@ export class HomePage extends LitElement {
     this.dialog?.open();
   }
 
+  private async handleVoiceCommand(e: CustomEvent<VoiceRecognitionResult>) {
+    const { command, transcript } = e.detail;
+    
+    console.debug('[home-page] Voice command received:', { command, transcript });
+
+    if (command === 'start-feed') {
+      // Open the feeding dialog and start timer
+      await this.ensureFeedingDialog();
+      if (this.dialog) {
+        this.dialog.open();
+        // Give the dialog time to open, then trigger start
+        await this.dialog.updateComplete;
+        // Programmatically click the "Start feed" button
+        const startButton = this.dialog.shadowRoot?.querySelector('.start-actions .btn-save') as HTMLButtonElement;
+        if (startButton) {
+          startButton.click();
+        }
+      }
+    } else if (command === 'end-feed') {
+      // If dialog is open and timer is running, complete the feeding
+      if (this.dialog && this.dialog.shadowRoot) {
+        const doneButton = this.dialog.shadowRoot.querySelector('.timer-actions .btn-save') as HTMLButtonElement;
+        if (doneButton) {
+          doneButton.click();
+        }
+      }
+    }
+  }
+
   private async handleLogAdded(e: CustomEvent<FeedingLog>) {
     const { handleLogAddition } = await import('../utils/log-addition.js');
 
@@ -328,7 +365,10 @@ export class HomePage extends LitElement {
               `}
         </div>
 
-        <button class="add-btn" @click=${this.handleAddClick}>Start feeding</button>
+        <div class="fab-group">
+          <voice-control-button @voice-command=${this.handleVoiceCommand}></voice-control-button>
+          <button class="add-btn" @click=${this.handleAddClick}>Start feeding</button>
+        </div>
 
         <feeding-form-dialog @log-added=${this.handleLogAdded}></feeding-form-dialog>
       </div>
