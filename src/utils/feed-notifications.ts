@@ -31,7 +31,7 @@ export async function showNextFeedNotification(log: FeedingLog): Promise<void> {
     body: `Next feed around ${formatNextFeedLabel(log.nextFeedTime)}`,
     tag: 'next-feed-reminder',
     icon: '/maskable_icon_x512.png',
-    badge: '/maskable_icon_x512.png',
+    badge: '/notification-badge.png',
     data: { logId: log.id ?? null, nextFeedTime: log.nextFeedTime },
   };
 
