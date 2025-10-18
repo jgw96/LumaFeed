@@ -1,5 +1,10 @@
 import { LitElement, html, css, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import type {
+  MLCEngineInterface as WebLlmEngine,
+  WebLlmChatCompletionMessage,
+  WebLlmInitProgress,
+} from '@mlc-ai/web-llm';
 import type { FeedingLog } from '../types/feeding-log.js';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -8,6 +13,9 @@ const AI_FEEDING_GUIDELINES = `General reference ranges (bottle feeding): 0-1 mo
 const AI_DOWNLOAD_MESSAGE =
   'Chrome will download the on-device model after you press Generate. Keep this tab open until it finishes.';
 const AI_SYSTEM_CONTEXT = `${AI_SUMMARY_SYSTEM_PROMPT}\n\nReference guidance:\n${AI_FEEDING_GUIDELINES}`;
+const WEBLLM_MODEL_ID = 'SmolLM2-360M-Instruct-q4f16_1-MLC';
+const WEBLLM_PRELOAD_MESSAGE =
+  'Runs locally with SmolLM after a quick one-time download. Tap Generate to get started.';
 
 const AI_EXPECTED_MODALITIES = {
   expectedInputs: [{ type: 'text', languages: ['en'] }],
@@ -133,8 +141,16 @@ export class FeedingAiSummaryCard extends LitElement {
   @state()
   private availabilityState: LanguageModelAvailability | null = null;
 
+  @state()
+  private aiMode: 'prompt-api' | 'web-llm' | 'unsupported' = 'unsupported';
+
+  @state()
+  private webLlmInitializing: boolean = false;
+
   private session: LanguageModelSession | null = null;
   private lastSummaryLogIds: string[] = [];
+  private webLlmEngine: WebLlmEngine | null = null;
+  private webLlmInitPromise: Promise<WebLlmEngine> | null = null;
 
   connectedCallback() {
     super.connectedCallback();
@@ -164,9 +180,12 @@ export class FeedingAiSummaryCard extends LitElement {
 
   render() {
     const recentLogs = this.getLast24HourLogs();
+    const usingWebLlm = this.aiMode === 'web-llm';
+    const modelPreparing = usingWebLlm
+      ? this.webLlmInitializing
+      : this.availabilityState === 'downloading' && !this.session;
     const canSummarize = recentLogs.length > 0 && this.supported && !this.loading;
-    const downloadInProgress = this.availabilityState === 'downloading' && !this.session;
-    const disabled = this.busy || !canSummarize || downloadInProgress;
+    const disabled = this.busy || !canSummarize || modelPreparing;
 
     return html`
       <section aria-labelledby="ai-summary-title">
@@ -314,6 +333,9 @@ export class FeedingAiSummaryCard extends LitElement {
 
   private applyAvailabilityState(state: LanguageModelAvailability) {
     this.availabilityState = state;
+    if (state !== 'unavailable') {
+      this.aiMode = 'prompt-api';
+    }
 
     if (state === 'unavailable') {
       this.supported = false;
@@ -347,6 +369,84 @@ export class FeedingAiSummaryCard extends LitElement {
     const clamped = Math.max(0, Math.min(1, value));
     this.availabilityState = 'downloading';
     this.availabilityMessage = `Downloading on-device model: ${Math.round(clamped * 100)}%`;
+  }
+
+  private updateWebLlmProgress(progress: WebLlmInitProgress) {
+    if (typeof progress.progress === 'number' && Number.isFinite(progress.progress)) {
+      this.availabilityMessage = `Loading SmolLM locally: ${Math.round(progress.progress * 100)}%`;
+      return;
+    }
+
+    if (progress.text) {
+      this.availabilityMessage = progress.text;
+      return;
+    }
+
+    this.availabilityMessage = 'Preparing local model...';
+  }
+
+  private async ensureWebLlmEngine(): Promise<WebLlmEngine> {
+    if (this.webLlmEngine) {
+      return this.webLlmEngine;
+    }
+
+    if (this.webLlmInitPromise) {
+      return this.webLlmInitPromise;
+    }
+
+    this.webLlmInitializing = true;
+    if (!this.availabilityMessage || this.availabilityMessage === WEBLLM_PRELOAD_MESSAGE) {
+      this.availabilityMessage = 'Starting local model download...';
+    }
+
+    this.webLlmInitPromise = (async () => {
+      try {
+        const { CreateMLCEngine } = await import('@mlc-ai/web-llm');
+        const engine = await CreateMLCEngine(WEBLLM_MODEL_ID, {
+          initProgressCallback: (progress) => this.updateWebLlmProgress(progress),
+        });
+        this.webLlmEngine = engine;
+        this.supported = true;
+        this.availabilityMessage = 'AI summaries run locally with SmolLM.';
+        return engine;
+      } catch (error) {
+        console.warn('WebLLM initialization failed', error);
+        this.webLlmEngine = null;
+        this.supported = false;
+        this.aiMode = 'unsupported';
+        this.availabilityMessage =
+          error instanceof Error ? `Local AI unavailable: ${error.message}` : 'Local AI unavailable.';
+        throw error;
+      } finally {
+        this.webLlmInitializing = false;
+      }
+    })();
+
+    try {
+      return await this.webLlmInitPromise;
+    } finally {
+      this.webLlmInitPromise = null;
+    }
+  }
+
+  private async prepareWebLlmSupport(eagerLoad: boolean = false): Promise<void> {
+    this.aiMode = 'web-llm';
+    this.availabilityState = null;
+    this.session = null;
+
+    if (!this.webLlmEngine && !this.webLlmInitializing) {
+      this.availabilityMessage = WEBLLM_PRELOAD_MESSAGE;
+    }
+
+    this.supported = true;
+
+    if (eagerLoad) {
+      try {
+        await this.ensureWebLlmEngine();
+      } catch (error) {
+        console.warn('WebLLM eager load failed', error);
+      }
+    }
   }
 
   private async ensureSession(): Promise<LanguageModelSession> {
@@ -383,6 +483,38 @@ export class FeedingAiSummaryCard extends LitElement {
     return session;
   }
 
+  private async generateWithPromptApi(logs: FeedingLog[]): Promise<string> {
+    const session = await this.ensureSession();
+    const prompt = this.buildPrompt(logs);
+    return session.prompt([{ role: 'user', content: prompt }]);
+  }
+
+  private async generateWithWebLlm(logs: FeedingLog[]): Promise<string> {
+    const engine = await this.ensureWebLlmEngine();
+    if (!engine?.chat?.completions?.create) {
+      throw new Error('Local model interface is not available.');
+    }
+
+    const prompt = this.buildPrompt(logs);
+    const messages: WebLlmChatCompletionMessage[] = [
+      { role: 'system', content: AI_SYSTEM_CONTEXT },
+      { role: 'user', content: prompt },
+    ];
+
+    const result = await engine.chat.completions.create({
+      messages,
+      max_tokens: 256,
+      temperature: 0.6,
+    });
+
+    const content = result.choices?.[0]?.message?.content?.trim();
+    if (!content) {
+      throw new Error('Local model did not return a summary.');
+    }
+
+    return content;
+  }
+
   private async handleGenerateClick() {
     this.error = null;
 
@@ -401,17 +533,31 @@ export class FeedingAiSummaryCard extends LitElement {
       return;
     }
 
-    if (typeof LanguageModel === 'undefined') {
-      this.error = 'Chrome built-in Prompt API is not available yet.';
-      return;
-    }
-
     this.busy = true;
 
     try {
-      const session = await this.ensureSession();
-      const prompt = this.buildPrompt(logs);
-      const response = await session.prompt([{ role: 'user', content: prompt }]);
+      let response: string;
+
+      if (this.aiMode === 'prompt-api') {
+        try {
+          response = await this.generateWithPromptApi(logs);
+        } catch (error) {
+          const promptMissing =
+            typeof LanguageModel === 'undefined' ||
+            (error instanceof Error && /Prompt API/i.test(error.message));
+          if (!promptMissing) {
+            throw error;
+          }
+          await this.prepareWebLlmSupport();
+          response = await this.generateWithWebLlm(logs);
+        }
+      } else if (this.aiMode === 'web-llm') {
+        response = await this.generateWithWebLlm(logs);
+      } else {
+        await this.prepareWebLlmSupport();
+        response = await this.generateWithWebLlm(logs);
+      }
+
       this.summary = this.enforceSummaryLength(response.trim());
       this.lastSummaryLogIds = logs.map((log) => log.id);
     } catch (error) {
@@ -425,18 +571,20 @@ export class FeedingAiSummaryCard extends LitElement {
       } else {
         this.error = 'Unable to generate summary right now.';
       }
+      if (this.aiMode === 'prompt-api' && typeof LanguageModel === 'undefined') {
+        await this.prepareWebLlmSupport();
+      }
     } finally {
       this.busy = false;
-      void this.checkPromptAvailability();
+      if (this.aiMode === 'prompt-api') {
+        void this.checkPromptAvailability();
+      }
     }
   }
 
   private async checkPromptAvailability(): Promise<void> {
     if (typeof LanguageModel === 'undefined') {
-      this.supported = false;
-      this.availabilityState = null;
-      this.availabilityMessage =
-        'Update to the latest Chrome on an eligible device to use AI summaries.';
+      await this.prepareWebLlmSupport();
       return;
     }
 
@@ -446,12 +594,20 @@ export class FeedingAiSummaryCard extends LitElement {
         return;
       }
 
+      if (availability === 'unavailable') {
+        await this.prepareWebLlmSupport();
+        return;
+      }
+
       this.applyAvailabilityState(availability);
     } catch (error) {
       console.warn('AI availability check failed', error);
-      this.supported = false;
-      this.availabilityState = null;
-      this.availabilityMessage = 'Could not verify AI support.';
+      await this.prepareWebLlmSupport();
+      if (this.aiMode !== 'web-llm') {
+        this.supported = false;
+        this.availabilityState = null;
+        this.availabilityMessage = 'Could not verify AI support.';
+      }
     }
   }
 }
