@@ -1,9 +1,9 @@
-import { LitElement, html, css } from 'lit';
-import { customElement, query, state } from 'lit/decorators.js';
+import { html, css } from 'lit';
+import { customElement, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { calculateNextFeedTime, type FeedingLog, type UnitType } from '../types/feeding-log.js';
 import { settingsService } from '../services/settings-service.js';
-import { acquireScrollLock, releaseScrollLock } from '../utils/dialog-scroll-lock.js';
+import { BaseModalDialog } from './base-modal-dialog.js';
 
 const ML_PER_FL_OZ = 29.5735;
 const DEFAULT_DURATION_MINUTES = 20;
@@ -33,7 +33,7 @@ interface NormalizedEntry {
 }
 
 @customElement('feeding-import-dialog')
-export class FeedingImportDialog extends LitElement {
+export class FeedingImportDialog extends BaseModalDialog {
   static styles = css`
     dialog {
       border: none;
@@ -435,141 +435,17 @@ export class FeedingImportDialog extends LitElement {
   @state()
   private submissionError: string | null = null;
 
-  @query('dialog')
-  private dialog?: HTMLDialogElement;
-
-  private isClosing = false;
-
-  private closeTimeoutId: number | null = null;
-
-  private animationEndHandler?: (event: AnimationEvent) => void;
-
-  private transitionEndHandler?: (event: TransitionEvent) => void;
-
-  private resetPending = false;
-  private hasScrollLock = false;
-
-  private lockScroll() {
-    if (this.hasScrollLock) {
-      return;
-    }
-    acquireScrollLock();
-    this.hasScrollLock = true;
-  }
-
-  private unlockScroll() {
-    if (!this.hasScrollLock) {
-      return;
-    }
-    releaseScrollLock();
-    this.hasScrollLock = false;
-  }
-
   connectedCallback(): void {
     super.connectedCallback();
     this.resetForm();
   }
 
-  open() {
-    const dialog = this.dialog;
-    if (!dialog) {
-      return;
-    }
-
-    this.cancelPendingClose();
+  protected override resetDialogState(): void {
     this.resetForm();
-    this.lockScroll();
-
-    if (!dialog.open) {
-      dialog.showModal();
-    }
-
-    this.updateComplete
-      .then(() => {
-        this.focusInitialField();
-      })
-      .catch(() => {});
   }
 
-  close() {
-    const dialog = this.dialog;
-    if (!dialog) {
-      return;
-    }
-
-    if (!dialog.open) {
-      dialog.classList.remove('closing');
-      this.isClosing = false;
-      this.unlockScroll();
-      this.scheduleResetForm();
-      return;
-    }
-
-    const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    if (prefersReducedMotion) {
-      dialog.classList.remove('closing');
-      this.isClosing = false;
-      dialog.close();
-      this.unlockScroll();
-      this.scheduleResetForm();
-      return;
-    }
-
-    if (this.isClosing) {
-      return;
-    }
-
-    this.isClosing = true;
-    dialog.classList.add('closing');
-
-    const finishClose = () => {
-      if (!this.isClosing) {
-        return;
-      }
-
-      this.isClosing = false;
-      this.clearClosingHandlers();
-      dialog.classList.remove('closing');
-      if (dialog.open) {
-        dialog.close();
-      }
-      this.unlockScroll();
-      this.scheduleResetForm();
-    };
-
-    const onAnimationEnd = (event: AnimationEvent) => {
-      if (event.target !== dialog) {
-        return;
-      }
-      finishClose();
-    };
-
-    const onTransitionEnd = (event: TransitionEvent) => {
-      if (event.target !== dialog) {
-        return;
-      }
-      finishClose();
-    };
-
-    this.animationEndHandler = onAnimationEnd;
-    this.transitionEndHandler = onTransitionEnd;
-
-    dialog.addEventListener('animationend', onAnimationEnd);
-    dialog.addEventListener('transitionend', onTransitionEnd);
-
-    this.closeTimeoutId = window.setTimeout(() => {
-      finishClose();
-    }, 250);
-  }
-
-  disconnectedCallback(): void {
-    this.clearClosingHandlers();
-    this.unlockScroll();
-    super.disconnectedCallback();
+  protected override onAfterOpen(): void {
+    this.focusInitialField();
   }
 
   private handleCancel(event: Event) {
@@ -582,21 +458,6 @@ export class FeedingImportDialog extends LitElement {
     this.errors = {};
     this.submitting = false;
     this.submissionError = null;
-  }
-
-  private scheduleResetForm() {
-    if (this.resetPending) {
-      return;
-    }
-
-    this.resetPending = true;
-    queueMicrotask(() => {
-      if (!this.resetPending) {
-        return;
-      }
-      this.resetPending = false;
-      this.resetForm();
-    });
   }
 
   private createEntry(): ImportEntry {
@@ -635,37 +496,6 @@ export class FeedingImportDialog extends LitElement {
   private focusInitialField() {
     const firstInput = this.renderRoot.querySelector<HTMLElement>('[data-initial-focus]');
     firstInput?.focus();
-  }
-
-  private clearClosingHandlers() {
-    if (this.closeTimeoutId !== null) {
-      window.clearTimeout(this.closeTimeoutId);
-      this.closeTimeoutId = null;
-    }
-
-    const dialog = this.dialog;
-    if (!dialog) {
-      return;
-    }
-
-    if (this.animationEndHandler) {
-      dialog.removeEventListener('animationend', this.animationEndHandler);
-      this.animationEndHandler = undefined;
-    }
-
-    if (this.transitionEndHandler) {
-      dialog.removeEventListener('transitionend', this.transitionEndHandler);
-      this.transitionEndHandler = undefined;
-    }
-  }
-
-  private cancelPendingClose() {
-    this.clearClosingHandlers();
-    this.isClosing = false;
-    this.resetPending = false;
-    if (this.dialog) {
-      this.dialog.classList.remove('closing');
-    }
   }
 
   private updateEntry(id: string, patch: Partial<ImportEntry>) {

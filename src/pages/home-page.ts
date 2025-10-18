@@ -4,10 +4,8 @@ import { customElement, state, query } from 'lit/decorators.js';
 import type { FeedingLog } from '../types/feeding-log.js';
 
 import '../components/app-toast.js';
-import '../components/feeding-form-dialog.js';
 import '../components/feeding-log-list.js';
 import '../components/feeding-summary-card.js';
-import '../components/confirm-dialog.js';
 
 import type { FeedingFormDialog } from '../components/feeding-form-dialog.js';
 import type { AppToast } from '../components/app-toast.js';
@@ -171,13 +169,16 @@ export class HomePage extends LitElement {
   @query('confirm-dialog')
   private confirmDialog!: ConfirmDialog;
 
+  private feedingDialogLoaded = false;
+  private confirmDialogLoaded = false;
+
   async connectedCallback() {
     super.connectedCallback();
     await this.loadLogs();
 
     const queryParams = new URLSearchParams(window.location.search);
     if (queryParams.get('startfeeding')) {
-      this.handleAddClick();
+      await this.handleAddClick();
     }
   }
 
@@ -209,8 +210,35 @@ export class HomePage extends LitElement {
     await this.loadLogs();
   }
 
-  private handleAddClick() {
-    this.dialog.open();
+  private async ensureFeedingDialog(): Promise<void> {
+    await this.updateComplete;
+
+    if (!this.feedingDialogLoaded) {
+      if (!customElements.get('feeding-form-dialog')) {
+        await import('../components/feeding-form-dialog.js');
+      }
+
+      await customElements.whenDefined('feeding-form-dialog');
+      this.feedingDialogLoaded = true;
+    }
+  }
+
+  private async ensureConfirmDialog(): Promise<void> {
+    await this.updateComplete;
+
+    if (!this.confirmDialogLoaded) {
+      if (!customElements.get('confirm-dialog')) {
+        await import('../components/confirm-dialog.js');
+      }
+
+      await customElements.whenDefined('confirm-dialog');
+      this.confirmDialogLoaded = true;
+    }
+  }
+
+  private async handleAddClick() {
+    await this.ensureFeedingDialog();
+    this.dialog?.open();
   }
 
   private async handleLogAdded(e: CustomEvent<FeedingLog>) {
@@ -225,7 +253,13 @@ export class HomePage extends LitElement {
   }
 
   private async handleLogDeleted(e: CustomEvent<string>) {
+    await this.ensureConfirmDialog();
+
     const { handleLogDeletion } = await import('../utils/log-deletion.js');
+
+    if (!this.confirmDialog) {
+      return;
+    }
 
     await handleLogDeletion(e.detail, this.confirmDialog, () => this.loadLogs());
   }

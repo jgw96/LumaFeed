@@ -1,8 +1,8 @@
-import { LitElement, html, css, PropertyValues } from 'lit';
-import { customElement, state, query } from 'lit/decorators.js';
+import { html, css, PropertyValues } from 'lit';
+import { customElement, state } from 'lit/decorators.js';
 import { calculateNextFeedTime, type FeedingLog, type UnitType } from '../types/feeding-log.js';
 import { settingsService } from '../services/settings-service.js';
-import { acquireScrollLock, releaseScrollLock } from '../utils/dialog-scroll-lock.js';
+import { BaseModalDialog } from './base-modal-dialog.js';
 
 interface WakeLockSentinelLike extends EventTarget {
   released: boolean;
@@ -16,7 +16,7 @@ interface WakeLockApi {
 const DEFAULT_FEEDING_DURATION_MINUTES = 20;
 
 @customElement('feeding-form-dialog')
-export class FeedingFormDialog extends LitElement {
+export class FeedingFormDialog extends BaseModalDialog {
   static styles = css`
     dialog {
       border: none;
@@ -481,9 +481,6 @@ export class FeedingFormDialog extends LitElement {
     }
   `;
 
-  @query('dialog')
-  dialog!: HTMLDialogElement;
-
   @state()
   private feedType: 'formula' | 'milk' = 'formula';
 
@@ -514,32 +511,6 @@ export class FeedingFormDialog extends LitElement {
   @state()
   private isManualMode = false;
 
-  private isClosing = false;
-
-  private closeTimeoutId: number | null = null;
-
-  private animationEndHandler?: (event: AnimationEvent) => void;
-
-  private transitionEndHandler?: (event: TransitionEvent) => void;
-
-  private hasScrollLock = false;
-
-  private lockScroll() {
-    if (this.hasScrollLock) {
-      return;
-    }
-    acquireScrollLock();
-    this.hasScrollLock = true;
-  }
-
-  private unlockScroll() {
-    if (!this.hasScrollLock) {
-      return;
-    }
-    releaseScrollLock();
-    this.hasScrollLock = false;
-  }
-
   private timerStartMs: number | null = null;
 
   private timerIntervalId: number | null = null;
@@ -566,11 +537,17 @@ export class FeedingFormDialog extends LitElement {
     }
   };
 
-  private resetPending = false;
-
   constructor() {
     super();
     this.resetForm();
+  }
+
+  protected override resetDialogState(): void {
+    this.resetForm();
+  }
+
+  protected override onBeforeClose(): void {
+    this.clearTimer();
   }
 
   private startTimerTick() {
@@ -701,18 +678,6 @@ export class FeedingFormDialog extends LitElement {
     this.close();
   }
 
-  private scheduleResetForm() {
-    if (this.resetPending) {
-      return;
-    }
-
-    this.resetPending = true;
-    queueMicrotask(() => {
-      this.resetPending = false;
-      this.resetForm();
-    });
-  }
-
   private formatElapsed(ms: number): string {
     const totalSeconds = Math.max(0, Math.floor(ms / 1000));
     const hours = Math.floor(totalSeconds / 3600);
@@ -746,126 +711,13 @@ export class FeedingFormDialog extends LitElement {
 
   protected firstUpdated(changedProperties: PropertyValues): void {
     super.firstUpdated(changedProperties);
-    this.dialog.addEventListener('cancel', this.handleDialogCancel);
+    this.dialog?.addEventListener('cancel', this.handleDialogCancel);
   }
 
   disconnectedCallback(): void {
     this.dialog?.removeEventListener('cancel', this.handleDialogCancel);
-    this.clearClosingHandlers();
     this.clearTimer();
-    void this.releaseWakeLock();
-    this.unlockScroll();
     super.disconnectedCallback();
-  }
-
-  open() {
-    this.cancelPendingClose();
-    this.resetForm();
-    this.lockScroll();
-    this.dialog.showModal();
-  }
-
-  close() {
-    this.clearTimer();
-    const dialog = this.dialog;
-
-    if (!dialog.open) {
-      dialog.classList.remove('closing');
-      this.isClosing = false;
-      this.unlockScroll();
-      this.scheduleResetForm();
-      return;
-    }
-
-    const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    if (prefersReducedMotion) {
-      dialog.classList.remove('closing');
-      this.isClosing = false;
-      dialog.close();
-      this.unlockScroll();
-      this.scheduleResetForm();
-      return;
-    }
-
-    if (this.isClosing) {
-      return;
-    }
-
-    this.isClosing = true;
-    dialog.classList.add('closing');
-
-    const finishClose = () => {
-      if (!this.isClosing) {
-        return;
-      }
-
-      this.isClosing = false;
-      this.clearClosingHandlers();
-      dialog.classList.remove('closing');
-      if (dialog.open) {
-        dialog.close();
-      }
-      this.unlockScroll();
-      this.scheduleResetForm();
-    };
-
-    const onAnimationEnd = (event: AnimationEvent) => {
-      if (event.target !== dialog) {
-        return;
-      }
-      finishClose();
-    };
-
-    const onTransitionEnd = (event: TransitionEvent) => {
-      if (event.target !== dialog) {
-        return;
-      }
-      finishClose();
-    };
-
-    this.animationEndHandler = onAnimationEnd;
-    this.transitionEndHandler = onTransitionEnd;
-
-    dialog.addEventListener('animationend', onAnimationEnd);
-    dialog.addEventListener('transitionend', onTransitionEnd);
-
-    this.closeTimeoutId = window.setTimeout(() => {
-      finishClose();
-    }, 250);
-  }
-
-  private clearClosingHandlers() {
-    if (this.closeTimeoutId !== null) {
-      window.clearTimeout(this.closeTimeoutId);
-      this.closeTimeoutId = null;
-    }
-
-    const dialog = this.dialog;
-    if (!dialog) {
-      return;
-    }
-
-    if (this.animationEndHandler) {
-      dialog.removeEventListener('animationend', this.animationEndHandler);
-      this.animationEndHandler = undefined;
-    }
-
-    if (this.transitionEndHandler) {
-      dialog.removeEventListener('transitionend', this.transitionEndHandler);
-      this.transitionEndHandler = undefined;
-    }
-  }
-
-  private cancelPendingClose() {
-    this.clearClosingHandlers();
-    this.isClosing = false;
-    if (this.dialog) {
-      this.dialog.classList.remove('closing');
-    }
   }
 
   private formatDateTimeLocal(date: Date): string {

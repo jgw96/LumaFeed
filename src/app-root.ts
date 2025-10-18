@@ -3,7 +3,6 @@ import { customElement, state, query } from 'lit/decorators.js';
 import { Router } from './router/router.js';
 import './pages/home-page.js';
 import './components/app-header-menu.js';
-import './components/feeding-import-dialog.js';
 import './components/pwa-install-prompt.js';
 
 import type { HomePage } from './pages/home-page.js';
@@ -315,6 +314,8 @@ export class AppRoot extends LitElement {
   @query('feeding-import-dialog')
   private importDialog?: HTMLElementTagNameMap['feeding-import-dialog'];
 
+  private importDialogLoaded = false;
+
   private readonly navItems: Array<{
     href: string;
     component: string;
@@ -533,7 +534,21 @@ export class AppRoot extends LitElement {
     event.stopPropagation();
   };
 
-  private handleImportFeedsRequested = () => {
+  private async ensureImportDialog(): Promise<void> {
+    await this.updateComplete;
+
+    if (!this.importDialogLoaded) {
+      if (!customElements.get('feeding-import-dialog')) {
+        await import('./components/feeding-import-dialog.js');
+      }
+
+      await customElements.whenDefined('feeding-import-dialog');
+      this.importDialogLoaded = true;
+    }
+  }
+
+  private handleImportFeedsRequested = async () => {
+    await this.ensureImportDialog();
     this.importDialog?.open();
   };
 
