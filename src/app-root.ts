@@ -1,7 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state, query } from 'lit/decorators.js';
 import { Router } from './router/router.js';
-
 import './pages/home-page.js';
 import './components/app-header-menu.js';
 import './components/feeding-import-dialog.js';
@@ -330,7 +329,10 @@ export class AppRoot extends LitElement {
     
     this.router = new Router(
       [
-        { pattern: '/', component: 'home-page' },
+        { 
+          pattern: '/', 
+          component: 'home-page'
+        },
         {
           pattern: '/settings',
           component: 'settings-page',

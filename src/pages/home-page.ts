@@ -211,56 +211,29 @@ export class HomePage extends LitElement {
   }
 
   private async handleLogAdded(e: CustomEvent<FeedingLog>) {
-    try {
-      const { feedingStorage } = await import('../services/feeding-storage.js');
-
-  await feedingStorage.addLog(e.detail);
-  const logs = await this.loadLogs();
-  await this.showNextFeedToast(logs[0] ?? e.detail);
-    } catch (error) {
-      console.error('Failed to save log:', error);
-    }
+    const { handleLogAddition } = await import('../utils/log-addition.js');
+    
+    await handleLogAddition(
+      e.detail,
+      this.toastElement,
+      () => this.loadLogs(),
+      (log) => this.maybeShowNextFeedNotification(log)
+    );
   }
 
   private async handleLogDeleted(e: CustomEvent<string>) {
-    const confirmed = await this.confirmDialog.show({
-      headline: 'Delete feeding log?',
-      supportingText: 'This action cannot be undone.',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
-      confirmDestructive: true,
-    });
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      const { feedingStorage } = await import('../services/feeding-storage.js');
-
-      await feedingStorage.deleteLog(e.detail);
-      await this.loadLogs();
-    } catch (error) {
-      console.error('Failed to delete log:', error);
-    }
+    const { handleLogDeletion } = await import('../utils/log-deletion.js');
+    
+    await handleLogDeletion(
+      e.detail,
+      this.confirmDialog,
+      () => this.loadLogs()
+    );
   }
 
-  private async showNextFeedToast(log?: FeedingLog) {
-    if (!log || typeof log.nextFeedTime !== 'number') {
-      return;
-    }
-
-    const { formatNextFeedLabel } = await import('../utils/feed-time.js');
-
-    if (this.toastElement) {
-      await this.toastElement.show({
-      headline: 'Feeding saved',
-      supporting: `Next feed around ${formatNextFeedLabel(log.nextFeedTime)}`,
-      icon: '🕒',
-      });
-    }
-
-    void this.maybeShowNextFeedNotification(log);
+  private async maybeShowNextFeedNotification(log: FeedingLog) {
+    const { showNextFeedNotification } = await import('../utils/feed-notifications.js');
+    await showNextFeedNotification(log);
   }
 
   render() {
@@ -297,52 +270,5 @@ export class HomePage extends LitElement {
       <app-toast></app-toast>
       <confirm-dialog></confirm-dialog>
     `;
-  }
-
-  private async maybeShowNextFeedNotification(log: FeedingLog) {
-    if (!('Notification' in window) || typeof log.nextFeedTime !== 'number') {
-      return;
-    }
-
-    let permission: NotificationPermission = Notification.permission;
-
-    if (permission === 'default') {
-      try {
-        permission = await Notification.requestPermission();
-      } catch (error) {
-        console.warn('Requesting notification permission failed', error);
-        return;
-      }
-    }
-
-    if (permission !== 'granted') {
-      return;
-    }
-
-    const { formatNextFeedLabel } = await import('../utils/feed-time.js');
-
-    const notificationOptions: NotificationOptions = {
-      body: `Next feed around ${formatNextFeedLabel(log.nextFeedTime)}`,
-      tag: 'next-feed-reminder',
-      icon: '/maskable_icon_x512.png',
-      badge: '/maskable_icon_x512.png',
-      data: { logId: log.id ?? null, nextFeedTime: log.nextFeedTime },
-    };
-
-    try {
-      const registration = await navigator.serviceWorker?.ready;
-      if (registration) {
-        await registration.showNotification('Feeding saved', notificationOptions);
-        return;
-      }
-    } catch (error) {
-      console.warn('Service worker notification failed', error);
-    }
-
-    try {
-      new Notification('Feeding saved', notificationOptions);
-    } catch (error) {
-      console.warn('Direct notification failed', error);
-    }
   }
 }
