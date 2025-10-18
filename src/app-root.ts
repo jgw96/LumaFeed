@@ -127,7 +127,7 @@ export class AppRoot extends LitElement {
 
     .nav-links {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.25rem;
     }
 
     .nav-link {
@@ -136,37 +136,45 @@ export class AppRoot extends LitElement {
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      gap: 0.35rem;
+      gap: 0.25rem;
       text-decoration: none;
       color: var(--md-sys-color-on-surface-variant);
-      font-size: var(--md-sys-typescale-label-medium-font-size);
-      font-weight: var(--md-sys-typescale-label-medium-font-weight);
-      line-height: var(--md-sys-typescale-label-medium-line-height);
-      padding: 0.75rem 0.5rem;
-      border-radius: var(--md-sys-shape-corner-large);
+      font-size: 0.75rem;
+      font-weight: 500;
+      line-height: 1rem;
+      letter-spacing: 0.5px;
+      padding: 0.5rem 0.5rem 0.75rem;
       position: relative;
-      transition:
-        background-color 0.2s ease,
-        color 0.2s ease;
+      transition: color 0.2s ease;
+      border-radius: 0;
     }
 
+    /* Active indicator pill behind icon */
     .nav-link::before {
       content: '';
       position: absolute;
-      top: 0.4rem;
-      width: 24px;
-      height: 3px;
-      border-radius: 999px;
+      top: 0.25rem;
+      width: 64px;
+      height: 32px;
+      border-radius: 16px;
       background: transparent;
       transition: background-color 0.2s ease;
+      z-index: 0;
     }
 
-    .nav-link:hover {
-      background: var(--md-sys-color-surface-container-high);
+    .nav-link::after {
+      display: none;
+    }
+
+    .nav-link:hover::before {
+      background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
     }
 
     .nav-link.active {
-      color: var(--md-sys-color-on-secondary-container);
+      color: var(--md-sys-color-on-surface);
+    }
+
+    .nav-link.active::before {
       background: var(--md-sys-color-secondary-container);
     }
 
@@ -176,10 +184,17 @@ export class AppRoot extends LitElement {
       flex-shrink: 0;
       transition: all 0.2s ease;
       color: inherit;
+      position: relative;
+      z-index: 1;
     }
 
     .nav-icon path {
       fill: currentColor;
+    }
+
+    .nav-label {
+      position: relative;
+      z-index: 1;
     }
 
     @media (min-width: 768px) {
@@ -212,7 +227,7 @@ export class AppRoot extends LitElement {
 
       .side-nav .nav-links {
         flex-direction: column;
-        gap: 0.375rem;
+        gap: 0.25rem;
       }
 
       .side-nav__top {
@@ -228,16 +243,15 @@ export class AppRoot extends LitElement {
         flex-direction: row;
         justify-content: flex-start;
         align-items: center;
-        padding: 0.875rem 1.5rem 0.875rem 1.25rem;
-        border-radius: 28px;
-        gap: 0.875rem;
+        padding: 1rem;
+        border-radius: 20px;
+        gap: 0.75rem;
         font-size: 0.875rem;
         font-weight: 500;
         letter-spacing: 0.01em;
         position: relative;
-        transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
-        overflow: hidden;
-        min-height: 56px;
+        transition: all 0.2s ease;
+        background: transparent;
       }
 
       .side-nav .nav-link::before {
@@ -245,39 +259,17 @@ export class AppRoot extends LitElement {
       }
 
       .side-nav .nav-link::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: var(--md-sys-color-on-surface);
-        opacity: 0;
-        transition: opacity 0.2s ease;
-        border-radius: inherit;
-        pointer-events: none;
+        display: none;
       }
 
       .side-nav .nav-link:hover {
         background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
       }
 
-      .side-nav .nav-link:hover::after {
-        opacity: 0;
-      }
-
-      .side-nav .nav-link:active::after {
-        opacity: 0.12;
-      }
-
       .side-nav .nav-link.active {
         background: var(--md-sys-color-secondary-container);
         color: var(--md-sys-color-on-secondary-container);
         font-weight: 600;
-        box-shadow:
-          0 1px 3px rgba(0, 0, 0, 0.12),
-          0 1px 2px rgba(0, 0, 0, 0.06);
-      }
-
-      .side-nav .nav-link.active::after {
-        opacity: 0;
       }
 
       .side-nav .nav-link.active:hover {
@@ -286,13 +278,6 @@ export class AppRoot extends LitElement {
           var(--md-sys-color-secondary-container) 92%,
           var(--md-sys-color-on-secondary-container)
         );
-        box-shadow:
-          0 2px 4px rgba(0, 0, 0, 0.14),
-          0 1px 3px rgba(0, 0, 0, 0.08);
-      }
-
-      .side-nav .nav-link.active:active {
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
       }
 
       .side-nav .nav-icon {
