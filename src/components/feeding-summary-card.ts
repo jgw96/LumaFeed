@@ -1,6 +1,7 @@
 import { LitElement, html, css, PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { FeedingLog } from '../types/feeding-log.js';
+import { formatNextFeedLabel } from '../utils/feed-time.js';
 import './feeding-ai-summary-card.js';
 
 @customElement('feeding-summary-card')
@@ -46,6 +47,27 @@ export class FeedingSummaryCard extends LitElement {
     .summary-card__secondary {
       font-size: var(--md-sys-typescale-body-small-font-size);
       color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .summary-card__next {
+      background: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+      border-radius: var(--md-sys-shape-corner-large);
+      padding: 0.75rem 1rem;
+      display: grid;
+      gap: 0.25rem;
+    }
+
+    .summary-card__next-label {
+      font-size: var(--md-sys-typescale-body-small-font-size);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.9;
+    }
+
+    .summary-card__next-value {
+      font-size: var(--md-sys-typescale-title-small-font-size);
+      font-weight: var(--md-sys-typescale-title-small-font-weight);
     }
 
     .summary-card__empty {
@@ -107,6 +129,30 @@ export class FeedingSummaryCard extends LitElement {
   disconnectedCallback(): void {
     super.disconnectedCallback();
     window.removeEventListener('resize', this.handleWindowResize);
+  }
+
+  private resolveNextFeedTime(): number | undefined {
+    if (!Array.isArray(this.logs) || this.logs.length === 0) {
+      return undefined;
+    }
+
+    let latestLog: FeedingLog | undefined;
+    let latestCompletedAt = Number.NEGATIVE_INFINITY;
+
+    for (const log of this.logs) {
+      const completedAt = typeof log.endTime === 'number' ? log.endTime : log.timestamp;
+      if (
+        typeof completedAt === 'number' &&
+        Number.isFinite(completedAt) &&
+        (latestLog === undefined || completedAt > latestCompletedAt)
+      ) {
+        latestLog = log;
+        latestCompletedAt = completedAt;
+      }
+    }
+
+    const candidate = typeof latestLog?.nextFeedTime === 'number' ? latestLog.nextFeedTime : undefined;
+    return Number.isFinite(candidate) ? candidate : undefined;
   }
 
   private calculateSummary(): { feedings: number; totalMl: number; totalOz: number } {
@@ -300,26 +346,28 @@ export class FeedingSummaryCard extends LitElement {
   }
 
   render() {
-  const summary = this.calculateSummary();
-  const { feedings, totalMl, totalOz } = summary;
-  const filtered = this.filteredLogs();
-  const hasChartData = filtered.length > 0;
+    const summary = this.calculateSummary();
+    const { feedings, totalMl, totalOz } = summary;
+    const filtered = this.filteredLogs();
+    const hasChartData = filtered.length > 0;
+    const nextFeedTime = this.resolveNextFeedTime();
+    const nextFeedLabel = typeof nextFeedTime === 'number' ? formatNextFeedLabel(nextFeedTime) : null;
 
     return html`
       <div class="summary-card" role="status" aria-live="polite">
         <div class="summary-card__section">
           <span class="summary-card__title">Summary - Last 24 hours</span>
           ${this.loading
-            ? html`<span class="summary-card__status">Loading summary…</span>`
-            : feedings > 0
-              ? html`
+        ? html`<span class="summary-card__status">Loading summary…</span>`
+        : feedings > 0
+          ? html`
                   <span class="summary-card__status">${this.formatFeedingLabel(feedings)}</span>
                   <div class="summary-card__totals">
                     <span>${this.formatNumber(totalMl)} ml</span>
                     <span class="summary-card__secondary">(${this.formatNumber(totalOz, 1)} oz)</span>
                   </div>
                   ${hasChartData
-                    ? html`
+              ? html`
                         <div
                           class="summary-card__chart"
                           role="img"
@@ -328,9 +376,18 @@ export class FeedingSummaryCard extends LitElement {
                           <canvas id="feedChart" aria-hidden="true"></canvas>
                         </div>
                       `
-                    : html`<div class="summary-card__empty">No chart data for the last 24 hours.</div>`}
+              : html`<div class="summary-card__empty">No chart data for the last 24 hours.</div>`}
+
+                              ${nextFeedLabel
+              ? html`
+                        <div class="summary-card__next" role="note" aria-label="Next suggested feed">
+                          <span class="summary-card__next-label">Next feed</span>
+                          <span class="summary-card__next-value">${nextFeedLabel}</span>
+                        </div>
+                      `
+              : null}
                 `
-              : html`
+          : html`
                   <span class="summary-card__status">No feedings logged</span>
                   <div class="summary-card__empty">Add a feeding to see totals.</div>
                 `}
