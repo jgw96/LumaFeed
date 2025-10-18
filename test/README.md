@@ -39,6 +39,7 @@ npm run test:coverage
 The test suite covers:
 
 ### Router Tests (`router.test.ts`)
+
 - Route initialization
 - Route matching (home, settings, 404)
 - Navigation between routes
@@ -46,6 +47,7 @@ The test suite covers:
 - Unsubscribing from route changes
 
 ### App Root Tests (`app-root.test.ts`)
+
 - Header rendering
 - Navigation links
 - Default route rendering (home page)
@@ -54,6 +56,7 @@ The test suite covers:
 - 404 page rendering for invalid routes
 
 ### Home Page Tests (`home-page.test.ts`)
+
 - Page rendering
 - Add feeding button
 - Loading state
@@ -64,18 +67,22 @@ The test suite covers:
 - Next feed toast notification
 
 ### Settings Page Tests (`settings-page.test.ts`)
+
 - Page rendering
 - Default interval display
 - Settings persistence
 
 ### About Page Tests (`about-page.test.ts`)
+
 - Ensures the about page module re-exports the settings page class for compatibility
 
 ### Not Found Page Tests (`not-found-page.test.ts`)
+
 - 404 message display
 - Home link rendering
 
 ### Feeding Form Dialog Tests (`feeding-form-dialog.test.ts`)
+
 - Dialog rendering
 - Feed type selection (formula/milk)
 - Amount input
@@ -87,6 +94,7 @@ The test suite covers:
 - Form submission and event dispatching
 
 ### Feeding Log List Tests (`feeding-log-list.test.ts`)
+
 - Empty state rendering
 - Log item display
 - Feed type display (formula/milk)
@@ -114,6 +122,7 @@ The test suite covers:
 ### Setup (`setup.ts`)
 
 The setup file includes:
+
 - URLPattern polyfill for browser routing tests
 - File System Access API mocks for storage tests
 - crypto.randomUUID mock for consistent test IDs
@@ -141,7 +150,7 @@ describe('YourComponent', () => {
 
   it('should render correctly', async () => {
     const component = await mountComponent<YourComponent>('your-component');
-    
+
     const element = queryShadow(component, '.some-class');
     expect(element).toBeTruthy();
   });

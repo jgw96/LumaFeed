@@ -37,7 +37,9 @@ export class HomePage extends LitElement {
       font-size: var(--md-sys-typescale-label-large-font-size);
       font-weight: var(--md-sys-typescale-label-large-font-weight);
       cursor: pointer;
-      transition: background-color 0.2s, box-shadow 0.2s;
+      transition:
+        background-color 0.2s,
+        box-shadow 0.2s;
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -101,7 +103,9 @@ export class HomePage extends LitElement {
       opacity: 0;
       pointer-events: none;
       z-index: 100;
-      transition: transform 0.32s cubic-bezier(0.2, 0, 0, 1), opacity 0.28s ease;
+      transition:
+        transform 0.32s cubic-bezier(0.2, 0, 0, 1),
+        opacity 0.28s ease;
     }
 
     .toast.toast--visible {
@@ -142,12 +146,11 @@ export class HomePage extends LitElement {
       color: var(--md-sys-color-on-surface-variant);
     }
 
-    @media(min-width: 640px) {
+    @media (min-width: 640px) {
       .add-btn {
         bottom: calc(16px + var(--bottom-nav-height, 0px));
       }
-    }    
-
+    }
   `;
 
   @state()
@@ -212,7 +215,7 @@ export class HomePage extends LitElement {
 
   private async handleLogAdded(e: CustomEvent<FeedingLog>) {
     const { handleLogAddition } = await import('../utils/log-addition.js');
-    
+
     await handleLogAddition(
       e.detail,
       this.toastElement,
@@ -223,12 +226,8 @@ export class HomePage extends LitElement {
 
   private async handleLogDeleted(e: CustomEvent<string>) {
     const { handleLogDeletion } = await import('../utils/log-deletion.js');
-    
-    await handleLogDeletion(
-      e.detail,
-      this.confirmDialog,
-      () => this.loadLogs()
-    );
+
+    await handleLogDeletion(e.detail, this.confirmDialog, () => this.loadLogs());
   }
 
   private async maybeShowNextFeedNotification(log: FeedingLog) {
@@ -237,7 +236,7 @@ export class HomePage extends LitElement {
   }
 
   render() {
-  const shouldShowSummary = this.hasLoadedInitialData && this.logs.length > 0;
+    const shouldShowSummary = this.hasLoadedInitialData && this.logs.length > 0;
 
     return html`
       <div class="container">
@@ -252,8 +251,8 @@ export class HomePage extends LitElement {
         <div class="logs-section">
           <h2 class="section-title">Recent Feedings</h2>
           ${this.loading
-        ? html`<div class="loading">Loading...</div>`
-        : html`
+            ? html`<div class="loading">Loading...</div>`
+            : html`
                 <feeding-log-list
                   .logs=${this.logs}
                   @log-deleted=${this.handleLogDeleted}
@@ -261,9 +260,7 @@ export class HomePage extends LitElement {
               `}
         </div>
 
-        <button class="add-btn" @click=${this.handleAddClick}>
-          Start feeding
-        </button>
+        <button class="add-btn" @click=${this.handleAddClick}>Start feeding</button>
 
         <feeding-form-dialog @log-added=${this.handleLogAdded}></feeding-form-dialog>
       </div>

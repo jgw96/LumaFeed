@@ -17,10 +17,11 @@ export const DEFAULT_NEXT_FEED_INTERVAL_MINUTES = 180;
 
 export function calculateNextFeedTime(
   baseTime: number,
-  intervalMinutes: number = DEFAULT_NEXT_FEED_INTERVAL_MINUTES,
+  intervalMinutes: number = DEFAULT_NEXT_FEED_INTERVAL_MINUTES
 ): number {
-  const safeInterval = Number.isFinite(intervalMinutes) && intervalMinutes > 0
-    ? intervalMinutes
-    : DEFAULT_NEXT_FEED_INTERVAL_MINUTES;
+  const safeInterval =
+    Number.isFinite(intervalMinutes) && intervalMinutes > 0
+      ? intervalMinutes
+      : DEFAULT_NEXT_FEED_INTERVAL_MINUTES;
   return baseTime + safeInterval * 60_000;
 }

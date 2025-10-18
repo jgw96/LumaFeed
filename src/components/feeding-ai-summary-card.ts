@@ -5,7 +5,8 @@ import type { FeedingLog } from '../types/feeding-log.js';
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const AI_SUMMARY_SYSTEM_PROMPT = `You are an encouraging infant-feeding assistant. Summarize the caregiver's last 24 hours of bottle feeds in UNDER 70 WORDS spread across no more than two sentences. Highlight positives, mention any gentle watch-outs, and remind them to consult a pediatrician for medical decisions.`;
 const AI_FEEDING_GUIDELINES = `General reference ranges (bottle feeding): 0-1 month: 60-90 ml (2-3 oz) every 3-4 hours; 1-2 months: 90-120 ml (3-4 oz) every 3-4 hours; 2-4 months: 120-150 ml (4-5 oz) every 3-4 hours. Babies vary - use the data as a guide, not a diagnosis.`;
-const AI_DOWNLOAD_MESSAGE = 'Chrome will download the on-device model after you press Generate. Keep this tab open until it finishes.';
+const AI_DOWNLOAD_MESSAGE =
+  'Chrome will download the on-device model after you press Generate. Keep this tab open until it finishes.';
 const AI_SYSTEM_CONTEXT = `${AI_SUMMARY_SYSTEM_PROMPT}\n\nReference guidance:\n${AI_FEEDING_GUIDELINES}`;
 
 const AI_EXPECTED_MODALITIES = {
@@ -55,7 +56,9 @@ export class FeedingAiSummaryCard extends LitElement {
       font-size: var(--md-sys-typescale-label-large-font-size);
       font-weight: var(--md-sys-typescale-label-large-font-weight);
       cursor: pointer;
-      transition: background-color 0.2s ease, transform 0.2s ease;
+      transition:
+        background-color 0.2s ease,
+        transform 0.2s ease;
     }
 
     button:hover:not(:disabled) {
@@ -149,7 +152,9 @@ export class FeedingAiSummaryCard extends LitElement {
   updated(changedProperties: Map<string, unknown>): void {
     if (changedProperties.has('logs')) {
       const previousIds = this.lastSummaryLogIds.join(',');
-      const nextIds = this.getLast24HourLogs().map((log) => log.id).join(',');
+      const nextIds = this.getLast24HourLogs()
+        .map((log) => log.id)
+        .join(',');
       if (previousIds !== nextIds) {
         this.summary = null;
         this.lastSummaryLogIds = [];
@@ -175,7 +180,10 @@ export class FeedingAiSummaryCard extends LitElement {
           ${this.busy ? 'Generating...' : 'Generate summary'}
         </button>
         ${!this.supported
-          ? html`<p class="status">${this.availabilityMessage ?? 'Update to the latest Chrome on an eligible device to use AI summaries.'}</p>`
+          ? html`<p class="status">
+              ${this.availabilityMessage ??
+              'Update to the latest Chrome on an eligible device to use AI summaries.'}
+            </p>`
           : nothing}
         ${this.supported && this.availabilityMessage
           ? html`<p class="status">${this.availabilityMessage}</p>`
@@ -188,7 +196,9 @@ export class FeedingAiSummaryCard extends LitElement {
           ? html`
               <article aria-live="polite">
                 <p class="summary-text">${this.summary}</p>
-                <p class="disclaimer">AI insight only - always follow guidance from your care team.</p>
+                <p class="disclaimer">
+                  AI insight only - always follow guidance from your care team.
+                </p>
               </article>
             `
           : nothing}
@@ -212,9 +222,8 @@ export class FeedingAiSummaryCard extends LitElement {
       accumulatedIntervals += sorted[i].startTime - sorted[i - 1].startTime;
     }
 
-    const averageIntervalMinutes = sorted.length > 1
-      ? accumulatedIntervals / (sorted.length - 1) / 60_000
-      : null;
+    const averageIntervalMinutes =
+      sorted.length > 1 ? accumulatedIntervals / (sorted.length - 1) / 60_000 : null;
 
     return {
       feedCount: logs.length,
@@ -322,7 +331,10 @@ export class FeedingAiSummaryCard extends LitElement {
     }
 
     if (state === 'downloading') {
-      if (!this.availabilityMessage || !this.availabilityMessage.toLowerCase().startsWith('downloading')) {
+      if (
+        !this.availabilityMessage ||
+        !this.availabilityMessage.toLowerCase().startsWith('downloading')
+      ) {
         this.availabilityMessage = 'Downloading the on-device model...';
       }
       return;
@@ -346,9 +358,7 @@ export class FeedingAiSummaryCard extends LitElement {
       throw new Error('Chrome built-in Prompt API is not available yet.');
     }
 
-    const initialPrompts: LanguageModelMessage[] = [
-      { role: 'system', content: AI_SYSTEM_CONTEXT },
-    ];
+    const initialPrompts: LanguageModelMessage[] = [{ role: 'system', content: AI_SYSTEM_CONTEXT }];
 
     const options: LanguageModelCreateOptions = {
       initialPrompts,
@@ -399,16 +409,17 @@ export class FeedingAiSummaryCard extends LitElement {
     this.busy = true;
 
     try {
-  const session = await this.ensureSession();
-  const prompt = this.buildPrompt(logs);
-  const response = await session.prompt([{ role: 'user', content: prompt }]);
-  this.summary = this.enforceSummaryLength(response.trim());
+      const session = await this.ensureSession();
+      const prompt = this.buildPrompt(logs);
+      const response = await session.prompt([{ role: 'user', content: prompt }]);
+      this.summary = this.enforceSummaryLength(response.trim());
       this.lastSummaryLogIds = logs.map((log) => log.id);
     } catch (error) {
       console.error('AI summary generation failed', error);
       this.summary = null;
       if (error instanceof DOMException && error.name === 'NotAllowedError') {
-        this.error = 'Chrome needs a user gesture to use the on-device model. Please click Generate again after interacting with the page.';
+        this.error =
+          'Chrome needs a user gesture to use the on-device model. Please click Generate again after interacting with the page.';
       } else if (error instanceof Error) {
         this.error = error.message;
       } else {
@@ -424,12 +435,13 @@ export class FeedingAiSummaryCard extends LitElement {
     if (typeof LanguageModel === 'undefined') {
       this.supported = false;
       this.availabilityState = null;
-      this.availabilityMessage = 'Update to the latest Chrome on an eligible device to use AI summaries.';
+      this.availabilityMessage =
+        'Update to the latest Chrome on an eligible device to use AI summaries.';
       return;
     }
 
     try {
-  const availability = await LanguageModel.availability(AI_EXPECTED_MODALITIES);
+      const availability = await LanguageModel.availability(AI_EXPECTED_MODALITIES);
       if (!this.isConnected) {
         return;
       }

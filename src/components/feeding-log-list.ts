@@ -22,7 +22,9 @@ export class FeedingLogList extends LitElement {
       border: 1px solid var(--md-sys-color-outline-variant);
       border-radius: var(--md-sys-shape-corner-extra-large);
       padding: 1rem 1.25rem;
-      transition: box-shadow 0.2s, background-color 0.2s;
+      transition:
+        box-shadow 0.2s,
+        background-color 0.2s;
     }
 
     .log-item:hover {
@@ -97,7 +99,9 @@ export class FeedingLogList extends LitElement {
       cursor: pointer;
       padding: 0.5rem;
       font-size: 1.5rem;
-      transition: opacity 0.2s, background-color 0.2s;
+      transition:
+        opacity 0.2s,
+        background-color 0.2s;
       border-radius: var(--md-sys-shape-corner-extra-small);
       width: 2.5rem;
       height: 2.5rem;
@@ -124,7 +128,11 @@ export class FeedingLogList extends LitElement {
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
       const fallbackDate = new Date(log.timestamp);
       const day = fallbackDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      const time = fallbackDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      const time = fallbackDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
       return `${day} · ${time}`;
     }
 
@@ -132,11 +140,12 @@ export class FeedingLogList extends LitElement {
     const isToday = start.toDateString() === now.toDateString();
     const isYesterday = start.toDateString() === yesterday.toDateString();
 
-    const formatTime = (value: Date) => value.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
+    const formatTime = (value: Date) =>
+      value.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
 
     const startTime = formatTime(start);
     const endTime = formatTime(end);
@@ -156,11 +165,13 @@ export class FeedingLogList extends LitElement {
   }
 
   private handleDelete(log: FeedingLog) {
-    this.dispatchEvent(new CustomEvent('log-deleted', { 
-      detail: log.id,
-      bubbles: true,
-      composed: true 
-    }));
+    this.dispatchEvent(
+      new CustomEvent('log-deleted', {
+        detail: log.id,
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   render() {
@@ -175,43 +186,45 @@ export class FeedingLogList extends LitElement {
 
     return html`
       <div class="log-list">
-        ${this.logs.map(log => html`
-          <div class="log-item">
-            <div class="log-header">
-              <div class="log-type">
-                ${log.feedType === 'formula' ? '🍼 Formula' : '🤱 Breast Milk'}
+        ${this.logs.map(
+          (log) => html`
+            <div class="log-item">
+              <div class="log-header">
+                <div class="log-type">
+                  ${log.feedType === 'formula' ? '🍼 Formula' : '🤱 Breast Milk'}
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                  <div class="log-time">${this.formatTimeRange(log)}</div>
+                  <button
+                    class="delete-btn"
+                    @click=${() => this.handleDelete(log)}
+                    title="Delete log"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
-              <div style="display: flex; align-items: center; gap: 1rem;">
-                <div class="log-time">${this.formatTimeRange(log)}</div>
-                <button 
-                  class="delete-btn" 
-                  @click=${() => this.handleDelete(log)}
-                  title="Delete log"
-                >
-                  ×
-                </button>
+              <div class="log-details">
+                <div class="detail-item">
+                  <div class="detail-label">Amount</div>
+                  <div class="detail-value">${log.amountMl} ml (${log.amountOz} fl oz)</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Duration</div>
+                  <div class="detail-value">${log.durationMinutes} min</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Method</div>
+                  <div class="detail-value">${log.isBottleFed ? 'Bottle' : 'Breast'}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">Next feed</div>
+                  <div class="detail-value">${formatNextFeedLabel(log.nextFeedTime)}</div>
+                </div>
               </div>
             </div>
-            <div class="log-details">
-              <div class="detail-item">
-                <div class="detail-label">Amount</div>
-                <div class="detail-value">${log.amountMl} ml (${log.amountOz} fl oz)</div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">Duration</div>
-                <div class="detail-value">${log.durationMinutes} min</div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">Method</div>
-                <div class="detail-value">${log.isBottleFed ? 'Bottle' : 'Breast'}</div>
-              </div>
-              <div class="detail-item">
-                <div class="detail-label">Next feed</div>
-                <div class="detail-value">${formatNextFeedLabel(log.nextFeedTime)}</div>
-              </div>
-            </div>
-          </div>
-        `)}
+          `
+        )}
       </div>
     `;
   }

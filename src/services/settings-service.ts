@@ -45,9 +45,10 @@ class SettingsService {
       }
 
       const parsed = JSON.parse(raw) as Partial<AppSettings>;
-      const interval = typeof parsed.defaultFeedIntervalMinutes === 'number'
-        ? parsed.defaultFeedIntervalMinutes
-        : DEFAULT_NEXT_FEED_INTERVAL_MINUTES;
+      const interval =
+        typeof parsed.defaultFeedIntervalMinutes === 'number'
+          ? parsed.defaultFeedIntervalMinutes
+          : DEFAULT_NEXT_FEED_INTERVAL_MINUTES;
 
       return {
         defaultFeedIntervalMinutes: clampInterval(interval),
@@ -91,7 +92,7 @@ class SettingsService {
       defaultFeedIntervalMinutes: clampInterval(
         typeof partial.defaultFeedIntervalMinutes === 'number'
           ? partial.defaultFeedIntervalMinutes
-          : current.defaultFeedIntervalMinutes,
+          : current.defaultFeedIntervalMinutes
       ),
     };
 

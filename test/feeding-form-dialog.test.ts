@@ -48,7 +48,6 @@ describe('FeedingFormDialog', () => {
 
     const timerDisplay = queryShadow(dialog, '.timer-display');
     expect(timerDisplay).toBeTruthy();
-
   });
 
   it('should allow entering details manually', async () => {
@@ -57,7 +56,9 @@ describe('FeedingFormDialog', () => {
     const form = queryShadow<HTMLFormElement>(dialog, 'form');
     expect(form).toBeTruthy();
 
-    const timeInputs = queryShadow(dialog, 'form')?.querySelectorAll('input[type="datetime-local"]');
+    const timeInputs = queryShadow(dialog, 'form')?.querySelectorAll(
+      'input[type="datetime-local"]'
+    );
     expect(timeInputs).toBeTruthy();
     expect(timeInputs?.length).toBe(2);
   });
@@ -84,7 +85,6 @@ describe('FeedingFormDialog', () => {
 
     const summary = queryShadow(dialog, '.time-summary');
     expect(summary).toBeTruthy();
-
   });
 
   it('should allow switching to manual editing from timer summary', async () => {
@@ -112,9 +112,10 @@ describe('FeedingFormDialog', () => {
 
     await dialog.updateComplete;
 
-    const timeInputs = queryShadow(dialog, 'form')?.querySelectorAll('input[type="datetime-local"]');
+    const timeInputs = queryShadow(dialog, 'form')?.querySelectorAll(
+      'input[type="datetime-local"]'
+    );
     expect(timeInputs?.length).toBe(2);
-
   });
 
   it('should keep save disabled until amount entered', async () => {

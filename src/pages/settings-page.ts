@@ -60,7 +60,7 @@ export class SettingsPage extends LitElement {
       font-size: var(--md-sys-typescale-title-small-font-size);
     }
 
-    input[type="number"] {
+    input[type='number'] {
       width: 120px;
       padding: 0.75rem 1rem;
       border-radius: var(--md-sys-shape-corner-large);
@@ -70,7 +70,7 @@ export class SettingsPage extends LitElement {
       color: var(--md-sys-color-on-surface);
     }
 
-    input[type="number"]:focus {
+    input[type='number']:focus {
       outline: none;
       border-color: var(--md-sys-color-primary);
       box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
@@ -88,7 +88,7 @@ export class SettingsPage extends LitElement {
       gap: 0.75rem;
     }
 
-    button[type="submit"] {
+    button[type='submit'] {
       padding: 0.65rem 1.5rem;
       border: none;
       border-radius: var(--md-sys-shape-corner-extra-large);
@@ -98,10 +98,12 @@ export class SettingsPage extends LitElement {
       font-size: var(--md-sys-typescale-label-large-font-size);
       cursor: pointer;
       box-shadow: var(--md-sys-elevation-1);
-      transition: background-color 0.2s ease, box-shadow 0.2s ease;
+      transition:
+        background-color 0.2s ease,
+        box-shadow 0.2s ease;
     }
 
-    button[type="submit"]:disabled {
+    button[type='submit']:disabled {
       opacity: 0.6;
       cursor: not-allowed;
       box-shadow: none;
@@ -238,8 +240,8 @@ export class SettingsPage extends LitElement {
               required
             />
             <p class="helper-text">
-              Choose how far apart feedings are scheduled by default. Minimum ${MIN_FEED_INTERVAL_MINUTES} minutes,
-              maximum ${MAX_FEED_INTERVAL_MINUTES} minutes.
+              Choose how far apart feedings are scheduled by default. Minimum
+              ${MIN_FEED_INTERVAL_MINUTES} minutes, maximum ${MAX_FEED_INTERVAL_MINUTES} minutes.
             </p>
           </div>
 

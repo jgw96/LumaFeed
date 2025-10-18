@@ -14,10 +14,10 @@ export async function handleLogAddition(
   try {
     const { feedingStorage } = await import('../services/feeding-storage.js');
     await feedingStorage.addLog(log);
-    
+
     const logs = await onSuccess();
     const latestLog = Array.isArray(logs) && logs.length > 0 ? logs[0] : log;
-    
+
     await showNextFeedToast(latestLog, toastElement, onShowNotification);
   } catch (error) {
     console.error('Failed to save log:', error);

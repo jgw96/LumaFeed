@@ -3,6 +3,7 @@
 ## Easiest Way to Test Right Now
 
 ### 1. Start the dev server
+
 ```bash
 npm run dev
 ```
@@ -22,14 +23,16 @@ prompt.isIOS = false;
 ```
 
 **To test iOS UI:**
+
 ```javascript
 const prompt = document.querySelector('app-root').shadowRoot.querySelector('pwa-install-prompt');
 sessionStorage.removeItem('pwa-install-dismissed');
 prompt.visible = true;
-prompt.isIOS = true;  // Shows iOS instructions
+prompt.isIOS = true; // Shows iOS instructions
 ```
 
 **To hide it:**
+
 ```javascript
 const prompt = document.querySelector('app-root').shadowRoot.querySelector('pwa-install-prompt');
 prompt.visible = false;
@@ -56,6 +59,7 @@ The production build has better service worker support, so the `beforeinstallpro
 ## What to Look For
 
 ### Chrome/Edge Version:
+
 - App icon with name "LumaFeed"
 - Description text
 - "Not now" and "Install" buttons
@@ -63,9 +67,10 @@ The production build has better service worker support, so the `beforeinstallpro
 - Material 3 styled card at bottom of screen
 
 ### iOS Version:
+
 - Same header with app info
 - Instructions box showing:
-  - "Tap the Share button" 
+  - "Tap the Share button"
   - "Scroll down and tap 'Add to Home Screen'"
 - Only close button (no install button, since iOS doesn't support programmatic install)
 
@@ -74,15 +79,17 @@ The production build has better service worker support, so the `beforeinstallpro
 ## Troubleshooting
 
 **Component not found?**
+
 ```javascript
 // It's in app-root's shadow DOM
 const appRoot = document.querySelector('app-root');
 const prompt = appRoot.shadowRoot.querySelector('pwa-install-prompt');
-console.log('Prompt element:', prompt);  // Should return the element
+console.log('Prompt element:', prompt); // Should return the element
 ```
 
 **Still not showing after setting visible = true?**
 Check the component state:
+
 ```javascript
 const prompt = document.querySelector('app-root').shadowRoot.querySelector('pwa-install-prompt');
 console.log('Visible:', prompt.visible);
@@ -92,6 +99,7 @@ console.log('Dismissed:', sessionStorage.getItem('pwa-install-dismissed'));
 ```
 
 **To reset everything:**
+
 ```javascript
 sessionStorage.clear();
 location.reload();

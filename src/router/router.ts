@@ -126,18 +126,18 @@ export class Router {
 
     for (const { pattern, config } of this.routes) {
       const match = pattern.exec(url);
-      
+
       if (match) {
         const params: RouteMatch = {
           pathname: match.pathname.groups || {},
-          search: Object.fromEntries(url.searchParams)
+          search: Object.fromEntries(url.searchParams),
         };
 
         this.currentRoute = config.component;
         this.currentParams = params;
 
         await this.ensureComponent(config.component);
-        
+
         this.notifyListeners(config.component, params);
         return;
       }
@@ -155,7 +155,7 @@ export class Router {
   }
 
   private notifyListeners(route: string, params: RouteMatch) {
-    this.listeners.forEach(listener => listener(route, params));
+    this.listeners.forEach((listener) => listener(route, params));
   }
 
   public navigate(path: string) {
@@ -167,12 +167,12 @@ export class Router {
 
   public onRouteChange(callback: (route: string, params: RouteMatch) => void) {
     this.listeners.add(callback);
-    
+
     // Call immediately with current route if it exists
     if (this.currentRoute !== null) {
       callback(this.currentRoute, this.currentParams);
     }
-    
+
     // Return unsubscribe function
     return () => {
       this.listeners.delete(callback);

@@ -27,11 +27,11 @@ export class FeedingStorageService {
       const fileHandle = await this.getFileHandle();
       const file = await fileHandle.getFile();
       const contents = await file.text();
-      
+
       if (!contents.trim()) {
         return [];
       }
-      
+
       const rawLogs = JSON.parse(contents) as FeedingLog[];
       const defaultInterval = await settingsService.getDefaultFeedIntervalMinutes();
       const normalized = rawLogs.map((log) => {
@@ -53,9 +53,10 @@ export class FeedingStorageService {
           durationMinutes = Math.max(1, diffMinutes);
         }
 
-        const nextFeedTime = typeof log.nextFeedTime === 'number' && log.nextFeedTime > endTime
-          ? log.nextFeedTime
-          : calculateNextFeedTime(endTime, defaultInterval);
+        const nextFeedTime =
+          typeof log.nextFeedTime === 'number' && log.nextFeedTime > endTime
+            ? log.nextFeedTime
+            : calculateNextFeedTime(endTime, defaultInterval);
 
         return {
           ...log,
@@ -80,9 +81,10 @@ export class FeedingStorageService {
     const defaultInterval = await settingsService.getDefaultFeedIntervalMinutes();
     const normalizedLog: FeedingLog = {
       ...log,
-      nextFeedTime: typeof log.nextFeedTime === 'number' && log.nextFeedTime > baseTime
-        ? log.nextFeedTime
-        : calculateNextFeedTime(baseTime, defaultInterval),
+      nextFeedTime:
+        typeof log.nextFeedTime === 'number' && log.nextFeedTime > baseTime
+          ? log.nextFeedTime
+          : calculateNextFeedTime(baseTime, defaultInterval),
     };
 
     logs.push(normalizedLog);
@@ -96,7 +98,7 @@ export class FeedingStorageService {
 
   async deleteLog(id: string): Promise<void> {
     const logs = await this.loadLogs();
-    const filtered = logs.filter(log => log.id !== id);
+    const filtered = logs.filter((log) => log.id !== id);
     await this.saveLogs(filtered);
   }
 }

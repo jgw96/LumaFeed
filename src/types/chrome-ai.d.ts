@@ -56,13 +56,19 @@ declare global {
     addEventListener(
       type: 'downloadprogress',
       listener: (event: LanguageModelDownloadProgressEvent) => void,
-      options?: boolean | AddEventListenerOptions,
+      options?: boolean | AddEventListenerOptions
     ): void;
   }
 
   interface LanguageModelSession {
-    prompt: (input: string | LanguageModelMessage[], options?: LanguageModelPromptOptions) => Promise<string>;
-    promptStreaming?: (input: string | LanguageModelMessage[], options?: LanguageModelPromptOptions) => AsyncIterable<string>;
+    prompt: (
+      input: string | LanguageModelMessage[],
+      options?: LanguageModelPromptOptions
+    ) => Promise<string>;
+    promptStreaming?: (
+      input: string | LanguageModelMessage[],
+      options?: LanguageModelPromptOptions
+    ) => AsyncIterable<string>;
     append?: (messages: LanguageModelMessage[]) => Promise<void>;
     clone?: (options?: LanguageModelCloneOptions) => Promise<LanguageModelSession>;
     destroy?: () => void;
@@ -71,7 +77,9 @@ declare global {
   }
 
   interface LanguageModelInterface {
-    availability: (options?: LanguageModelAvailabilityOptions) => Promise<LanguageModelAvailability>;
+    availability: (
+      options?: LanguageModelAvailabilityOptions
+    ) => Promise<LanguageModelAvailability>;
     create: (options?: LanguageModelCreateOptions) => Promise<LanguageModelSession>;
     params: () => Promise<LanguageModelParams>;
   }

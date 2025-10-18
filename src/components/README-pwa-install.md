@@ -16,6 +16,7 @@ A lightweight PWA installation prompt component that shows users they can instal
 ### For Chrome/Edge (beforeinstallprompt event):
 
 1. **Start dev server:**
+
    ```bash
    npm run dev
    ```
@@ -25,7 +26,7 @@ A lightweight PWA installation prompt component that shows users they can instal
    - Open DevTools (F12)
 
 3. **Simulate installability:**
-   
+
    **Option A - Use DevTools Application Panel:**
    - Go to DevTools → Application tab
    - In the left sidebar, find "Manifest"
@@ -34,6 +35,7 @@ A lightweight PWA installation prompt component that shows users they can instal
    - You should see warnings if the PWA criteria aren't met
 
    **Option B - Override install state in Console:**
+
    ```javascript
    // In DevTools Console, manually trigger the prompt to test UI:
    const prompt = document.querySelector('app-root').shadowRoot.querySelector('pwa-install-prompt');
@@ -41,10 +43,12 @@ A lightweight PWA installation prompt component that shows users they can instal
    ```
 
    **Option C - Test with production build:**
+
    ```bash
    npm run build
    npm run preview
    ```
+
    Then visit `http://localhost:4173` - the production build meets PWA criteria better.
 
 4. **Check PWA Requirements:**
@@ -76,7 +80,10 @@ Add this button temporarily to your app for easy testing:
 
 ```html
 <!-- Add to home-page.ts or app-root.ts render method -->
-<button @click=${this.testPWAPrompt} style="position: fixed; bottom: 200px; right: 20px; z-index: 9999;">
+<button
+  @click="${this.testPWAPrompt}"
+  style="position: fixed; bottom: 200px; right: 20px; z-index: 9999;"
+>
   Test PWA Prompt
 </button>
 ```
@@ -94,6 +101,7 @@ private testPWAPrompt() {
 ```
 
 **Or from the browser console:**
+
 ```javascript
 // Access from app-root's shadow DOM
 const appRoot = document.querySelector('app-root');
@@ -107,6 +115,7 @@ prompt.visible = true;
 The best way to test the **real** install flow:
 
 1. **Deploy to Firebase Hosting:**
+
    ```bash
    npm run build
    firebase deploy --only hosting
@@ -146,7 +155,7 @@ console.log({
   isIOS: prompt.isIOS,
   isStandalone: prompt.isStandalone,
   deferredPrompt: prompt.deferredPrompt,
-  dismissed: sessionStorage.getItem('pwa-install-dismissed')
+  dismissed: sessionStorage.getItem('pwa-install-dismissed'),
 });
 
 // Force show:
@@ -156,6 +165,7 @@ prompt.visible = true;
 ### beforeinstallprompt not firing?
 
 Common issues:
+
 - Service worker not active (check DevTools → Application → Service Workers)
 - App already installed
 - Not meeting installability criteria
@@ -165,7 +175,7 @@ Common issues:
 
 ```javascript
 // In DevTools Console:
-navigator.serviceWorker.getRegistrations().then(registrations => {
+navigator.serviceWorker.getRegistrations().then((registrations) => {
   console.log('Service Worker registrations:', registrations);
 });
 ```
@@ -186,11 +196,13 @@ The component doesn't emit custom events currently, but you can add them:
 
 ```typescript
 // Example: emit when user installs
-this.dispatchEvent(new CustomEvent('pwa-installed', {
-  bubbles: true,
-  composed: true,
-  detail: { platform: 'chrome' }
-}));
+this.dispatchEvent(
+  new CustomEvent('pwa-installed', {
+    bubbles: true,
+    composed: true,
+    detail: { platform: 'chrome' },
+  })
+);
 ```
 
 ## Browser Support

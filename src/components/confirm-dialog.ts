@@ -207,14 +207,13 @@ export class ConfirmDialog extends LitElement {
               : null}
           </div>
           <div class="dialog__actions">
-            <button
-              class="dialog__button dialog__button--cancel"
-              @click=${this.handleCancel}
-            >
+            <button class="dialog__button dialog__button--cancel" @click=${this.handleCancel}>
               ${this.options.cancelText}
             </button>
             <button
-              class="dialog__button dialog__button--confirm ${this.options.confirmDestructive ? 'destructive' : ''}"
+              class="dialog__button dialog__button--confirm ${this.options.confirmDestructive
+                ? 'destructive'
+                : ''}"
               @click=${this.handleConfirm}
             >
               ${this.options.confirmText}

@@ -38,7 +38,7 @@ describe('ConfirmDialog', () => {
     // Cancel to resolve the promise
     const cancelBtn = queryShadow<HTMLButtonElement>(dialog, '.dialog__button--cancel');
     cancelBtn?.click();
-    
+
     const result = await promise;
     expect(result).toBe(false);
   });

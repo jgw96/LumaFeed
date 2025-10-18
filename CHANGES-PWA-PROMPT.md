@@ -5,12 +5,14 @@
 ### 1. Mobile-First Bottom Positioning ✅
 
 **Mobile (< 768px):**
+
 - Position: `bottom: 0; left: 0; right: 0;`
 - Full-width at the bottom of the screen
 - Rounded top corners only (`border-radius: 16px 16px 0 0`)
 - Slides up from bottom with shadow above
 
 **Desktop (≥ 768px):**
+
 - Centered with max-width: 400px
 - `bottom: 1rem` with margin from edges
 - Fully rounded corners (`border-radius: 16px`)
@@ -26,6 +28,7 @@ This uses the proper maskable icon from your manifest for better visual consiste
 ## Visual Behavior
 
 ### Mobile:
+
 ```
 ┌─────────────────────┐
 │                     │
@@ -39,6 +42,7 @@ This uses the proper maskable icon from your manifest for better visual consiste
 ```
 
 ### Desktop:
+
 ```
          Page Content
 
@@ -55,6 +59,7 @@ All 9 tests passing ✅
 TypeScript checks passing ✅
 
 Test in browser with:
+
 ```javascript
 const prompt = document.querySelector('app-root').shadowRoot.querySelector('pwa-install-prompt');
 sessionStorage.removeItem('pwa-install-dismissed');

@@ -22,11 +22,14 @@ export class PWAInstallPrompt extends LitElement {
       color: var(--md-sys-color-on-surface);
       border-radius: 16px 16px 0 0;
       padding: 1rem;
-      box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.2), 0 -2px 8px rgba(0, 0, 0, 0.1);
+      box-shadow:
+        0 -4px 16px rgba(0, 0, 0, 0.2),
+        0 -2px 8px rgba(0, 0, 0, 0.1);
       z-index: 1000;
       transform: translateY(100%);
       opacity: 0;
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      transition:
+        transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
         opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -40,7 +43,9 @@ export class PWAInstallPrompt extends LitElement {
         transform: translateX(-50%) translateY(calc(100% + 2rem));
         max-width: 400px;
         border-radius: 16px;
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.1);
+        box-shadow:
+          0 8px 16px rgba(0, 0, 0, 0.2),
+          0 4px 8px rgba(0, 0, 0, 0.1);
       }
 
       .prompt--visible {
@@ -133,7 +138,9 @@ export class PWAInstallPrompt extends LitElement {
       font-weight: var(--md-sys-typescale-label-large-font-weight);
       line-height: var(--md-sys-typescale-label-large-line-height);
       cursor: pointer;
-      transition: background-color 0.2s ease, box-shadow 0.2s ease;
+      transition:
+        background-color 0.2s ease,
+        box-shadow 0.2s ease;
     }
 
     .prompt__button--text {
@@ -142,11 +149,7 @@ export class PWAInstallPrompt extends LitElement {
     }
 
     .prompt__button--text:hover {
-      background: color-mix(
-        in srgb,
-        var(--md-sys-color-primary) 8%,
-        transparent
-      );
+      background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
     }
 
     .prompt__button--filled {
@@ -155,17 +158,23 @@ export class PWAInstallPrompt extends LitElement {
     }
 
     .prompt__button--filled:hover {
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+      box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.12),
+        0 1px 2px rgba(0, 0, 0, 0.24);
     }
 
     @media (prefers-color-scheme: dark) {
       .prompt {
-        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4), 0 -2px 8px rgba(0, 0, 0, 0.3);
+        box-shadow:
+          0 -4px 16px rgba(0, 0, 0, 0.4),
+          0 -2px 8px rgba(0, 0, 0, 0.3);
       }
 
       @media (min-width: 768px) {
         .prompt {
-          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4), 0 4px 8px rgba(0, 0, 0, 0.3);
+          box-shadow:
+            0 8px 16px rgba(0, 0, 0, 0.4),
+            0 4px 8px rgba(0, 0, 0, 0.3);
         }
       }
     }
@@ -311,17 +320,9 @@ export class PWAInstallPrompt extends LitElement {
             </div>
             <div class="prompt__text">
               <h3 class="prompt__title">Install ${this.appName}</h3>
-              <p class="prompt__description">
-                Get quick access from your home screen
-              </p>
+              <p class="prompt__description">Get quick access from your home screen</p>
             </div>
-            <button
-              class="prompt__close"
-              @click="${this.hide}"
-              aria-label="Dismiss"
-            >
-              ✕
-            </button>
+            <button class="prompt__close" @click="${this.hide}" aria-label="Dismiss">✕</button>
           </div>
           <div class="ios-instructions">
             <h4 class="ios-instructions__title">To install:</h4>
@@ -329,12 +330,10 @@ export class PWAInstallPrompt extends LitElement {
               <li class="ios-instructions__step">
                 Tap the Share button
                 <svg width="16" height="20" viewBox="0 0 16 20" fill="currentColor">
-                  <path d="M8 0L4 4h2.5v6h3V4H12L8 0zm-7 16v2h14v-2H1z"/>
+                  <path d="M8 0L4 4h2.5v6h3V4H12L8 0zm-7 16v2h14v-2H1z" />
                 </svg>
               </li>
-              <li class="ios-instructions__step">
-                Scroll down and tap "Add to Home Screen"
-              </li>
+              <li class="ios-instructions__step">Scroll down and tap "Add to Home Screen"</li>
             </ol>
           </div>
         </div>
@@ -353,22 +352,11 @@ export class PWAInstallPrompt extends LitElement {
               Install the app for easy access from your home screen, taskbar or app drawer.
             </p>
           </div>
-          <button
-            class="prompt__close"
-            @click="${this.hide}"
-            aria-label="Dismiss"
-          >
-            ✕
-          </button>
+          <button class="prompt__close" @click="${this.hide}" aria-label="Dismiss">✕</button>
         </div>
         <div class="prompt__actions">
-          <button class="prompt__button prompt__button--text" @click="${this.hide}">
-            Not now
-          </button>
-          <button
-            class="prompt__button prompt__button--filled"
-            @click="${this.handleInstall}"
-          >
+          <button class="prompt__button prompt__button--text" @click="${this.hide}">Not now</button>
+          <button class="prompt__button prompt__button--filled" @click="${this.handleInstall}">
             Install
           </button>
         </div>

@@ -19,7 +19,9 @@ export class AppHeaderMenu extends LitElement {
       background: transparent;
       color: var(--md-sys-color-on-surface-variant);
       cursor: pointer;
-      transition: background-color 0.2s ease, color 0.2s ease;
+      transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
       font-size: 1.75rem;
       line-height: 1;
     }
@@ -52,7 +54,9 @@ export class AppHeaderMenu extends LitElement {
       opacity: 0;
       pointer-events: none;
       transform: translateY(-6px) scale(0.98);
-      transition: opacity 150ms ease, transform 150ms ease;
+      transition:
+        opacity 150ms ease,
+        transform 150ms ease;
     }
 
     .header-menu:where(:popover-open) {
@@ -116,13 +120,7 @@ export class AppHeaderMenu extends LitElement {
       >
         &#8942;
       </button>
-      <div
-        id=${this.menuId}
-        class="header-menu"
-        popover="auto"
-        role="menu"
-        data-menu
-      >
+      <div id=${this.menuId} class="header-menu" popover="auto" role="menu" data-menu>
         <button
           class="header-menu__button"
           type="button"

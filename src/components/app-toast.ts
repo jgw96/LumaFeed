@@ -32,7 +32,9 @@ export class AppToast extends LitElement {
       opacity: 0;
       pointer-events: none;
       z-index: 100;
-      transition: transform 0.32s cubic-bezier(0.2, 0, 0, 1), opacity 0.28s ease;
+      transition:
+        transform 0.32s cubic-bezier(0.2, 0, 0, 1),
+        opacity 0.28s ease;
     }
 
     :host(.toast--visible) {

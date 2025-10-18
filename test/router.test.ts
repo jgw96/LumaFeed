@@ -11,7 +11,7 @@ describe('Router', () => {
     // Store original location and history
     originalLocation = window.location;
     originalHistory = window.history;
-    
+
     // Mock history.pushState
     window.history.pushState = (data: any, unused: string, url?: string | URL | null) => {
       if (url) {
@@ -154,7 +154,7 @@ describe('Router', () => {
         expect(route).toBeTruthy();
         expect(params).toHaveProperty('pathname');
         expect(params).toHaveProperty('search');
-        
+
         if (route === 'settings-page') {
           unsubscribe?.();
           resolve();
@@ -172,9 +172,7 @@ describe('Router', () => {
   });
 
   it('should allow unsubscribing from route changes', () => {
-    router = new Router([
-      { pattern: '/', component: 'home-page' },
-    ]);
+    router = new Router([{ pattern: '/', component: 'home-page' }]);
 
     let callCount = 0;
     const unsubscribe = router.onRouteChange(() => {

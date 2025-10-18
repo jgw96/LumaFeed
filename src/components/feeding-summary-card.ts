@@ -151,7 +151,8 @@ export class FeedingSummaryCard extends LitElement {
       }
     }
 
-    const candidate = typeof latestLog?.nextFeedTime === 'number' ? latestLog.nextFeedTime : undefined;
+    const candidate =
+      typeof latestLog?.nextFeedTime === 'number' ? latestLog.nextFeedTime : undefined;
     return Number.isFinite(candidate) ? candidate : undefined;
   }
 
@@ -271,9 +272,12 @@ export class FeedingSummaryCard extends LitElement {
 
     const styles = getComputedStyle(this);
     const primaryColor = styles.getPropertyValue('--md-sys-color-primary').trim() || '#6750a4';
-    const gridColor = styles.getPropertyValue('--md-sys-color-outline-variant').trim() || 'rgba(0,0,0,0.1)';
-    const baselineColor = styles.getPropertyValue('--md-sys-color-outline').trim() || 'rgba(0,0,0,0.2)';
-    const textColor = styles.getPropertyValue('--md-sys-color-on-surface-variant').trim() || '#625b71';
+    const gridColor =
+      styles.getPropertyValue('--md-sys-color-outline-variant').trim() || 'rgba(0,0,0,0.1)';
+    const baselineColor =
+      styles.getPropertyValue('--md-sys-color-outline').trim() || 'rgba(0,0,0,0.2)';
+    const textColor =
+      styles.getPropertyValue('--md-sys-color-on-surface-variant').trim() || '#625b71';
 
     const topPadding = 16;
     const leftPadding = data.length > 6 ? 28 : 16;
@@ -311,8 +315,12 @@ export class FeedingSummaryCard extends LitElement {
     context.stroke();
 
     const barWidth = Math.max(6, chartWidth / (data.length * 1.7));
-    const gap = data.length > 1 ? Math.max(4, (chartWidth - barWidth * data.length) / (data.length - 1)) : 0;
-    const timeFormatter = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
+    const gap =
+      data.length > 1 ? Math.max(4, (chartWidth - barWidth * data.length) / (data.length - 1)) : 0;
+    const timeFormatter = new Intl.DateTimeFormat(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
 
     let x = leftPadding;
     for (let i = 0; i < data.length; i += 1) {
@@ -351,23 +359,26 @@ export class FeedingSummaryCard extends LitElement {
     const filtered = this.filteredLogs();
     const hasChartData = filtered.length > 0;
     const nextFeedTime = this.resolveNextFeedTime();
-    const nextFeedLabel = typeof nextFeedTime === 'number' ? formatNextFeedLabel(nextFeedTime) : null;
+    const nextFeedLabel =
+      typeof nextFeedTime === 'number' ? formatNextFeedLabel(nextFeedTime) : null;
 
     return html`
       <div class="summary-card" role="status" aria-live="polite">
         <div class="summary-card__section">
           <span class="summary-card__title">Summary - Last 24 hours</span>
           ${this.loading
-        ? html`<span class="summary-card__status">Loading summary…</span>`
-        : feedings > 0
-          ? html`
+            ? html`<span class="summary-card__status">Loading summary…</span>`
+            : feedings > 0
+              ? html`
                   <span class="summary-card__status">${this.formatFeedingLabel(feedings)}</span>
                   <div class="summary-card__totals">
                     <span>${this.formatNumber(totalMl)} ml</span>
-                    <span class="summary-card__secondary">(${this.formatNumber(totalOz, 1)} oz)</span>
+                    <span class="summary-card__secondary"
+                      >(${this.formatNumber(totalOz, 1)} oz)</span
+                    >
                   </div>
                   ${hasChartData
-              ? html`
+                    ? html`
                         <div
                           class="summary-card__chart"
                           role="img"
@@ -376,18 +387,23 @@ export class FeedingSummaryCard extends LitElement {
                           <canvas id="feedChart" aria-hidden="true"></canvas>
                         </div>
                       `
-              : html`<div class="summary-card__empty">No chart data for the last 24 hours.</div>`}
-
-                              ${nextFeedLabel
-              ? html`
-                        <div class="summary-card__next" role="note" aria-label="Next suggested feed">
+                    : html`<div class="summary-card__empty">
+                        No chart data for the last 24 hours.
+                      </div>`}
+                  ${nextFeedLabel
+                    ? html`
+                        <div
+                          class="summary-card__next"
+                          role="note"
+                          aria-label="Next suggested feed"
+                        >
                           <span class="summary-card__next-label">Next feed</span>
                           <span class="summary-card__next-value">${nextFeedLabel}</span>
                         </div>
                       `
-              : null}
+                    : null}
                 `
-          : html`
+              : html`
                   <span class="summary-card__status">No feedings logged</span>
                   <div class="summary-card__empty">Add a feeding to see totals.</div>
                 `}

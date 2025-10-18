@@ -45,7 +45,9 @@ export class NotFoundPage extends LitElement {
       border-radius: var(--md-sys-shape-corner-extra-large);
       background: var(--md-sys-color-primary-container);
       display: inline-block;
-      transition: background-color 0.2s, box-shadow 0.2s;
+      transition:
+        background-color 0.2s,
+        box-shadow 0.2s;
     }
 
     a:hover {
@@ -60,9 +62,7 @@ export class NotFoundPage extends LitElement {
       <div class="container">
         <h1>404</h1>
         <h2>Page Not Found</h2>
-        <p>
-          The page you're looking for doesn't exist.
-        </p>
+        <p>The page you're looking for doesn't exist.</p>
         <a href="/">Go back home</a>
       </div>
     `;

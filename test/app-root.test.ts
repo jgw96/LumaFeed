@@ -10,10 +10,10 @@ describe('AppRoot', () => {
 
   it('should render the app with header brand', async () => {
     const appRoot = await mountComponent<AppRoot>('app-root');
-    
+
     const header = queryShadow(appRoot, 'header');
     expect(header).toBeTruthy();
-    
+
     const brand = queryShadow(appRoot, 'header .brand');
     expect(brand?.textContent?.trim()).toBe('LumaFeed');
   });
@@ -30,10 +30,10 @@ describe('AppRoot', () => {
 
   it('should render navigation links', async () => {
     const appRoot = await mountComponent<AppRoot>('app-root');
-    
+
     const homeLink = queryShadow<HTMLAnchorElement>(appRoot, 'a[href="/"]');
     const settingsLink = queryShadow<HTMLAnchorElement>(appRoot, 'a[href="/settings"]');
-    
+
     expect(homeLink).toBeTruthy();
     expect(homeLink?.textContent?.trim()).toBe('Home');
     expect(settingsLink).toBeTruthy();
@@ -42,42 +42,50 @@ describe('AppRoot', () => {
 
   it('should render home page by default', async () => {
     const appRoot = await mountComponent<AppRoot>('app-root');
-    
-    await waitFor(() => {
-      const homePage = queryShadow(appRoot, 'home-page');
-      return homePage !== null;
-    }, 3000, 'Home page not rendered');
-    
+
+    await waitFor(
+      () => {
+        const homePage = queryShadow(appRoot, 'home-page');
+        return homePage !== null;
+      },
+      3000,
+      'Home page not rendered'
+    );
+
     const homePage = queryShadow(appRoot, 'home-page');
     expect(homePage).toBeTruthy();
   });
 
   it('should navigate to settings page when settings link is clicked', async () => {
     const appRoot = await mountComponent<AppRoot>('app-root');
-    
+
     const settingsLink = queryShadow<HTMLAnchorElement>(appRoot, 'a[href="/settings"]');
     expect(settingsLink).toBeTruthy();
-    
+
     // Simulate click
     settingsLink!.click();
-    
-    await waitFor(() => {
-      const settingsPage = queryShadow(appRoot, 'settings-page');
-      return settingsPage !== null;
-    }, 3000, 'Settings page not rendered after navigation');
-    
+
+    await waitFor(
+      () => {
+        const settingsPage = queryShadow(appRoot, 'settings-page');
+        return settingsPage !== null;
+      },
+      3000,
+      'Settings page not rendered after navigation'
+    );
+
     const settingsPage = queryShadow(appRoot, 'settings-page');
     expect(settingsPage).toBeTruthy();
   });
 
   it('should apply active class to current navigation link', async () => {
     const appRoot = await mountComponent<AppRoot>('app-root');
-    
+
     // Wait for initial render and check if home link has active class or not
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
     const homeLink = queryShadow<HTMLAnchorElement>(appRoot, 'a[href="/"]');
-    
+
     // The active class may or may not be applied depending on the current URL
     // Just verify the link exists and className is a string
     expect(homeLink).toBeTruthy();
@@ -88,17 +96,21 @@ describe('AppRoot', () => {
     // Set location to invalid path before mounting
     const originalPushState = window.history.pushState;
     window.history.pushState({}, '', '/invalid-route');
-    
+
     const appRoot = await mountComponent<AppRoot>('app-root');
-    
-    await waitFor(() => {
-      const notFoundPage = queryShadow(appRoot, 'not-found-page');
-      return notFoundPage !== null;
-    }, 3000, 'Not found page not rendered');
-    
+
+    await waitFor(
+      () => {
+        const notFoundPage = queryShadow(appRoot, 'not-found-page');
+        return notFoundPage !== null;
+      },
+      3000,
+      'Not found page not rendered'
+    );
+
     const notFoundPage = queryShadow(appRoot, 'not-found-page');
     expect(notFoundPage).toBeTruthy();
-    
+
     // Restore
     window.history.pushState = originalPushState;
   });

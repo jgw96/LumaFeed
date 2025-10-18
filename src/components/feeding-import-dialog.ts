@@ -78,7 +78,8 @@ export class FeedingImportDialog extends LitElement {
       background: var(--md-sys-color-surface);
       color: var(--md-sys-color-on-surface);
       padding: 1.5rem;
-      border-radius: var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-extra-large) 0 0;
+      border-radius: var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-extra-large) 0
+        0;
       display: grid;
       gap: 0.5rem;
     }
@@ -169,7 +170,9 @@ export class FeedingImportDialog extends LitElement {
       color: var(--md-sys-color-on-surface);
       font: inherit;
       padding: 0.75rem 1rem;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
     }
 
     input:focus-visible,
@@ -270,7 +273,9 @@ export class FeedingImportDialog extends LitElement {
       padding: 0.75rem 1.5rem;
       font: inherit;
       cursor: pointer;
-      transition: background-color 0.2s ease, box-shadow 0.2s ease;
+      transition:
+        background-color 0.2s ease,
+        box-shadow 0.2s ease;
       min-width: 96px;
     }
 
@@ -474,9 +479,10 @@ export class FeedingImportDialog extends LitElement {
       return;
     }
 
-    const prefersReducedMotion = typeof window !== 'undefined'
-      && typeof window.matchMedia === 'function'
-      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (prefersReducedMotion) {
       dialog.classList.remove('closing');
@@ -634,9 +640,7 @@ export class FeedingImportDialog extends LitElement {
   }
 
   private updateEntry(id: string, patch: Partial<ImportEntry>) {
-    this.entries = this.entries.map((entry) =>
-      entry.id === id ? { ...entry, ...patch } : entry
-    );
+    this.entries = this.entries.map((entry) => (entry.id === id ? { ...entry, ...patch } : entry));
   }
 
   private clearFieldError(id: string, field: FieldName) {
@@ -798,22 +802,24 @@ export class FeedingImportDialog extends LitElement {
 
     try {
       const defaultInterval = await settingsService.getDefaultFeedIntervalMinutes();
-      const logs: FeedingLog[] = normalized.map(({ entry, startTime, endTime, durationMinutes, amountMl, amountOz, isBottleFed }) => {
-        const safeDuration = Math.max(1, durationMinutes);
+      const logs: FeedingLog[] = normalized.map(
+        ({ entry, startTime, endTime, durationMinutes, amountMl, amountOz, isBottleFed }) => {
+          const safeDuration = Math.max(1, durationMinutes);
 
-        return {
-          id: crypto.randomUUID(),
-          feedType: entry.feedType,
-          amountMl,
-          amountOz,
-          durationMinutes: safeDuration,
-          isBottleFed,
-          timestamp: endTime,
-          startTime,
-          endTime,
-          nextFeedTime: calculateNextFeedTime(endTime, defaultInterval),
-        } satisfies FeedingLog;
-      });
+          return {
+            id: crypto.randomUUID(),
+            feedType: entry.feedType,
+            amountMl,
+            amountOz,
+            durationMinutes: safeDuration,
+            isBottleFed,
+            timestamp: endTime,
+            startTime,
+            endTime,
+            nextFeedTime: calculateNextFeedTime(endTime, defaultInterval),
+          } satisfies FeedingLog;
+        }
+      );
 
       const { feedingStorage } = await import('../services/feeding-storage.js');
       for (const log of logs) {
@@ -852,146 +858,155 @@ export class FeedingImportDialog extends LitElement {
           <div class="dialog-content">
             <div class="entries">
               ${this.entries.map((entry, index) => {
-              const durationLabel = this.formatDuration(entry);
-              return html`
-                <section class="entry-card" aria-label=${`Feed ${index + 1}`}>
-                  <div class="entry-header">
-                    <div class="entry-title">Feed ${index + 1}</div>
-                    ${this.entries.length > 1
-                      ? html`
-                          <button
-                            type="button"
-                            class="remove-btn"
-                            @click=${() => this.handleRemoveEntry(entry.id)}
+                const durationLabel = this.formatDuration(entry);
+                return html`
+                  <section class="entry-card" aria-label=${`Feed ${index + 1}`}>
+                    <div class="entry-header">
+                      <div class="entry-title">Feed ${index + 1}</div>
+                      ${this.entries.length > 1
+                        ? html`
+                            <button
+                              type="button"
+                              class="remove-btn"
+                              @click=${() => this.handleRemoveEntry(entry.id)}
+                            >
+                              Remove
+                            </button>
+                          `
+                        : null}
+                    </div>
+
+                    <div class="entry-grid">
+                      <div>
+                        <span class="form-label">Feed Type</span>
+                        <div class="radio-group" role="radiogroup" aria-label="Feed Type">
+                          <label class="radio-option">
+                            <input
+                              type="radio"
+                              name=${`import-feed-type-${entry.id}`}
+                              .value=${'formula'}
+                              .checked=${entry.feedType === 'formula'}
+                              @change=${() => this.handleFeedTypeChange(entry.id, 'formula')}
+                            />
+                            <span>Formula</span>
+                          </label>
+                          <label class="radio-option">
+                            <input
+                              type="radio"
+                              name=${`import-feed-type-${entry.id}`}
+                              .value=${'milk'}
+                              .checked=${entry.feedType === 'milk'}
+                              @change=${() => this.handleFeedTypeChange(entry.id, 'milk')}
+                            />
+                            <span>Breast Milk</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label class="form-label" for=${`import-amount-${entry.id}`}>
+                          Amount
+                        </label>
+                        <div class="amount-group">
+                          <input
+                            id=${`import-amount-${entry.id}`}
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            inputmode="decimal"
+                            .value=${entry.amount}
+                            @input=${(e: Event) =>
+                              this.handleAmountChange(
+                                entry.id,
+                                (e.currentTarget as HTMLInputElement).value
+                              )}
+                            required
+                          />
+                          <select
+                            aria-label="Amount unit"
+                            .value=${entry.unit}
+                            @change=${(e: Event) =>
+                              this.handleUnitChange(
+                                entry.id,
+                                (e.currentTarget as HTMLSelectElement).value as UnitType
+                              )}
                           >
-                            Remove
-                          </button>
-                        `
-                      : null}
-                  </div>
-
-                  <div class="entry-grid">
-                    <div>
-                      <span class="form-label">Feed Type</span>
-                      <div class="radio-group" role="radiogroup" aria-label="Feed Type">
-                        <label class="radio-option">
-                          <input
-                            type="radio"
-                            name=${`import-feed-type-${entry.id}`}
-                            .value=${'formula'}
-                            .checked=${entry.feedType === 'formula'}
-                            @change=${() => this.handleFeedTypeChange(entry.id, 'formula')}
-                          />
-                          <span>Formula</span>
-                        </label>
-                        <label class="radio-option">
-                          <input
-                            type="radio"
-                            name=${`import-feed-type-${entry.id}`}
-                            .value=${'milk'}
-                            .checked=${entry.feedType === 'milk'}
-                            @change=${() => this.handleFeedTypeChange(entry.id, 'milk')}
-                          />
-                          <span>Breast Milk</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label class="form-label" for=${`import-amount-${entry.id}`}>
-                        Amount
-                      </label>
-                      <div class="amount-group">
-                        <input
-                          id=${`import-amount-${entry.id}`}
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          inputmode="decimal"
-                          .value=${entry.amount}
-                          @input=${(e: Event) =>
-                            this.handleAmountChange(entry.id, (e.currentTarget as HTMLInputElement).value)}
-                          required
-                        />
-                        <select
-                          aria-label="Amount unit"
-                          .value=${entry.unit}
-                          @change=${(e: Event) =>
-                            this.handleUnitChange(
-                              entry.id,
-                              (e.currentTarget as HTMLSelectElement).value as UnitType
-                            )}
-                        >
-                          <option value="ml">ml</option>
-                          <option value="oz">fl oz</option>
-                        </select>
-                      </div>
-                      ${this.renderFieldError(entry.id, 'amount')}
-                    </div>
-
-                    <div>
-                      <span class="form-label">Feeding Time</span>
-                      <div class="time-grid">
-                        <div class="time-input">
-                          <label for=${`import-start-${entry.id}`}>Start</label>
-                          <input
-                            id=${`import-start-${entry.id}`}
-                            type="datetime-local"
-                            .value=${entry.start}
-                            data-initial-focus=${ifDefined(index === 0 ? 'true' : undefined)}
-                            @change=${(e: Event) =>
-                              this.handleStartChange(entry.id, (e.currentTarget as HTMLInputElement).value)}
-                            required
-                          />
-                          ${this.renderFieldError(entry.id, 'start')}
+                            <option value="ml">ml</option>
+                            <option value="oz">fl oz</option>
+                          </select>
                         </div>
-                        <div class="time-input">
-                          <label for=${`import-end-${entry.id}`}>End</label>
-                          <input
-                            id=${`import-end-${entry.id}`}
-                            type="datetime-local"
-                            .value=${entry.end}
-                            @change=${(e: Event) =>
-                              this.handleEndChange(entry.id, (e.currentTarget as HTMLInputElement).value)}
-                            required
-                          />
-                          ${this.renderFieldError(entry.id, 'end')}
+                        ${this.renderFieldError(entry.id, 'amount')}
+                      </div>
+
+                      <div>
+                        <span class="form-label">Feeding Time</span>
+                        <div class="time-grid">
+                          <div class="time-input">
+                            <label for=${`import-start-${entry.id}`}>Start</label>
+                            <input
+                              id=${`import-start-${entry.id}`}
+                              type="datetime-local"
+                              .value=${entry.start}
+                              data-initial-focus=${ifDefined(index === 0 ? 'true' : undefined)}
+                              @change=${(e: Event) =>
+                                this.handleStartChange(
+                                  entry.id,
+                                  (e.currentTarget as HTMLInputElement).value
+                                )}
+                              required
+                            />
+                            ${this.renderFieldError(entry.id, 'start')}
+                          </div>
+                          <div class="time-input">
+                            <label for=${`import-end-${entry.id}`}>End</label>
+                            <input
+                              id=${`import-end-${entry.id}`}
+                              type="datetime-local"
+                              .value=${entry.end}
+                              @change=${(e: Event) =>
+                                this.handleEndChange(
+                                  entry.id,
+                                  (e.currentTarget as HTMLInputElement).value
+                                )}
+                              required
+                            />
+                            ${this.renderFieldError(entry.id, 'end')}
+                          </div>
+                        </div>
+                        <div class="computed-duration" role="status" aria-live="polite">
+                          Duration: ${durationLabel}
                         </div>
                       </div>
-                      <div class="computed-duration" role="status" aria-live="polite">
-                        Duration: ${durationLabel}
-                      </div>
-                    </div>
 
-                    <div>
-                      <span class="form-label">Feeding Method</span>
-                      <div class="radio-group" role="radiogroup" aria-label="Feeding Method">
-                        <label class="radio-option">
-                          <input
-                            type="radio"
-                            name=${`import-method-${entry.id}`}
-                            .value=${'bottle'}
-                            .checked=${entry.method === 'bottle'}
-                            @change=${() => this.handleMethodChange(entry.id, 'bottle')}
-                          />
-                          <span>Bottle</span>
-                        </label>
-                        <label class="radio-option">
-                          <input
-                            type="radio"
-                            name=${`import-method-${entry.id}`}
-                            .value=${'breast'}
-                            .checked=${entry.method === 'breast'}
-                            @change=${() => this.handleMethodChange(entry.id, 'breast')}
-                          />
-                          <span>Breast</span>
-                        </label>
+                      <div>
+                        <span class="form-label">Feeding Method</span>
+                        <div class="radio-group" role="radiogroup" aria-label="Feeding Method">
+                          <label class="radio-option">
+                            <input
+                              type="radio"
+                              name=${`import-method-${entry.id}`}
+                              .value=${'bottle'}
+                              .checked=${entry.method === 'bottle'}
+                              @change=${() => this.handleMethodChange(entry.id, 'bottle')}
+                            />
+                            <span>Bottle</span>
+                          </label>
+                          <label class="radio-option">
+                            <input
+                              type="radio"
+                              name=${`import-method-${entry.id}`}
+                              .value=${'breast'}
+                              .checked=${entry.method === 'breast'}
+                              @change=${() => this.handleMethodChange(entry.id, 'breast')}
+                            />
+                            <span>Breast</span>
+                          </label>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </section>
-              `;
-            })}
+                  </section>
+                `;
+              })}
 
               <button type="button" class="add-entry-btn" @click=${this.handleAddEntry}>
                 + Add another feed

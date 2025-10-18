@@ -14,8 +14,15 @@ export class AppRoot extends LitElement {
     :host {
       display: block;
       min-height: 100vh;
-      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-        Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-family:
+        'Roboto',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        Oxygen,
+        Ubuntu,
+        Cantarell,
+        sans-serif;
       background-color: var(--md-sys-color-background);
       color: var(--md-sys-color-on-background);
       --bottom-nav-height: 52px;
@@ -138,7 +145,9 @@ export class AppRoot extends LitElement {
       padding: 0.75rem 0.5rem;
       border-radius: var(--md-sys-shape-corner-large);
       position: relative;
-      transition: background-color 0.2s ease, color 0.2s ease;
+      transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
     }
 
     .nav-link::before {
@@ -190,7 +199,8 @@ export class AppRoot extends LitElement {
         display: flex;
         padding: 0 1.25rem;
         box-shadow: var(--md-sys-elevation-0);
-        border-right: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 50%, transparent);
+        border-right: 1px solid
+          color-mix(in srgb, var(--md-sys-color-outline-variant) 50%, transparent);
       }
 
       .side-nav__content {
@@ -261,7 +271,9 @@ export class AppRoot extends LitElement {
         background: var(--md-sys-color-secondary-container);
         color: var(--md-sys-color-on-secondary-container);
         font-weight: 600;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.06);
+        box-shadow:
+          0 1px 3px rgba(0, 0, 0, 0.12),
+          0 1px 2px rgba(0, 0, 0, 0.06);
       }
 
       .side-nav .nav-link.active::after {
@@ -269,8 +281,14 @@ export class AppRoot extends LitElement {
       }
 
       .side-nav .nav-link.active:hover {
-        background: color-mix(in srgb, var(--md-sys-color-secondary-container) 92%, var(--md-sys-color-on-secondary-container));
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.08);
+        background: color-mix(
+          in srgb,
+          var(--md-sys-color-secondary-container) 92%,
+          var(--md-sys-color-on-secondary-container)
+        );
+        box-shadow:
+          0 2px 4px rgba(0, 0, 0, 0.14),
+          0 1px 3px rgba(0, 0, 0, 0.08);
       }
 
       .side-nav .nav-link.active:active {
@@ -326,12 +344,12 @@ export class AppRoot extends LitElement {
 
   constructor() {
     super();
-    
+
     this.router = new Router(
       [
-        { 
-          pattern: '/', 
-          component: 'home-page'
+        {
+          pattern: '/',
+          component: 'home-page',
         },
         {
           pattern: '/settings',
@@ -408,13 +426,17 @@ export class AppRoot extends LitElement {
   private getViewTransitionStarter():
     | ((updateCallback: () => Promise<void> | void) => { finished?: Promise<void> })
     | null {
-    const container = this.pageContainer as unknown as { startViewTransition?: (cb: () => Promise<void> | void) => { finished?: Promise<void> } };
+    const container = this.pageContainer as unknown as {
+      startViewTransition?: (cb: () => Promise<void> | void) => { finished?: Promise<void> };
+    };
 
     if (container && typeof container.startViewTransition === 'function') {
       return container.startViewTransition.bind(container);
     }
 
-    const doc = document as unknown as { startViewTransition?: (cb: () => Promise<void> | void) => { finished?: Promise<void> } };
+    const doc = document as unknown as {
+      startViewTransition?: (cb: () => Promise<void> | void) => { finished?: Promise<void> };
+    };
 
     if (typeof doc.startViewTransition === 'function') {
       return doc.startViewTransition.bind(document);
@@ -455,7 +477,11 @@ export class AppRoot extends LitElement {
           </main>
         </div>
       </div>
-      <nav class="bottom-nav nav-links" aria-label="Primary navigation" @click=${this.handleNavClick}>
+      <nav
+        class="bottom-nav nav-links"
+        aria-label="Primary navigation"
+        @click=${this.handleNavClick}
+      >
         ${this.renderNavLinks()}
       </nav>
       <feeding-import-dialog></feeding-import-dialog>
@@ -467,21 +493,29 @@ export class AppRoot extends LitElement {
     const icons: Record<string, { filled: string; outlined: string }> = {
       home: {
         outlined: 'M12 5.69l5 4.5V18h-2v-6H9v6H7v-7.81l5-4.5M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z',
-        filled: 'M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm0 2.69l5 4.5V18h-2v-6H9v6H7v-7.81l5-4.5z'
+        filled: 'M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm0 2.69l5 4.5V18h-2v-6H9v6H7v-7.81l5-4.5z',
       },
       settings: {
-        outlined: 'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z',
-        filled: 'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z'
-      }
+        outlined:
+          'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z',
+        filled:
+          'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z',
+      },
     };
 
     const icon = icons[iconName];
     if (!icon) return html``;
 
     const path = active ? icon.filled : icon.outlined;
-    
+
     return html`
-      <svg class="nav-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="currentColor">
+      <svg
+        class="nav-icon"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+        fill="currentColor"
+      >
         <path d="${path}"></path>
       </svg>
     `;

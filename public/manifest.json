@@ -9,9 +9,7 @@
   "background_color": "#1D1B20",
   "scope": "/",
   "orientation": "portrait",
-  "categories": [
-    "utilities"
-  ],
+  "categories": ["utilities"],
   "screenshots": [
     {
       "src": "/screenshots/dark-mobile-screenshot-final.png",

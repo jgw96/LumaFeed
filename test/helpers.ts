@@ -18,15 +18,15 @@ export async function waitForElement(
   timeout = 3000
 ): Promise<Element> {
   const startTime = Date.now();
-  
+
   while (Date.now() - startTime < timeout) {
     const element = parent.querySelector(selector);
     if (element) {
       return element;
     }
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
-  
+
   throw new Error(`Element with selector "${selector}" not found within ${timeout}ms`);
 }
 
@@ -39,14 +39,14 @@ export async function waitFor(
   message = 'Condition not met within timeout'
 ): Promise<void> {
   const startTime = Date.now();
-  
+
   while (Date.now() - startTime < timeout) {
     if (condition()) {
       return;
     }
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
-  
+
   throw new Error(message);
 }
 
@@ -58,19 +58,19 @@ export async function mountComponent<T extends HTMLElement>(
   attributes: Record<string, string> = {}
 ): Promise<T> {
   await waitForComponent(tagName);
-  
+
   const element = document.createElement(tagName) as T;
-  
+
   // Set attributes
   Object.entries(attributes).forEach(([key, value]) => {
     element.setAttribute(key, value);
   });
-  
+
   document.body.appendChild(element);
-  
+
   // Wait for component to render
-  await new Promise(resolve => setTimeout(resolve, 100));
-  
+  await new Promise((resolve) => setTimeout(resolve, 100));
+
   return element;
 }
 
@@ -93,10 +93,7 @@ export function getShadowRoot(element: HTMLElement): ShadowRoot {
 /**
  * Helper to query selector in shadow root
  */
-export function queryShadow<T extends Element>(
-  element: HTMLElement,
-  selector: string
-): T | null {
+export function queryShadow<T extends Element>(element: HTMLElement, selector: string): T | null {
   const shadowRoot = getShadowRoot(element);
   return shadowRoot.querySelector<T>(selector);
 }
@@ -115,11 +112,7 @@ export function queryShadowAll<T extends Element>(
 /**
  * Trigger a custom event on an element
  */
-export function triggerEvent(
-  element: Element,
-  eventName: string,
-  detail?: any
-): void {
+export function triggerEvent(element: Element, eventName: string, detail?: any): void {
   const event = new CustomEvent(eventName, {
     detail,
     bubbles: true,

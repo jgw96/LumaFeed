@@ -16,7 +16,7 @@ self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
-self.addEventListener('activate', event => {
+self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
@@ -24,7 +24,7 @@ if (enablePrecache && Array.isArray(precacheManifest)) {
   precacheAndRoute(precacheManifest);
 }
 
-self.addEventListener('notificationclick', event => {
+self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const targetUrl = event.notification?.data?.url;
   if (targetUrl) {

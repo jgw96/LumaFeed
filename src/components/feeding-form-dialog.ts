@@ -21,8 +21,8 @@ export class FeedingFormDialog extends LitElement {
       border: none;
       border-radius: var(--md-sys-shape-corner-extra-large);
       padding: 0;
-  width: min(560px, calc(100vw - 2rem));
-  margin: auto;
+      width: min(560px, calc(100vw - 2rem));
+      margin: auto;
       background: var(--md-sys-color-surface-container-high);
       color: var(--md-sys-color-on-surface);
       box-shadow: var(--md-sys-elevation-3);
@@ -42,7 +42,8 @@ export class FeedingFormDialog extends LitElement {
       background: var(--md-sys-color-surface);
       color: var(--md-sys-color-on-surface);
       padding: 1.5rem;
-      border-radius: var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-extra-large) 0 0;
+      border-radius: var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-extra-large) 0
+        0;
     }
 
     .dialog-header h2 {
@@ -228,8 +229,8 @@ export class FeedingFormDialog extends LitElement {
       margin-bottom: 0.5rem;
     }
 
-    input[type="number"],
-    input[type="datetime-local"],
+    input[type='number'],
+    input[type='datetime-local'],
     select {
       padding: 0.875rem 1rem;
       border: 1px solid var(--md-sys-color-outline);
@@ -238,11 +239,13 @@ export class FeedingFormDialog extends LitElement {
       font-family: inherit;
       background: var(--md-sys-color-surface-container-lowest);
       color: var(--md-sys-color-on-surface);
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
     }
 
-    input[type="number"],
-    input[type="datetime-local"] {
+    input[type='number'],
+    input[type='datetime-local'] {
       width: 100%;
       box-sizing: border-box;
       min-width: 0;
@@ -254,8 +257,8 @@ export class FeedingFormDialog extends LitElement {
       max-width: 100%;
     }
 
-    input[type="number"]:focus,
-    input[type="datetime-local"]:focus,
+    input[type='number']:focus,
+    input[type='datetime-local']:focus,
     select:focus {
       outline: none;
       border-color: var(--md-sys-color-primary);
@@ -275,7 +278,7 @@ export class FeedingFormDialog extends LitElement {
       min-width: 0;
     }
 
-    input[type="radio"] {
+    input[type='radio'] {
       width: 20px;
       height: 20px;
       cursor: pointer;
@@ -323,7 +326,9 @@ export class FeedingFormDialog extends LitElement {
       font-size: var(--md-sys-typescale-label-large-font-size);
       font-weight: var(--md-sys-typescale-label-large-font-weight);
       cursor: pointer;
-      transition: background-color 0.2s, box-shadow 0.2s;
+      transition:
+        background-color 0.2s,
+        box-shadow 0.2s;
       min-height: 40px;
     }
 
@@ -530,7 +535,11 @@ export class FeedingFormDialog extends LitElement {
   };
 
   private readonly handleVisibilityChange = () => {
-    if (document.visibilityState === 'visible' && this.view === 'timing' && !this.wakeLockSentinel) {
+    if (
+      document.visibilityState === 'visible' &&
+      this.view === 'timing' &&
+      !this.wakeLockSentinel
+    ) {
       void this.requestWakeLock();
     }
   };
@@ -743,9 +752,10 @@ export class FeedingFormDialog extends LitElement {
       return;
     }
 
-    const prefersReducedMotion = typeof window !== 'undefined'
-      && typeof window.matchMedia === 'function'
-      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (prefersReducedMotion) {
       dialog.classList.remove('closing');
@@ -907,7 +917,9 @@ export class FeedingFormDialog extends LitElement {
       const adjustedEnd = new Date(start.getTime() + minutes * 60_000);
       value = this.formatDateTimeLocal(adjustedEnd);
     } else if (!start && providedEnd) {
-      const adjustedStart = new Date(providedEnd.getTime() - DEFAULT_FEEDING_DURATION_MINUTES * 60_000);
+      const adjustedStart = new Date(
+        providedEnd.getTime() - DEFAULT_FEEDING_DURATION_MINUTES * 60_000
+      );
       this.startTime = this.formatDateTimeLocal(adjustedStart);
     }
 
@@ -940,9 +952,10 @@ export class FeedingFormDialog extends LitElement {
       return;
     }
 
-    const durationMinutes = this.duration > 0
-      ? this.duration
-      : Math.max(1, Math.round((end.getTime() - start.getTime()) / 60_000));
+    const durationMinutes =
+      this.duration > 0
+        ? this.duration
+        : Math.max(1, Math.round((end.getTime() - start.getTime()) / 60_000));
 
     const defaultInterval = await settingsService.getDefaultFeedIntervalMinutes();
 
@@ -959,11 +972,13 @@ export class FeedingFormDialog extends LitElement {
       nextFeedTime: calculateNextFeedTime(end.getTime(), defaultInterval),
     };
 
-    this.dispatchEvent(new CustomEvent('log-added', { 
-      detail: log,
-      bubbles: true,
-      composed: true 
-    }));
+    this.dispatchEvent(
+      new CustomEvent('log-added', {
+        detail: log,
+        bubbles: true,
+        composed: true,
+      })
+    );
 
     this.close();
   }
@@ -984,11 +999,7 @@ export class FeedingFormDialog extends LitElement {
   }
 
   render() {
-    return html`
-      <dialog>
-        ${this.renderActiveView()}
-      </dialog>
-    `;
+    return html` <dialog>${this.renderActiveView()}</dialog> `;
   }
 
   private renderActiveView() {
@@ -1011,8 +1022,8 @@ export class FeedingFormDialog extends LitElement {
       </div>
       <div class="start-screen">
         <p class="start-intro">
-          We'll keep time for you. Tap “Start feed” right as the feeding begins and we'll capture the end time when
-          you're finished.
+          We'll keep time for you. Tap “Start feed” right as the feeding begins and we'll capture
+          the end time when you're finished.
         </p>
         <div class="start-highlights">
           <div class="start-highlight">Autofill start and end time with a single tap.</div>
@@ -1038,8 +1049,8 @@ export class FeedingFormDialog extends LitElement {
           minute: '2-digit',
         })
       : '—';
-  const elapsedMinutes = Math.floor(this.timerElapsedMs / 60_000);
-  const elapsedLabel = elapsedMinutes >= 1 ? `${elapsedMinutes} min` : '<1 min';
+    const elapsedMinutes = Math.floor(this.timerElapsedMs / 60_000);
+    const elapsedLabel = elapsedMinutes >= 1 ? `${elapsedMinutes} min` : '<1 min';
 
     return html`
       <div class="dialog-header">
@@ -1048,7 +1059,9 @@ export class FeedingFormDialog extends LitElement {
       </div>
       <div class="timer-screen">
         <div class="timer-highlight">
-          <div class="timer-display" aria-live="polite">${this.formatElapsed(this.timerElapsedMs)}</div>
+          <div class="timer-display" aria-live="polite">
+            ${this.formatElapsed(this.timerElapsedMs)}
+          </div>
           <div class="timer-metadata">
             <span>
               <span class="label">Started</span>
@@ -1130,11 +1143,13 @@ export class FeedingFormDialog extends LitElement {
                 min="0"
                 step="0.1"
                 .value=${this.amount.toString()}
-                @input=${(e: Event) => (this.amount = parseFloat((e.target as HTMLInputElement).value) || 0)}
+                @input=${(e: Event) =>
+                  (this.amount = parseFloat((e.target as HTMLInputElement).value) || 0)}
                 required
               />
               <select
-                @change=${(e: Event) => (this.unit = (e.target as HTMLSelectElement).value as UnitType)}
+                @change=${(e: Event) =>
+                  (this.unit = (e.target as HTMLSelectElement).value as UnitType)}
                 .value=${this.unit}
               >
                 <option value="ml">ml</option>
@@ -1180,17 +1195,25 @@ export class FeedingFormDialog extends LitElement {
                       <div class="time-summary-grid">
                         <div class="time-summary-item">
                           <span class="time-summary-label">Start</span>
-                          <span class="time-summary-value">${this.formatDisplayTime(this.startTime)}</span>
+                          <span class="time-summary-value"
+                            >${this.formatDisplayTime(this.startTime)}</span
+                          >
                         </div>
                         <div class="time-summary-item">
                           <span class="time-summary-label">End</span>
-                          <span class="time-summary-value">${this.formatDisplayTime(this.endTime)}</span>
+                          <span class="time-summary-value"
+                            >${this.formatDisplayTime(this.endTime)}</span
+                          >
                         </div>
                       </div>
                       <div class="time-summary-duration">
                         Duration: ${this.duration > 0 ? `${this.duration} min` : '—'}
                       </div>
-                      <button type="button" class="link-button" @click=${() => (this.isManualMode = true)}>
+                      <button
+                        type="button"
+                        class="link-button"
+                        @click=${() => (this.isManualMode = true)}
+                      >
                         Adjust times manually
                       </button>
                     </div>
@@ -1226,12 +1249,8 @@ export class FeedingFormDialog extends LitElement {
         </div>
 
         <div class="dialog-actions">
-          <button type="button" class="btn-cancel" @click=${this.handleCancel}>
-            Cancel
-          </button>
-          <button type="submit" class="btn-save" ?disabled=${!this.isValid}>
-            Save Log
-          </button>
+          <button type="button" class="btn-cancel" @click=${this.handleCancel}>Cancel</button>
+          <button type="submit" class="btn-save" ?disabled=${!this.isValid}>Save Log</button>
         </div>
       </form>
     `;
