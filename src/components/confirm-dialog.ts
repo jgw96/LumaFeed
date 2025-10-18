@@ -1,5 +1,6 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { acquireScrollLock, releaseScrollLock } from '../utils/dialog-scroll-lock.js';
 
 export interface ConfirmDialogOptions {
   headline: string;
@@ -32,6 +33,8 @@ export class ConfirmDialog extends LitElement {
       align-items: center;
       justify-content: center;
       padding: 1rem;
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
 
     .dialog {
@@ -42,11 +45,13 @@ export class ConfirmDialog extends LitElement {
       min-width: 280px;
       max-width: 560px;
       width: 100%;
-      max-height: 90vh;
+      max-height: calc(100vh - 2rem);
       display: flex;
       flex-direction: column;
       animation: scale-in 0.2s cubic-bezier(0.2, 0, 0, 1);
       margin: auto;
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
 
     .dialog__content {
@@ -137,6 +142,7 @@ export class ConfirmDialog extends LitElement {
       .dialog {
         max-width: calc(100vw - 2rem);
         min-width: 260px;
+        max-height: calc(100vh - 1rem);
       }
 
       .scrim {
@@ -158,6 +164,7 @@ export class ConfirmDialog extends LitElement {
   };
 
   private resolvePromise?: (confirmed: boolean) => void;
+  private hasScrollLock = false;
 
   public show(options: ConfirmDialogOptions): Promise<boolean> {
     this.options = {
@@ -194,6 +201,27 @@ export class ConfirmDialog extends LitElement {
     if (e.target === e.currentTarget) {
       this.handleCancel();
     }
+  }
+
+  protected updated(changedProps: PropertyValues): void {
+    super.updated(changedProps);
+    if (changedProps.has('open')) {
+      if (this.open && !this.hasScrollLock) {
+        acquireScrollLock();
+        this.hasScrollLock = true;
+      } else if (!this.open && this.hasScrollLock) {
+        releaseScrollLock();
+        this.hasScrollLock = false;
+      }
+    }
+  }
+
+  disconnectedCallback(): void {
+    if (this.hasScrollLock) {
+      releaseScrollLock();
+      this.hasScrollLock = false;
+    }
+    super.disconnectedCallback();
   }
 
   render() {

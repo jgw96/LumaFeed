@@ -3,6 +3,7 @@ import { customElement, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { calculateNextFeedTime, type FeedingLog, type UnitType } from '../types/feeding-log.js';
 import { settingsService } from '../services/settings-service.js';
+import { acquireScrollLock, releaseScrollLock } from '../utils/dialog-scroll-lock.js';
 
 const ML_PER_FL_OZ = 29.5735;
 const DEFAULT_DURATION_MINUTES = 20;
@@ -40,11 +41,17 @@ export class FeedingImportDialog extends LitElement {
       padding: 0;
       max-width: 560px;
       width: 90vw;
+      margin: auto;
       background: var(--md-sys-color-surface-container-high);
       color: var(--md-sys-color-on-surface);
       box-shadow: var(--md-sys-elevation-3);
       opacity: 0;
       transform: translateY(-12px);
+      max-height: calc(100vh - 2rem);
+      overflow: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      box-sizing: border-box;
     }
 
     dialog::backdrop {
@@ -440,6 +447,23 @@ export class FeedingImportDialog extends LitElement {
   private transitionEndHandler?: (event: TransitionEvent) => void;
 
   private resetPending = false;
+  private hasScrollLock = false;
+
+  private lockScroll() {
+    if (this.hasScrollLock) {
+      return;
+    }
+    acquireScrollLock();
+    this.hasScrollLock = true;
+  }
+
+  private unlockScroll() {
+    if (!this.hasScrollLock) {
+      return;
+    }
+    releaseScrollLock();
+    this.hasScrollLock = false;
+  }
 
   connectedCallback(): void {
     super.connectedCallback();
@@ -454,6 +478,7 @@ export class FeedingImportDialog extends LitElement {
 
     this.cancelPendingClose();
     this.resetForm();
+    this.lockScroll();
 
     if (!dialog.open) {
       dialog.showModal();
@@ -475,6 +500,7 @@ export class FeedingImportDialog extends LitElement {
     if (!dialog.open) {
       dialog.classList.remove('closing');
       this.isClosing = false;
+      this.unlockScroll();
       this.scheduleResetForm();
       return;
     }
@@ -488,6 +514,7 @@ export class FeedingImportDialog extends LitElement {
       dialog.classList.remove('closing');
       this.isClosing = false;
       dialog.close();
+      this.unlockScroll();
       this.scheduleResetForm();
       return;
     }
@@ -510,6 +537,7 @@ export class FeedingImportDialog extends LitElement {
       if (dialog.open) {
         dialog.close();
       }
+      this.unlockScroll();
       this.scheduleResetForm();
     };
 
@@ -540,6 +568,7 @@ export class FeedingImportDialog extends LitElement {
 
   disconnectedCallback(): void {
     this.clearClosingHandlers();
+    this.unlockScroll();
     super.disconnectedCallback();
   }
 

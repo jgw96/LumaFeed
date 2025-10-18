@@ -2,6 +2,7 @@ import { LitElement, html, css, PropertyValues } from 'lit';
 import { customElement, state, query } from 'lit/decorators.js';
 import { calculateNextFeedTime, type FeedingLog, type UnitType } from '../types/feeding-log.js';
 import { settingsService } from '../services/settings-service.js';
+import { acquireScrollLock, releaseScrollLock } from '../utils/dialog-scroll-lock.js';
 
 interface WakeLockSentinelLike extends EventTarget {
   released: boolean;
@@ -29,7 +30,10 @@ export class FeedingFormDialog extends LitElement {
       opacity: 0;
       transform: translateY(-12px);
       box-sizing: border-box;
-      overflow: hidden;
+      max-height: calc(100vh - 2rem);
+      overflow: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
     }
 
     dialog::backdrop {
@@ -518,6 +522,24 @@ export class FeedingFormDialog extends LitElement {
 
   private transitionEndHandler?: (event: TransitionEvent) => void;
 
+  private hasScrollLock = false;
+
+  private lockScroll() {
+    if (this.hasScrollLock) {
+      return;
+    }
+    acquireScrollLock();
+    this.hasScrollLock = true;
+  }
+
+  private unlockScroll() {
+    if (!this.hasScrollLock) {
+      return;
+    }
+    releaseScrollLock();
+    this.hasScrollLock = false;
+  }
+
   private timerStartMs: number | null = null;
 
   private timerIntervalId: number | null = null;
@@ -732,12 +754,14 @@ export class FeedingFormDialog extends LitElement {
     this.clearClosingHandlers();
     this.clearTimer();
     void this.releaseWakeLock();
+    this.unlockScroll();
     super.disconnectedCallback();
   }
 
   open() {
     this.cancelPendingClose();
     this.resetForm();
+    this.lockScroll();
     this.dialog.showModal();
   }
 
@@ -748,6 +772,7 @@ export class FeedingFormDialog extends LitElement {
     if (!dialog.open) {
       dialog.classList.remove('closing');
       this.isClosing = false;
+      this.unlockScroll();
       this.scheduleResetForm();
       return;
     }
@@ -761,6 +786,7 @@ export class FeedingFormDialog extends LitElement {
       dialog.classList.remove('closing');
       this.isClosing = false;
       dialog.close();
+      this.unlockScroll();
       this.scheduleResetForm();
       return;
     }
@@ -783,6 +809,7 @@ export class FeedingFormDialog extends LitElement {
       if (dialog.open) {
         dialog.close();
       }
+      this.unlockScroll();
       this.scheduleResetForm();
     };
 
