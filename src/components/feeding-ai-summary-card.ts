@@ -106,6 +106,33 @@ export class FeedingAiSummaryCard extends LitElement {
       color: var(--md-sys-color-on-surface-variant);
       font-size: var(--md-sys-typescale-body-small-font-size);
     }
+
+    .chat-button {
+      justify-self: start;
+      background: var(--md-sys-color-tertiary-container);
+      color: var(--md-sys-color-on-tertiary-container);
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--md-sys-shape-corner-large);
+      font-size: var(--md-sys-typescale-label-large-font-size);
+      font-weight: var(--md-sys-typescale-label-large-font-weight);
+      cursor: pointer;
+      transition:
+        background-color 0.2s ease,
+        transform 0.2s ease;
+    }
+
+    .chat-button:hover:not(:disabled) {
+      background: var(--md-sys-color-tertiary);
+      color: var(--md-sys-color-on-tertiary);
+      transform: translateY(-1px);
+    }
+
+    .chat-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+      transform: none;
+    }
   `;
 
   @property({ attribute: false })
@@ -138,7 +165,11 @@ export class FeedingAiSummaryCard extends LitElement {
   @state()
   private webLlmInitializing: boolean = false;
 
+  @state()
+  private chatDialogOpen: boolean = false;
+
   private session: LanguageModelSession | null = null;
+  private chatDialogLoaded = false;
   private lastSummaryLogIds: string[] = [];
   private summaryHelpersModule: typeof import('../utils/feeding-ai-summary-utils.js') | null = null;
   private summaryHelpersPromise:
@@ -175,6 +206,23 @@ export class FeedingAiSummaryCard extends LitElement {
     }
   }
 
+  private async handleChatClick() {
+    if (!this.chatDialogLoaded) {
+      if (!customElements.get('feeding-ai-chat-dialog')) {
+        await import('./feeding-ai-chat-dialog.js');
+      }
+      await customElements.whenDefined('feeding-ai-chat-dialog');
+      this.chatDialogLoaded = true;
+    }
+
+    await this.updateComplete;
+    this.chatDialogOpen = true;
+  }
+
+  private handleChatDialogClose() {
+    this.chatDialogOpen = false;
+  }
+
   render() {
     const recentLogs = this.getLast24HourLogs();
     const usingWebLlm = this.aiMode === 'web-llm';
@@ -183,6 +231,7 @@ export class FeedingAiSummaryCard extends LitElement {
       : this.availabilityState === 'downloading' && !this.session;
     const canSummarize = recentLogs.length > 0 && this.supported && !this.loading;
     const disabled = this.busy || !canSummarize || modelPreparing;
+    const canChat = this.logs.length > 0 && this.supported;
 
     return html`
       <section aria-labelledby="ai-summary-title">
@@ -194,6 +243,9 @@ export class FeedingAiSummaryCard extends LitElement {
         </div>
         <button @click=${this.handleGenerateClick} ?disabled=${disabled}>
           ${this.busy ? 'Generating...' : 'Generate summary'}
+        </button>
+        <button class="chat-button" @click=${this.handleChatClick} ?disabled=${!canChat}>
+          Chat about your feed log
         </button>
         ${!this.supported
           ? html`<p class="status">
@@ -219,6 +271,16 @@ export class FeedingAiSummaryCard extends LitElement {
             `
           : nothing}
       </section>
+
+      ${this.chatDialogOpen
+        ? html`
+            <feeding-ai-chat-dialog
+              .open=${this.chatDialogOpen}
+              .logs=${this.logs}
+              @close=${this.handleChatDialogClose}
+            ></feeding-ai-chat-dialog>
+          `
+        : nothing}
     `;
   }
 
