@@ -21,13 +21,15 @@ export class FeedingFormDialog extends LitElement {
       border: none;
       border-radius: var(--md-sys-shape-corner-extra-large);
       padding: 0;
-      max-width: 560px;
-      width: 90vw;
+  width: min(560px, calc(100vw - 2rem));
+  margin: auto;
       background: var(--md-sys-color-surface-container-high);
       color: var(--md-sys-color-on-surface);
       box-shadow: var(--md-sys-elevation-3);
       opacity: 0;
       transform: translateY(-12px);
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     dialog::backdrop {
@@ -239,6 +241,19 @@ export class FeedingFormDialog extends LitElement {
       transition: border-color 0.2s, box-shadow 0.2s;
     }
 
+    input[type="number"],
+    input[type="datetime-local"] {
+      width: 100%;
+      box-sizing: border-box;
+      min-width: 0;
+    }
+
+    select {
+      box-sizing: border-box;
+      min-width: 0;
+      max-width: 100%;
+    }
+
     input[type="number"]:focus,
     input[type="datetime-local"]:focus,
     select:focus {
@@ -250,12 +265,14 @@ export class FeedingFormDialog extends LitElement {
     .radio-group {
       display: flex;
       gap: 1.5rem;
+      flex-wrap: wrap;
     }
 
     .radio-option {
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      min-width: 0;
     }
 
     input[type="radio"] {
