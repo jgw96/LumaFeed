@@ -2,6 +2,8 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state, query } from 'lit/decorators.js';
 
 import type { FeedingLog } from '../types/feeding-log.js';
+import type { AppSettings } from '../services/settings-service.js';
+import { settingsService } from '../services/settings-service.js';
 
 import '../components/app-toast.js';
 import '../components/feeding-log-list.js';
@@ -160,6 +162,9 @@ export class HomePage extends LitElement {
   @state()
   private hasLoadedInitialData: boolean = false;
 
+  @state()
+  private settings: AppSettings | null = null;
+
   @query('feeding-form-dialog')
   private dialog!: FeedingFormDialog;
 
@@ -172,13 +177,32 @@ export class HomePage extends LitElement {
   private feedingDialogLoaded = false;
   private confirmDialogLoaded = false;
 
+  private readonly handleSettingsChanged = (event: Event) => {
+    const detail = (event as CustomEvent<AppSettings>).detail;
+    if (!detail) {
+      return;
+    }
+    this.settings = detail;
+  };
   async connectedCallback() {
     super.connectedCallback();
+    await this.loadSettings();
+    window.addEventListener('feeding-tracker-settings-changed', this.handleSettingsChanged);
     await this.loadLogs();
 
     const queryParams = new URLSearchParams(window.location.search);
     if (queryParams.get('startfeeding')) {
       await this.handleAddClick();
+    }
+  }
+
+  private async loadSettings(): Promise<void> {
+    try {
+      this.settings = await settingsService.getSettings();
+    window.removeEventListener('feeding-tracker-settings-changed', this.handleSettingsChanged);
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+      this.settings = null;
     }
   }
 
@@ -265,12 +289,21 @@ export class HomePage extends LitElement {
   }
 
   private async maybeShowNextFeedNotification(log: FeedingLog) {
+    if (!this.settings) {
+      await this.loadSettings();
+    }
+
+    if (this.settings?.enableNextFeedReminder === false) {
+      return;
+    }
+
     const { showNextFeedNotification } = await import('../utils/feed-notifications.js');
     await showNextFeedNotification(log);
   }
 
   render() {
     const shouldShowSummary = this.hasLoadedInitialData && this.logs.length > 0;
+    const showAiSummary = this.settings?.showAiSummaryCard !== false;
 
     return html`
       <div class="container">
@@ -279,6 +312,7 @@ export class HomePage extends LitElement {
               <feeding-summary-card
                 .logs=${this.logs}
                 .loading=${this.loading}
+                .showAiSummary=${showAiSummary}
               ></feeding-summary-card>
             `
           : null}

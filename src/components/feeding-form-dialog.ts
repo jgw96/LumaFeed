@@ -1,7 +1,13 @@
 import { html, css, PropertyValues } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { calculateNextFeedTime, type FeedingLog, type UnitType } from '../types/feeding-log.js';
-import { settingsService } from '../services/settings-service.js';
+import {
+  settingsService,
+  DEFAULT_FEED_TYPE,
+  DEFAULT_FEED_UNIT,
+  DEFAULT_BOTTLE_FED,
+} from '../services/settings-service.js';
+import type { AppSettings } from '../services/settings-service.js';
 import { BaseModalDialog } from './base-modal-dialog.js';
 
 interface WakeLockSentinelLike extends EventTarget {
@@ -519,6 +525,26 @@ export class FeedingFormDialog extends BaseModalDialog {
 
   private wakeLockVisibilityListenerAttached = false;
 
+  private preferredFeedType: 'formula' | 'milk' = DEFAULT_FEED_TYPE;
+  private preferredUnit: UnitType = DEFAULT_FEED_UNIT;
+  private preferredBottleFed: boolean = DEFAULT_BOTTLE_FED;
+  private readonly handleSettingsChanged = (event: Event) => {
+    const detail = (event as CustomEvent<AppSettings>).detail;
+    if (!detail) {
+      return;
+    }
+
+    this.preferredFeedType = detail.defaultFeedType;
+    this.preferredUnit = detail.defaultFeedUnit;
+    this.preferredBottleFed = detail.defaultBottleFed;
+
+    if (this.view === 'start') {
+      this.feedType = this.preferredFeedType;
+      this.unit = this.preferredUnit;
+      this.isBottleFed = this.preferredBottleFed;
+    }
+  };
+
   private readonly handleWakeLockRelease = () => {
     if (this.wakeLockSentinel) {
       this.wakeLockSentinel.removeEventListener('release', this.handleWakeLockRelease);
@@ -540,6 +566,12 @@ export class FeedingFormDialog extends BaseModalDialog {
   constructor() {
     super();
     this.resetForm();
+  }
+
+  connectedCallback(): void {
+    super.connectedCallback();
+    window.addEventListener('feeding-tracker-settings-changed', this.handleSettingsChanged);
+    void this.loadPreferenceDefaults();
   }
 
   protected override resetDialogState(): void {
@@ -717,6 +749,7 @@ export class FeedingFormDialog extends BaseModalDialog {
   disconnectedCallback(): void {
     this.dialog?.removeEventListener('cancel', this.handleDialogCancel);
     this.clearTimer();
+    window.removeEventListener('feeding-tracker-settings-changed', this.handleSettingsChanged);
     super.disconnectedCallback();
   }
 
@@ -807,14 +840,31 @@ export class FeedingFormDialog extends BaseModalDialog {
   }
 
   private resetForm() {
-    this.feedType = 'formula';
+    this.feedType = this.preferredFeedType;
     this.amount = 0;
-    this.unit = 'ml';
-    this.isBottleFed = true;
+    this.unit = this.preferredUnit;
+    this.isBottleFed = this.preferredBottleFed;
     this.view = 'start';
     this.isManualMode = false;
     this.clearTimer();
     this.setDefaultTimes();
+  }
+
+  private async loadPreferenceDefaults(): Promise<void> {
+    try {
+      const settings = await settingsService.getSettings();
+      this.preferredFeedType = settings.defaultFeedType;
+      this.preferredUnit = settings.defaultFeedUnit;
+      this.preferredBottleFed = settings.defaultBottleFed;
+
+      if (this.view === 'start') {
+        this.feedType = this.preferredFeedType;
+        this.unit = this.preferredUnit;
+        this.isBottleFed = this.preferredBottleFed;
+      }
+    } catch (error) {
+      console.error('[feeding-form-dialog] Failed to load preference defaults', error);
+    }
   }
 
   private async handleSubmit(e: Event) {

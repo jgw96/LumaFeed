@@ -51,19 +51,7 @@ describe('SettingsPage', () => {
     input!.value = '210';
     input!.dispatchEvent(new Event('input', { bubbles: true }));
 
-    const form = queryShadow<HTMLFormElement>(settingsPage, 'form');
-    expect(form).toBeTruthy();
-
-    form!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-
-    await waitFor(
-      () => {
-        const status = queryShadow(settingsPage, '.status');
-        return status?.textContent?.includes('Settings saved') ?? false;
-      },
-      3000,
-      'Settings did not report a successful save'
-    );
+    await new Promise((resolve) => setTimeout(resolve, 600));
 
     const interval = await settingsService.getDefaultFeedIntervalMinutes();
     expect(interval).toBe(210);

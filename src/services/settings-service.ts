@@ -1,12 +1,23 @@
-import { DEFAULT_NEXT_FEED_INTERVAL_MINUTES } from '../types/feeding-log.js';
+import { DEFAULT_NEXT_FEED_INTERVAL_MINUTES, type UnitType } from '../types/feeding-log.js';
 
 export interface AppSettings {
   defaultFeedIntervalMinutes: number;
+  enableNextFeedReminder: boolean;
+  defaultFeedUnit: UnitType;
+  defaultFeedType: 'formula' | 'milk';
+  defaultBottleFed: boolean;
+  showAiSummaryCard: boolean;
 }
 
 export const MIN_FEED_INTERVAL_MINUTES = 60;
 export const MAX_FEED_INTERVAL_MINUTES = 360;
 export const FEED_INTERVAL_STEP_MINUTES = 15;
+
+export const DEFAULT_ENABLE_NEXT_FEED_REMINDER = true;
+export const DEFAULT_FEED_UNIT: UnitType = 'ml';
+export const DEFAULT_FEED_TYPE: 'formula' | 'milk' = 'formula';
+export const DEFAULT_BOTTLE_FED = true;
+export const DEFAULT_SHOW_AI_SUMMARY_CARD = true;
 
 const SETTINGS_STORAGE_KEY = 'feeding-tracker-settings';
 
@@ -30,7 +41,24 @@ class SettingsService {
   private get defaults(): AppSettings {
     return {
       defaultFeedIntervalMinutes: DEFAULT_NEXT_FEED_INTERVAL_MINUTES,
+      enableNextFeedReminder: DEFAULT_ENABLE_NEXT_FEED_REMINDER,
+      defaultFeedUnit: DEFAULT_FEED_UNIT,
+      defaultFeedType: DEFAULT_FEED_TYPE,
+      defaultBottleFed: DEFAULT_BOTTLE_FED,
+      showAiSummaryCard: DEFAULT_SHOW_AI_SUMMARY_CARD,
     };
+  }
+
+  private normalizeFeedType(value: unknown): 'formula' | 'milk' {
+    return value === 'milk' ? 'milk' : DEFAULT_FEED_TYPE;
+  }
+
+  private normalizeFeedUnit(value: unknown): UnitType {
+    return value === 'oz' ? 'oz' : DEFAULT_FEED_UNIT;
+  }
+
+  private normalizeBoolean(value: unknown, fallback: boolean): boolean {
+    return typeof value === 'boolean' ? value : fallback;
   }
 
   private readFromStorage(): AppSettings {
@@ -52,6 +80,17 @@ class SettingsService {
 
       return {
         defaultFeedIntervalMinutes: clampInterval(interval),
+        enableNextFeedReminder: this.normalizeBoolean(
+          parsed.enableNextFeedReminder,
+          DEFAULT_ENABLE_NEXT_FEED_REMINDER
+        ),
+        defaultFeedUnit: this.normalizeFeedUnit(parsed.defaultFeedUnit),
+        defaultFeedType: this.normalizeFeedType(parsed.defaultFeedType),
+        defaultBottleFed: this.normalizeBoolean(parsed.defaultBottleFed, DEFAULT_BOTTLE_FED),
+        showAiSummaryCard: this.normalizeBoolean(
+          parsed.showAiSummaryCard,
+          DEFAULT_SHOW_AI_SUMMARY_CARD
+        ),
       } satisfies AppSettings;
     } catch (error) {
       console.error('Failed to parse settings from storage, resetting to defaults.', error);
@@ -94,10 +133,39 @@ class SettingsService {
           ? partial.defaultFeedIntervalMinutes
           : current.defaultFeedIntervalMinutes
       ),
+      enableNextFeedReminder: this.normalizeBoolean(
+        partial.enableNextFeedReminder,
+        current.enableNextFeedReminder
+      ),
+      defaultFeedUnit: this.normalizeFeedUnit(
+        typeof partial.defaultFeedUnit === 'string'
+          ? partial.defaultFeedUnit
+          : current.defaultFeedUnit
+      ),
+      defaultFeedType: this.normalizeFeedType(
+        typeof partial.defaultFeedType === 'string'
+          ? partial.defaultFeedType
+          : current.defaultFeedType
+      ),
+      defaultBottleFed: this.normalizeBoolean(
+        partial.defaultBottleFed,
+        current.defaultBottleFed
+      ),
+      showAiSummaryCard: this.normalizeBoolean(
+        partial.showAiSummaryCard,
+        current.showAiSummaryCard
+      ),
     };
 
     this.cache = next;
     this.writeToStorage(next);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent<AppSettings>('feeding-tracker-settings-changed', {
+          detail: next,
+        })
+      );
+    }
     return next;
   }
 

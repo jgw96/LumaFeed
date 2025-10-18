@@ -1,21 +1,12 @@
 import { LitElement, html, css, nothing } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import type {
-  MLCEngineInterface as WebLlmEngine,
-  WebLlmChatCompletionMessage,
-  WebLlmInitProgress,
-} from '@mlc-ai/web-llm';
 import type { FeedingLog } from '../types/feeding-log.js';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
-const AI_SUMMARY_SYSTEM_PROMPT = `You are an encouraging infant-feeding assistant. Summarize the caregiver's last 24 hours of bottle feeds in UNDER 70 WORDS spread across no more than two sentences. Highlight positives, mention any gentle watch-outs, and remind them to consult a pediatrician for medical decisions.`;
-const AI_FEEDING_GUIDELINES = `General reference ranges (bottle feeding): 0-1 month: 60-90 ml (2-3 oz) every 3-4 hours; 1-2 months: 90-120 ml (3-4 oz) every 3-4 hours; 2-4 months: 120-150 ml (4-5 oz) every 3-4 hours. Babies vary - use the data as a guide, not a diagnosis.`;
 const AI_DOWNLOAD_MESSAGE =
-  'Chrome will download the on-device model after you press Generate. Keep this tab open until it finishes.';
-const AI_SYSTEM_CONTEXT = `${AI_SUMMARY_SYSTEM_PROMPT}\n\nReference guidance:\n${AI_FEEDING_GUIDELINES}`;
-const WEBLLM_MODEL_ID = 'SmolLM2-360M-Instruct-q4f16_1-MLC';
+  'Chrome will download the summary helper after you tap Generate. Keep this tab open until it finishes.';
 const WEBLLM_PRELOAD_MESSAGE =
-  'Runs locally with SmolLM after a quick one-time download. Tap Generate to get started.';
+  'Runs on this device after a quick one-time download. Tap Generate to get started.';
 
 const AI_EXPECTED_MODALITIES = {
   expectedInputs: [{ type: 'text', languages: ['en'] }],
@@ -149,8 +140,14 @@ export class FeedingAiSummaryCard extends LitElement {
 
   private session: LanguageModelSession | null = null;
   private lastSummaryLogIds: string[] = [];
-  private webLlmEngine: WebLlmEngine | null = null;
-  private webLlmInitPromise: Promise<WebLlmEngine> | null = null;
+  private summaryHelpersModule: typeof import('../utils/feeding-ai-summary-utils.js') | null = null;
+  private summaryHelpersPromise:
+    | Promise<typeof import('../utils/feeding-ai-summary-utils.js')>
+    | null = null;
+  private webLlmModule: typeof import('../utils/feeding-ai-web-llm.js') | null = null;
+  private webLlmModulePromise:
+    | Promise<typeof import('../utils/feeding-ai-web-llm.js')>
+    | null = null;
 
   connectedCallback() {
     super.connectedCallback();
@@ -192,7 +189,7 @@ export class FeedingAiSummaryCard extends LitElement {
         <div class="section-body">
           <h2 id="ai-summary-title" class="section-title">AI Summary</h2>
           <p class="section-description">
-            Get a quick, on-device recap of the last day. Chrome keeps this data local.
+            Get a quick recap of the past day. Your info stays on this device.
           </p>
         </div>
         <button @click=${this.handleGenerateClick} ?disabled=${disabled}>
@@ -201,14 +198,14 @@ export class FeedingAiSummaryCard extends LitElement {
         ${!this.supported
           ? html`<p class="status">
               ${this.availabilityMessage ??
-              'Update to the latest Chrome on an eligible device to use AI summaries.'}
+              'Update Chrome on a supported device to use AI summaries.'}
             </p>`
           : nothing}
         ${this.supported && this.availabilityMessage
           ? html`<p class="status">${this.availabilityMessage}</p>`
           : nothing}
         ${this.supported && recentLogs.length === 0
-          ? html`<p class="status">Add a feeding in the last 24 hours to unlock this summary.</p>`
+          ? html`<p class="status">Log a feeding in the last 24 hours to unlock this summary.</p>`
           : nothing}
         ${this.error ? html`<p class="error" role="alert">${this.error}</p>` : nothing}
         ${this.summary
@@ -230,105 +227,21 @@ export class FeedingAiSummaryCard extends LitElement {
     return this.logs.filter((log) => typeof log.startTime === 'number' && log.startTime >= cutoff);
   }
 
-  private computeStats(logs: FeedingLog[]) {
-    const totalMl = logs.reduce((sum, log) => sum + (log.amountMl ?? 0), 0);
-    const totalOz = logs.reduce((sum, log) => sum + (log.amountOz ?? 0), 0);
-    const totalDuration = logs.reduce((sum, log) => sum + (log.durationMinutes ?? 0), 0);
-    const sorted = [...logs].sort((a, b) => a.startTime - b.startTime);
-
-    let accumulatedIntervals = 0;
-    for (let i = 1; i < sorted.length; i += 1) {
-      accumulatedIntervals += sorted[i].startTime - sorted[i - 1].startTime;
+  private async getSummaryHelpers() {
+    if (this.summaryHelpersModule) {
+      return this.summaryHelpersModule;
     }
 
-    const averageIntervalMinutes =
-      sorted.length > 1 ? accumulatedIntervals / (sorted.length - 1) / 60_000 : null;
-
-    return {
-      feedCount: logs.length,
-      totalMl,
-      totalOz,
-      averageMl: logs.length ? totalMl / logs.length : 0,
-      averageOz: logs.length ? totalOz / logs.length : 0,
-      averageDuration: logs.length ? totalDuration / logs.length : 0,
-      averageIntervalMinutes,
-      bottleFeeds: logs.filter((log) => log.isBottleFed).length,
-      nursingFeeds: logs.filter((log) => !log.isBottleFed).length,
-    };
-  }
-
-  private formatNumber(value: number, decimals: number = 1): string {
-    if (!Number.isFinite(value)) {
-      return '0';
+    if (!this.summaryHelpersPromise) {
+      this.summaryHelpersPromise = import('../utils/feeding-ai-summary-utils.js');
     }
 
-    const formatter = new Intl.NumberFormat(undefined, {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    });
-    return formatter.format(value);
-  }
-
-  private formatMinutes(value: number | null): string {
-    if (!Number.isFinite(value) || value === null) {
-      return 'N/A';
+    try {
+      this.summaryHelpersModule = await this.summaryHelpersPromise;
+      return this.summaryHelpersModule;
+    } finally {
+      this.summaryHelpersPromise = null;
     }
-
-    const rounded = Math.round(value);
-    const hours = Math.floor(rounded / 60);
-    const minutes = rounded % 60;
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-
-    return `${minutes}m`;
-  }
-
-  private formatClock(timestamp: number): string {
-    const formatter = new Intl.DateTimeFormat(undefined, {
-      hour: 'numeric',
-      minute: '2-digit',
-    });
-
-    return formatter.format(new Date(timestamp));
-  }
-
-  private enforceSummaryLength(text: string, maxWords: number = 70): string {
-    const words = text.trim().split(/\s+/).filter(Boolean);
-    if (words.length <= maxWords) {
-      return text.trim();
-    }
-
-    const shortened = words.slice(0, maxWords).join(' ');
-    return `${shortened}…`;
-  }
-
-  private buildPrompt(logs: FeedingLog[]): string {
-    const stats = this.computeStats(logs);
-    const details = logs
-      .slice()
-      .sort((a, b) => a.startTime - b.startTime)
-      .map((log) => {
-        const amountMl = this.formatNumber(log.amountMl ?? 0, 0);
-        const amountOz = this.formatNumber(log.amountOz ?? 0, 1);
-        const duration = this.formatMinutes(log.durationMinutes ?? null);
-        const label = log.feedType === 'formula' ? 'Formula bottle' : 'Breast milk';
-        const timing = this.formatClock(log.startTime);
-        return `- ${timing}: ${label}, ${amountMl} ml (${amountOz} oz), duration ${duration}`;
-      })
-      .join('\n');
-
-    const averageInterval = this.formatMinutes(stats.averageIntervalMinutes);
-    const averageDuration = this.formatMinutes(stats.averageDuration);
-
-    return [
-      'You are helping a caregiver review feeding logs for the last 24 hours.',
-      `Reference guidance: ${AI_FEEDING_GUIDELINES}`,
-      `Summary statistics:\n- Total feeds: ${stats.feedCount}\n- Bottle feeds: ${stats.bottleFeeds}\n- Nursing sessions: ${stats.nursingFeeds}\n- Total intake: ${this.formatNumber(stats.totalMl, 0)} ml (${this.formatNumber(stats.totalOz, 1)} oz)\n- Average intake per feed: ${this.formatNumber(stats.averageMl, 0)} ml (${this.formatNumber(stats.averageOz, 1)} oz)\n- Average duration: ${averageDuration}\n- Average interval: ${averageInterval}`,
-      `Detailed entries:\n${details}`,
-      'Create a short, upbeat summary mentioning positive trends and any gentle watch-outs. End with a reminder that caregivers should consult healthcare professionals for specific advice.',
-    ].join('\n\n');
   }
 
   private applyAvailabilityState(state: LanguageModelAvailability) {
@@ -339,7 +252,7 @@ export class FeedingAiSummaryCard extends LitElement {
 
     if (state === 'unavailable') {
       this.supported = false;
-      this.availabilityMessage = 'AI summaries are not supported on this device yet.';
+  this.availabilityMessage = "AI summaries aren't available on this device yet.";
       this.session = null;
       return;
     }
@@ -357,7 +270,7 @@ export class FeedingAiSummaryCard extends LitElement {
         !this.availabilityMessage ||
         !this.availabilityMessage.toLowerCase().startsWith('downloading')
       ) {
-        this.availabilityMessage = 'Downloading the on-device model...';
+  this.availabilityMessage = 'Downloading the summary helper...';
       }
       return;
     }
@@ -368,64 +281,67 @@ export class FeedingAiSummaryCard extends LitElement {
   private updateDownloadProgress(value: number) {
     const clamped = Math.max(0, Math.min(1, value));
     this.availabilityState = 'downloading';
-    this.availabilityMessage = `Downloading on-device model: ${Math.round(clamped * 100)}%`;
+  this.availabilityMessage = `Downloading summary helper: ${Math.round(clamped * 100)}%`;
   }
 
-  private updateWebLlmProgress(progress: WebLlmInitProgress) {
-    if (typeof progress.progress === 'number' && Number.isFinite(progress.progress)) {
-      this.availabilityMessage = `Loading SmolLM locally: ${Math.round(progress.progress * 100)}%`;
+  private updateWebLlmProgress(progress: { progress?: number | null; text?: string | null }) {
+    if (typeof progress?.progress === 'number' && Number.isFinite(progress.progress)) {
+  this.availabilityMessage = `Setting up the local summary: ${Math.round(progress.progress * 100)}%`;
       return;
     }
 
-    if (progress.text) {
+    if (progress?.text) {
       this.availabilityMessage = progress.text;
       return;
     }
 
-    this.availabilityMessage = 'Preparing local model...';
+  this.availabilityMessage = 'Getting things ready...';
   }
 
-  private async ensureWebLlmEngine(): Promise<WebLlmEngine> {
-    if (this.webLlmEngine) {
-      return this.webLlmEngine;
+  private async getWebLlmModule() {
+    if (this.webLlmModule) {
+      return this.webLlmModule;
     }
 
-    if (this.webLlmInitPromise) {
-      return this.webLlmInitPromise;
+    if (!this.webLlmModulePromise) {
+      this.webLlmModulePromise = import('../utils/feeding-ai-web-llm.js');
     }
+
+    try {
+      this.webLlmModule = await this.webLlmModulePromise;
+      return this.webLlmModule;
+    } finally {
+      this.webLlmModulePromise = null;
+    }
+  }
+
+  private async ensureWebLlmReady(): Promise<void> {
+    const module = await this.getWebLlmModule();
 
     this.webLlmInitializing = true;
     if (!this.availabilityMessage || this.availabilityMessage === WEBLLM_PRELOAD_MESSAGE) {
-      this.availabilityMessage = 'Starting local model download...';
+      this.availabilityMessage = 'Getting the local summary ready...';
     }
 
-    this.webLlmInitPromise = (async () => {
-      try {
-        const { CreateMLCEngine } = await import('@mlc-ai/web-llm');
-        const engine = await CreateMLCEngine(WEBLLM_MODEL_ID, {
-          initProgressCallback: (progress) => this.updateWebLlmProgress(progress),
-        });
-        this.webLlmEngine = engine;
-        this.supported = true;
-        this.availabilityMessage = 'AI summaries run locally with SmolLM.';
-        return engine;
-      } catch (error) {
-        console.warn('WebLLM initialization failed', error);
-        this.webLlmEngine = null;
-        this.supported = false;
-        this.aiMode = 'unsupported';
-        this.availabilityMessage =
-          error instanceof Error ? `Local AI unavailable: ${error.message}` : 'Local AI unavailable.';
-        throw error;
-      } finally {
-        this.webLlmInitializing = false;
-      }
-    })();
-
     try {
-      return await this.webLlmInitPromise;
+      await module.ensureWebLlmEngine({
+        onProgress: (progress) => this.updateWebLlmProgress(progress),
+        onStatus: (message) => {
+          this.supported = true;
+          this.availabilityMessage = message;
+        },
+      });
+    } catch (error) {
+      console.warn('WebLLM initialization failed', error);
+      this.supported = false;
+      this.aiMode = 'unsupported';
+      this.availabilityMessage =
+        error instanceof Error
+          ? `Local summary unavailable right now: ${error.message}`
+          : 'Local summary unavailable right now.';
+      throw error;
     } finally {
-      this.webLlmInitPromise = null;
+      this.webLlmInitializing = false;
     }
   }
 
@@ -434,7 +350,7 @@ export class FeedingAiSummaryCard extends LitElement {
     this.availabilityState = null;
     this.session = null;
 
-    if (!this.webLlmEngine && !this.webLlmInitializing) {
+    if (!this.webLlmInitializing && !this.availabilityMessage) {
       this.availabilityMessage = WEBLLM_PRELOAD_MESSAGE;
     }
 
@@ -442,7 +358,7 @@ export class FeedingAiSummaryCard extends LitElement {
 
     if (eagerLoad) {
       try {
-        await this.ensureWebLlmEngine();
+  await this.ensureWebLlmReady();
       } catch (error) {
         console.warn('WebLLM eager load failed', error);
       }
@@ -455,9 +371,10 @@ export class FeedingAiSummaryCard extends LitElement {
     }
 
     if (typeof LanguageModel === 'undefined') {
-      throw new Error('Chrome built-in Prompt API is not available yet.');
+      throw new Error("Chrome's built-in AI isn't available yet.");
     }
 
+    const { AI_SYSTEM_CONTEXT } = await this.getSummaryHelpers();
     const initialPrompts: LanguageModelMessage[] = [{ role: 'system', content: AI_SYSTEM_CONTEXT }];
 
     const options: LanguageModelCreateOptions = {
@@ -485,34 +402,45 @@ export class FeedingAiSummaryCard extends LitElement {
 
   private async generateWithPromptApi(logs: FeedingLog[]): Promise<string> {
     const session = await this.ensureSession();
-    const prompt = this.buildPrompt(logs);
+    const { buildAiSummaryPrompt } = await this.getSummaryHelpers();
+    const prompt = buildAiSummaryPrompt(logs);
     return session.prompt([{ role: 'user', content: prompt }]);
   }
 
   private async generateWithWebLlm(logs: FeedingLog[]): Promise<string> {
-    const engine = await this.ensureWebLlmEngine();
-    if (!engine?.chat?.completions?.create) {
-      throw new Error('Local model interface is not available.');
+    const module = await this.getWebLlmModule();
+    const { buildAiSummaryPrompt, AI_SYSTEM_CONTEXT } = await this.getSummaryHelpers();
+
+    this.webLlmInitializing = true;
+    if (!this.availabilityMessage || this.availabilityMessage === WEBLLM_PRELOAD_MESSAGE) {
+      this.availabilityMessage = 'Getting the local summary ready...';
     }
 
-    const prompt = this.buildPrompt(logs);
-    const messages: WebLlmChatCompletionMessage[] = [
-      { role: 'system', content: AI_SYSTEM_CONTEXT },
-      { role: 'user', content: prompt },
-    ];
-
-    const result = await engine.chat.completions.create({
-      messages,
-      max_tokens: 256,
-      temperature: 0.6,
-    });
-
-    const content = result.choices?.[0]?.message?.content?.trim();
-    if (!content) {
-      throw new Error('Local model did not return a summary.');
+    try {
+      const prompt = buildAiSummaryPrompt(logs);
+      return await module.generateSummaryWithWebLlm({
+        prompt,
+        systemContext: AI_SYSTEM_CONTEXT,
+        callbacks: {
+          onProgress: (progress) => this.updateWebLlmProgress(progress),
+          onStatus: (message) => {
+            this.supported = true;
+            this.availabilityMessage = message;
+          },
+        },
+      });
+    } catch (error) {
+      console.warn('WebLLM summary generation failed', error);
+      this.supported = false;
+      this.aiMode = 'unsupported';
+      this.availabilityMessage =
+        error instanceof Error
+          ? `Local summary unavailable right now: ${error.message}`
+          : 'Local summary unavailable right now.';
+      throw error;
+    } finally {
+      this.webLlmInitializing = false;
     }
-
-    return content;
   }
 
   private async handleGenerateClick() {
@@ -524,12 +452,12 @@ export class FeedingAiSummaryCard extends LitElement {
 
     const logs = this.getLast24HourLogs();
     if (logs.length === 0) {
-      this.error = 'Add at least one feeding in the last 24 hours to generate a summary.';
+  this.error = 'Log at least one feeding in the last 24 hours to see a summary.';
       return;
     }
 
     if (!this.supported) {
-      this.error = this.availabilityMessage ?? 'AI summaries are not supported on this device yet.';
+  this.error = this.availabilityMessage ?? "AI summaries aren't available on this device yet.";
       return;
     }
 
@@ -558,14 +486,15 @@ export class FeedingAiSummaryCard extends LitElement {
         response = await this.generateWithWebLlm(logs);
       }
 
-      this.summary = this.enforceSummaryLength(response.trim());
+      const { enforceAiSummaryLength } = await this.getSummaryHelpers();
+      this.summary = enforceAiSummaryLength(response.trim());
       this.lastSummaryLogIds = logs.map((log) => log.id);
     } catch (error) {
       console.error('AI summary generation failed', error);
       this.summary = null;
       if (error instanceof DOMException && error.name === 'NotAllowedError') {
         this.error =
-          'Chrome needs a user gesture to use the on-device model. Please click Generate again after interacting with the page.';
+          'Chrome needs you to interact with the page first. Tap anywhere, then try Generate again.';
       } else if (error instanceof Error) {
         this.error = error.message;
       } else {
@@ -604,9 +533,9 @@ export class FeedingAiSummaryCard extends LitElement {
       console.warn('AI availability check failed', error);
       await this.prepareWebLlmSupport();
       if (this.aiMode !== 'web-llm') {
-        this.supported = false;
-        this.availabilityState = null;
-        this.availabilityMessage = 'Could not verify AI support.';
+  this.supported = false;
+  this.availabilityState = null;
+  this.availabilityMessage = "We couldn't check if summaries are available right now.";
       }
     }
   }

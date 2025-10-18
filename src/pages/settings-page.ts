@@ -1,12 +1,20 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { customElement, state, query } from 'lit/decorators.js';
 import {
   settingsService,
   MIN_FEED_INTERVAL_MINUTES,
   MAX_FEED_INTERVAL_MINUTES,
   FEED_INTERVAL_STEP_MINUTES,
+  DEFAULT_ENABLE_NEXT_FEED_REMINDER,
+  DEFAULT_FEED_UNIT,
+  DEFAULT_FEED_TYPE,
+  DEFAULT_BOTTLE_FED,
+  DEFAULT_SHOW_AI_SUMMARY_CARD,
 } from '../services/settings-service.js';
-import { DEFAULT_NEXT_FEED_INTERVAL_MINUTES } from '../types/feeding-log.js';
+import type { AppSettings } from '../services/settings-service.js';
+import type { AppToast } from '../components/app-toast.js';
+import '../components/app-toast.js';
+import { DEFAULT_NEXT_FEED_INTERVAL_MINUTES, type UnitType } from '../types/feeding-log.js';
 
 @customElement('settings-page')
 export class SettingsPage extends LitElement {
@@ -25,6 +33,21 @@ export class SettingsPage extends LitElement {
       gap: 1.5rem;
     }
 
+    .hero {
+      display: grid;
+      gap: 0.75rem;
+      padding: 2rem;
+      border-radius: var(--md-sys-shape-corner-extra-large);
+      background: linear-gradient(
+          135deg,
+          color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent),
+          transparent 45%
+        ),
+        var(--md-sys-color-surface-container-highest);
+      border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 65%, transparent);
+      box-shadow: var(--md-sys-elevation-2);
+    }
+
     h1 {
       color: var(--md-sys-color-on-background);
       margin: 0 0 0.5rem;
@@ -41,17 +64,43 @@ export class SettingsPage extends LitElement {
     }
 
     form {
-      background: var(--md-sys-color-surface-container-low);
-      padding: 1.75rem;
-      border-radius: var(--md-sys-shape-corner-extra-large);
-      border: 1px solid var(--md-sys-color-outline-variant);
       display: grid;
-      gap: 1.25rem;
+      gap: 2rem;
     }
 
     .form-group {
       display: grid;
       gap: 0.5rem;
+    }
+
+    .section {
+      display: grid;
+      gap: 1.25rem;
+      padding: 1.5rem;
+      border-radius: var(--md-sys-shape-corner-extra-large);
+      background: var(--md-sys-color-surface-container-highest);
+      border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 65%, transparent);
+      box-shadow: var(--md-sys-elevation-1);
+    }
+
+    .section__header {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .section__title {
+      margin: 0;
+      color: var(--md-sys-color-on-surface);
+      font-size: var(--md-sys-typescale-title-large-font-size);
+      font-weight: var(--md-sys-typescale-title-large-font-weight);
+      line-height: var(--md-sys-typescale-title-large-line-height);
+    }
+
+    .section__description {
+      margin: 0;
+      color: var(--md-sys-color-on-surface-variant);
+      font-size: var(--md-sys-typescale-body-medium-font-size);
+      line-height: var(--md-sys-typescale-body-medium-line-height);
     }
 
     label {
@@ -80,6 +129,137 @@ export class SettingsPage extends LitElement {
       color: var(--md-sys-color-on-surface-variant);
       font-size: var(--md-sys-typescale-body-medium-font-size);
       line-height: 1.4;
+    }
+
+    .switch {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      border-radius: var(--md-sys-shape-corner-large);
+      background: var(--md-sys-color-surface-container-highest);
+      border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 65%, transparent);
+    }
+
+    .switch__label {
+      display: grid;
+      gap: 0.25rem;
+    }
+
+    .switch__title {
+      font-size: var(--md-sys-typescale-title-small-font-size);
+      font-weight: var(--md-sys-typescale-title-small-font-weight);
+      color: var(--md-sys-color-on-surface);
+    }
+
+    .switch__supporting {
+      font-size: var(--md-sys-typescale-body-small-font-size);
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .switch__control {
+      position: relative;
+      width: 56px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+
+    .switch__input {
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      position: absolute;
+      inset: 0;
+      cursor: pointer;
+    }
+
+    .switch__track {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--md-sys-color-outline) 24%, transparent);
+      transition: background-color 0.25s ease;
+    }
+
+    .switch__thumb {
+      position: absolute;
+      top: 4px;
+      left: 6px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--md-sys-color-on-surface);
+      box-shadow: var(--md-sys-elevation-1);
+      transition:
+        transform 0.25s ease,
+        background-color 0.25s ease;
+    }
+
+    .switch[data-checked] .switch__track {
+      background: var(--md-sys-color-primary);
+    }
+
+    .switch[data-checked] .switch__thumb {
+      background: var(--md-sys-color-on-primary);
+      transform: translateX(24px);
+      box-shadow: var(--md-sys-elevation-2);
+    }
+
+    .switch[data-disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .switch[data-disabled] .switch__input {
+      cursor: not-allowed;
+    }
+
+    .choice-group {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .choice-pill {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 999px;
+      background: var(--md-sys-color-surface-container);
+      color: var(--md-sys-color-on-surface-variant);
+      border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 65%, transparent);
+      font-size: var(--md-sys-typescale-body-medium-font-size);
+      font-weight: 500;
+      cursor: pointer;
+      transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
+    }
+
+    .choice-pill[data-checked] {
+      background: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+      box-shadow: var(--md-sys-elevation-1);
+      border-color: transparent;
+    }
+
+    .choice-pill[data-disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .choice-pill input[type='radio'] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      margin: 0;
+      cursor: inherit;
     }
 
     .actions {
@@ -143,16 +323,42 @@ export class SettingsPage extends LitElement {
   @state()
   private statusMessage: { type: 'success' | 'error'; text: string } | null = null;
 
+  @state()
+  private enableNextFeedReminder = DEFAULT_ENABLE_NEXT_FEED_REMINDER;
+
+  @state()
+  private defaultUnit: UnitType = DEFAULT_FEED_UNIT;
+
+  @state()
+  private defaultFeedType: 'formula' | 'milk' = DEFAULT_FEED_TYPE;
+
+  @state()
+  private defaultBottleFed: boolean = DEFAULT_BOTTLE_FED;
+
+  @state()
+  private showAiSummaryCard = DEFAULT_SHOW_AI_SUMMARY_CARD;
+
+  @query('app-toast')
+  private toastElement?: AppToast;
+
+  private pendingUpdate: Partial<AppSettings> = {};
+  private saveTimeoutId: number | null = null;
+
   connectedCallback(): void {
     super.connectedCallback();
     this.loadSettings();
   }
 
+  disconnectedCallback(): void {
+    this.clearSaveTimeout();
+    super.disconnectedCallback();
+  }
+
   private async loadSettings(): Promise<void> {
     this.loading = true;
     try {
-      const { defaultFeedIntervalMinutes } = await settingsService.getSettings();
-      this.defaultInterval = defaultFeedIntervalMinutes;
+      const settings = await settingsService.getSettings();
+      this.applySettings(settings);
       this.statusMessage = null;
     } catch (error) {
       console.error('Failed to load settings.', error);
@@ -161,8 +367,80 @@ export class SettingsPage extends LitElement {
         text: 'Unable to load settings. Using defaults.',
       };
       this.defaultInterval = DEFAULT_NEXT_FEED_INTERVAL_MINUTES;
+      this.enableNextFeedReminder = DEFAULT_ENABLE_NEXT_FEED_REMINDER;
+      this.defaultUnit = DEFAULT_FEED_UNIT;
+      this.defaultFeedType = DEFAULT_FEED_TYPE;
+      this.defaultBottleFed = DEFAULT_BOTTLE_FED;
+      this.showAiSummaryCard = DEFAULT_SHOW_AI_SUMMARY_CARD;
     } finally {
       this.loading = false;
+    }
+  }
+
+  private applySettings(settings: AppSettings): void {
+    this.defaultInterval = settings.defaultFeedIntervalMinutes;
+    this.enableNextFeedReminder = settings.enableNextFeedReminder;
+    this.defaultUnit = settings.defaultFeedUnit;
+    this.defaultFeedType = settings.defaultFeedType;
+    this.defaultBottleFed = settings.defaultBottleFed;
+    this.showAiSummaryCard = settings.showAiSummaryCard;
+  }
+
+  private scheduleSave(partial: Partial<AppSettings>): void {
+    this.pendingUpdate = { ...this.pendingUpdate, ...partial };
+    this.statusMessage = null;
+
+    this.clearSaveTimeout();
+    this.saveTimeoutId = window.setTimeout(() => {
+      this.saveTimeoutId = null;
+      void this.flushPendingSave();
+    }, 300);
+  }
+
+  private async flushPendingSave(): Promise<void> {
+    if (this.saving) {
+      return;
+    }
+
+    const payload = this.pendingUpdate;
+    if (!payload || Object.keys(payload).length === 0) {
+      return;
+    }
+
+    this.pendingUpdate = {};
+    this.saving = true;
+
+    try {
+      const updated = await settingsService.updateSettings(payload);
+      this.applySettings(updated);
+      this.statusMessage = null;
+      await this.toastElement?.show({
+        headline: 'Settings updated',
+        supporting: 'Your preferences are now active.',
+        icon: '✓',
+      });
+    } catch (error) {
+      console.error('Failed to save settings.', error);
+      this.statusMessage = {
+        type: 'error',
+        text: 'Could not save changes. Try again.',
+      };
+    } finally {
+      this.saving = false;
+      if (this.pendingUpdate && Object.keys(this.pendingUpdate).length > 0) {
+        this.clearSaveTimeout();
+        this.saveTimeoutId = window.setTimeout(() => {
+          this.saveTimeoutId = null;
+          void this.flushPendingSave();
+        }, 150);
+      }
+    }
+  }
+
+  private clearSaveTimeout(): void {
+    if (this.saveTimeoutId !== null) {
+      window.clearTimeout(this.saveTimeoutId);
+      this.saveTimeoutId = null;
     }
   }
 
@@ -175,36 +453,48 @@ export class SettingsPage extends LitElement {
     }
 
     this.defaultInterval = value;
-    this.statusMessage = null;
+    this.scheduleSave({ defaultFeedIntervalMinutes: this.defaultInterval });
   }
 
-  private async handleSubmit(event: Event): Promise<void> {
-    event.preventDefault();
-    this.saving = true;
+  private handleReminderToggle(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.enableNextFeedReminder = input.checked;
+    this.scheduleSave({ enableNextFeedReminder: this.enableNextFeedReminder });
+  }
 
-    try {
-      const updated = await settingsService.updateSettings({
-        defaultFeedIntervalMinutes: this.defaultInterval,
-      });
-      this.defaultInterval = updated.defaultFeedIntervalMinutes;
-      this.statusMessage = {
-        type: 'success',
-        text: 'Settings saved. New sessions will use this interval.',
-      };
-    } catch (error) {
-      console.error('Failed to save settings.', error);
-      this.statusMessage = {
-        type: 'error',
-        text: 'Could not save changes. Try again.',
-      };
-    } finally {
-      this.saving = false;
+  private handleAiSummaryToggle(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.showAiSummaryCard = input.checked;
+    this.scheduleSave({ showAiSummaryCard: this.showAiSummaryCard });
+  }
+
+  private handleUnitChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.checked) {
+      this.defaultUnit = input.value as UnitType;
+      this.scheduleSave({ defaultFeedUnit: this.defaultUnit });
+    }
+  }
+
+  private handleFeedTypeChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.checked) {
+      this.defaultFeedType = input.value as 'formula' | 'milk';
+      this.scheduleSave({ defaultFeedType: this.defaultFeedType });
+    }
+  }
+
+  private handleBottleFedChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.checked) {
+      this.defaultBottleFed = input.value === 'true';
+      this.scheduleSave({ defaultBottleFed: this.defaultBottleFed });
     }
   }
 
   private renderStatus() {
     if (!this.statusMessage) {
-      return html`<div class="status" aria-live="polite"></div>`;
+      return null;
     }
 
     return html`
@@ -217,46 +507,228 @@ export class SettingsPage extends LitElement {
   render() {
     return html`
       <div class="container">
-        <div>
+        <div class="hero">
           <h1>Settings</h1>
           <p class="description">
             Adjust how the tracker behaves. Updates apply to future feeding entries.
           </p>
         </div>
 
-        <form @submit=${this.handleSubmit}>
-          <div class="form-group">
-            <label for="default-feed-interval">Default feed interval (minutes)</label>
-            <input
-              id="default-feed-interval"
-              name="default-feed-interval"
-              type="number"
-              min=${MIN_FEED_INTERVAL_MINUTES}
-              max=${MAX_FEED_INTERVAL_MINUTES}
-              step=${FEED_INTERVAL_STEP_MINUTES}
-              .value=${String(this.defaultInterval)}
-              @input=${this.handleIntervalInput}
-              ?disabled=${this.loading || this.saving}
-              required
-            />
-            <p class="helper-text">
-              Choose how far apart feedings are scheduled by default. Minimum
-              ${MIN_FEED_INTERVAL_MINUTES} minutes, maximum ${MAX_FEED_INTERVAL_MINUTES} minutes.
-            </p>
-          </div>
-
+        <form aria-busy=${this.loading || this.saving}>
           ${this.renderStatus()}
+          <section class="section">
+            <div class="section__header">
+              <h2 class="section__title">Feeding rhythm</h2>
+              <p class="section__description">
+                Tune the schedule and reminders used for upcoming feeds.
+              </p>
+            </div>
 
-          <div class="actions">
-            <button type="submit" ?disabled=${this.loading || this.saving}>
-              ${this.saving ? 'Saving…' : 'Save changes'}
-            </button>
-          </div>
+            <div class="form-group">
+              <label for="default-feed-interval">Default feed interval (minutes)</label>
+              <input
+                id="default-feed-interval"
+                name="default-feed-interval"
+                type="number"
+                min=${MIN_FEED_INTERVAL_MINUTES}
+                max=${MAX_FEED_INTERVAL_MINUTES}
+                step=${FEED_INTERVAL_STEP_MINUTES}
+                .value=${String(this.defaultInterval)}
+                @input=${this.handleIntervalInput}
+                ?disabled=${this.loading}
+                required
+              />
+              <p class="helper-text">
+                Choose how far apart feedings are scheduled by default. Minimum
+                ${MIN_FEED_INTERVAL_MINUTES} minutes, maximum
+                ${MAX_FEED_INTERVAL_MINUTES} minutes.
+              </p>
+            </div>
+
+            <label
+              class="switch"
+              ?data-checked=${this.enableNextFeedReminder}
+              ?data-disabled=${this.loading}
+            >
+              <span class="switch__label">
+                <span class="switch__title">Next feed reminder</span>
+                <span class="switch__supporting"
+                  >Show a device notification after saving a feeding.</span
+                >
+              </span>
+              <span class="switch__control">
+                <input
+                  class="switch__input"
+                  type="checkbox"
+                  name="next-feed-reminder"
+                  .checked=${this.enableNextFeedReminder}
+                  @change=${this.handleReminderToggle}
+                  ?disabled=${this.loading}
+                />
+                <span class="switch__track"></span>
+                <span class="switch__thumb"></span>
+              </span>
+            </label>
+          </section>
+
+          <section class="section">
+            <div class="section__header">
+              <h2 class="section__title">Entry defaults</h2>
+              <p class="section__description">
+                Pick the options that should be preselected when starting a new feeding.
+              </p>
+            </div>
+
+            <div class="form-group">
+              <span class="helper-text">Preferred feed type</span>
+              <div class="choice-group" role="radiogroup" aria-label="Default feed type">
+                <label
+                  class="choice-pill"
+                  ?data-checked=${this.defaultFeedType === 'formula'}
+                  ?data-disabled=${this.loading}
+                >
+                  <input
+                    type="radio"
+                    name="default-feed-type"
+                    value="formula"
+                    .checked=${this.defaultFeedType === 'formula'}
+                    @change=${this.handleFeedTypeChange}
+                    ?disabled=${this.loading}
+                  />
+                  Formula
+                </label>
+                <label
+                  class="choice-pill"
+                  ?data-checked=${this.defaultFeedType === 'milk'}
+                  ?data-disabled=${this.loading}
+                >
+                  <input
+                    type="radio"
+                    name="default-feed-type"
+                    value="milk"
+                    .checked=${this.defaultFeedType === 'milk'}
+                    @change=${this.handleFeedTypeChange}
+                    ?disabled=${this.loading}
+                  />
+                  Breast milk
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <span class="helper-text">Preferred unit</span>
+              <div class="choice-group" role="radiogroup" aria-label="Default unit">
+                <label
+                  class="choice-pill"
+                  ?data-checked=${this.defaultUnit === 'ml'}
+                  ?data-disabled=${this.loading}
+                >
+                  <input
+                    type="radio"
+                    name="default-unit"
+                    value="ml"
+                    .checked=${this.defaultUnit === 'ml'}
+                    @change=${this.handleUnitChange}
+                    ?disabled=${this.loading}
+                  />
+                  Milliliters
+                </label>
+                <label
+                  class="choice-pill"
+                  ?data-checked=${this.defaultUnit === 'oz'}
+                  ?data-disabled=${this.loading}
+                >
+                  <input
+                    type="radio"
+                    name="default-unit"
+                    value="oz"
+                    .checked=${this.defaultUnit === 'oz'}
+                    @change=${this.handleUnitChange}
+                    ?disabled=${this.loading}
+                  />
+                  Ounces
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <span class="helper-text">Typical session</span>
+              <div class="choice-group" role="radiogroup" aria-label="Default feeding style">
+                <label
+                  class="choice-pill"
+                  ?data-checked=${this.defaultBottleFed}
+                  ?data-disabled=${this.loading}
+                >
+                  <input
+                    type="radio"
+                    name="default-bottle-fed"
+                    value="true"
+                    .checked=${this.defaultBottleFed}
+                    @change=${this.handleBottleFedChange}
+                    ?disabled=${this.loading}
+                  />
+                  Bottle feeding
+                </label>
+                <label
+                  class="choice-pill"
+                  ?data-checked=${!this.defaultBottleFed}
+                  ?data-disabled=${this.loading}
+                >
+                  <input
+                    type="radio"
+                    name="default-bottle-fed"
+                    value="false"
+                    .checked=${!this.defaultBottleFed}
+                    @change=${this.handleBottleFedChange}
+                    ?disabled=${this.loading}
+                  />
+                  Breast feeding
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section__header">
+              <h2 class="section__title">Insights</h2>
+              <p class="section__description">
+                Control the AI summary card shown on the home screen.
+              </p>
+            </div>
+
+            <label
+              class="switch"
+              ?data-checked=${this.showAiSummaryCard}
+              ?data-disabled=${this.loading}
+            >
+              <span class="switch__label">
+                <span class="switch__title">Show AI summary</span>
+                <span class="switch__supporting"
+                  >Keep the on-device summary card visible on the home screen.</span
+                >
+              </span>
+              <span class="switch__control">
+                <input
+                  class="switch__input"
+                  type="checkbox"
+                  name="show-ai-summary"
+                  .checked=${this.showAiSummaryCard}
+                  @change=${this.handleAiSummaryToggle}
+                  ?disabled=${this.loading}
+                />
+                <span class="switch__track"></span>
+                <span class="switch__thumb"></span>
+              </span>
+            </label>
+          </section>
+
         </form>
 
         ${this.loading
           ? html`<div class="loading" role="status">Loading current settings…</div>`
           : null}
+
+        <app-toast></app-toast>
       </div>
     `;
   }

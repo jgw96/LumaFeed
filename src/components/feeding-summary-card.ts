@@ -105,6 +105,9 @@ export class FeedingSummaryCard extends LitElement {
   @property({ type: Boolean })
   loading = false;
 
+  @property({ type: Boolean })
+  showAiSummary = true;
+
   private readonly handleWindowResize = () => {
     if (!this.loading) {
       this.drawChart();
@@ -365,9 +368,9 @@ export class FeedingSummaryCard extends LitElement {
     return html`
       <div class="summary-card" role="status" aria-live="polite">
         <div class="summary-card__section">
-          <span class="summary-card__title">Summary - Last 24 hours</span>
+          <span class="summary-card__title">Last 24 hours at a glance</span>
           ${this.loading
-            ? html`<span class="summary-card__status">Loading summary…</span>`
+            ? html`<span class="summary-card__status">Loading your summary…</span>`
             : feedings > 0
               ? html`
                   <span class="summary-card__status">${this.formatFeedingLabel(feedings)}</span>
@@ -388,7 +391,7 @@ export class FeedingSummaryCard extends LitElement {
                         </div>
                       `
                     : html`<div class="summary-card__empty">
-                        No chart data for the last 24 hours.
+                        No chart data yet for the last 24 hours.
                       </div>`}
                   ${nextFeedLabel
                     ? html`
@@ -404,16 +407,20 @@ export class FeedingSummaryCard extends LitElement {
                     : null}
                 `
               : html`
-                  <span class="summary-card__status">No feedings logged</span>
-                  <div class="summary-card__empty">Add a feeding to see totals.</div>
+                  <span class="summary-card__status">No feedings logged yet</span>
+                  <div class="summary-card__empty">Log a feeding to see your totals.</div>
                 `}
         </div>
 
-        <feeding-ai-summary-card
-          class="summary-card__ai"
-          .logs=${this.logs}
-          .loading=${this.loading}
-        ></feeding-ai-summary-card>
+        ${this.showAiSummary
+          ? html`
+              <feeding-ai-summary-card
+                class="summary-card__ai"
+                .logs=${this.logs}
+                .loading=${this.loading}
+              ></feeding-ai-summary-card>
+            `
+          : null}
       </div>
     `;
   }
