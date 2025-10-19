@@ -56,6 +56,23 @@ export class FeedingSummaryCard extends LitElement {
       color: var(--md-sys-color-on-surface-variant);
     }
 
+    .summary-card__interval {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      font-size: var(--md-sys-typescale-body-medium-font-size);
+      color: var(--md-sys-color-on-surface-variant);
+      margin-top: 0.5rem;
+    }
+
+    .summary-card__interval-label {
+      font-weight: 500;
+    }
+
+    .summary-card__interval-value {
+      color: var(--md-sys-color-on-surface);
+    }
+
     .summary-card__next {
       background: var(--md-sys-color-secondary-container);
       color: var(--md-sys-color-on-secondary-container);
@@ -164,16 +181,48 @@ export class FeedingSummaryCard extends LitElement {
     window.removeEventListener('resize', this.handleWindowResize);
   }
 
-  private calculateSummary(): { feedings: number; totalMl: number; totalOz: number } {
+  private resolveNextFeedTime(): number | undefined {
+    if (!Array.isArray(this.logs) || this.logs.length === 0) {
+      return undefined;
+    }
+
+    let latestLog: FeedingLog | undefined;
+    let latestCompletedAt = Number.NEGATIVE_INFINITY;
+
+    for (const log of this.logs) {
+      const completedAt = typeof log.endTime === 'number' ? log.endTime : log.timestamp;
+      if (
+        typeof completedAt === 'number' &&
+        Number.isFinite(completedAt) &&
+        (latestLog === undefined || completedAt > latestCompletedAt)
+      ) {
+        latestLog = log;
+        latestCompletedAt = completedAt;
+      }
+    }
+
+    const candidate =
+      typeof latestLog?.nextFeedTime === 'number' ? latestLog.nextFeedTime : undefined;
+    return Number.isFinite(candidate) ? candidate : undefined;
+  }
+
+  private calculateSummary(): {
+    feedings: number;
+    totalMl: number;
+    totalOz: number;
+    averageIntervalMinutes: number | null;
+  } {
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
     let feedings = 0;
     let totalMl = 0;
     let totalOz = 0;
+    const feedTimestamps: number[] = [];
 
     for (const log of this.logs) {
       const timestamp = typeof log.endTime === 'number' ? log.endTime : log.timestamp;
       if (typeof timestamp === 'number' && timestamp >= cutoff) {
         feedings += 1;
+        feedTimestamps.push(timestamp);
         if (Number.isFinite(log.amountMl)) {
           totalMl += log.amountMl as number;
         }
@@ -183,11 +232,39 @@ export class FeedingSummaryCard extends LitElement {
       }
     }
 
-    return { feedings, totalMl, totalOz };
+    let averageIntervalMinutes: number | null = null;
+    if (feedTimestamps.length >= 2) {
+      // Sort timestamps in ascending order
+      feedTimestamps.sort((a, b) => a - b);
+
+      // Calculate intervals between consecutive feeds
+      const intervals: number[] = [];
+      for (let i = 1; i < feedTimestamps.length; i++) {
+        intervals.push(feedTimestamps[i] - feedTimestamps[i - 1]);
+      }
+
+      // Calculate average interval in minutes
+      const totalInterval = intervals.reduce((sum, interval) => sum + interval, 0);
+      averageIntervalMinutes = Math.round(totalInterval / intervals.length / 60_000);
+    }
+
+    return { feedings, totalMl, totalOz, averageIntervalMinutes };
   }
 
   private formatFeedingLabel(count: number): string {
     return count === 1 ? '1 feeding' : `${count} feedings`;
+  }
+
+  private formatInterval(minutes: number): string {
+    if (minutes < 60) {
+      return `${minutes} min`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    if (remainingMinutes === 0) {
+      return hours === 1 ? '1 hr' : `${hours} hrs`;
+    }
+    return `${hours} hr ${remainingMinutes} min`;
   }
 
   private getChartDescription(): string {
@@ -314,7 +391,7 @@ export class FeedingSummaryCard extends LitElement {
 
   render() {
     const summary = this.calculateSummary();
-    const { feedings, totalMl, totalOz } = summary;
+    const { feedings, totalMl, totalOz, averageIntervalMinutes } = summary;
     const filtered = this.filteredLogs();
     const hasChartData = filtered.length > 0;
     const nextFeedTime = this.resolveNextFeedTimeFn(this.logs);
@@ -326,9 +403,9 @@ export class FeedingSummaryCard extends LitElement {
         <div class="summary-card__section">
           <span class="summary-card__title">Last 24 hours at a glance</span>
           ${this.loading
-            ? html`<span class="summary-card__status">Loading your summary…</span>`
-            : feedings > 0
-              ? html`
+        ? html`<span class="summary-card__status">Loading your summary…</span>`
+        : feedings > 0
+          ? html`
                   <span class="summary-card__status">${this.formatFeedingLabel(feedings)}</span>
                   <div class="summary-card__totals">
                       <span>${this.formatNumberFn(totalMl)} ml</span>
@@ -336,8 +413,18 @@ export class FeedingSummaryCard extends LitElement {
                         >(${this.formatNumberFn(totalOz, 1)} oz)</span
                     >
                   </div>
+                  ${averageIntervalMinutes !== null
+              ? html`
+                        <div class="summary-card__interval">
+                          <span class="summary-card__interval-label">Average interval:</span>
+                          <span class="summary-card__interval-value"
+                            >${this.formatInterval(averageIntervalMinutes)}</span
+                          >
+                        </div>
+                      `
+              : null}
                   ${hasChartData
-                    ? html`
+              ? html`
                         <div
                           class="summary-card__chart"
                           role="img"
@@ -346,11 +433,11 @@ export class FeedingSummaryCard extends LitElement {
                           <canvas id="feedChart" aria-hidden="true"></canvas>
                         </div>
                       `
-                    : html`<div class="summary-card__empty">
+              : html`<div class="summary-card__empty">
                         No chart data yet for the last 24 hours.
                       </div>`}
                   ${nextFeedLabel
-                    ? html`
+              ? html`
                         <div
                           class="summary-card__next"
                           role="note"
@@ -360,23 +447,23 @@ export class FeedingSummaryCard extends LitElement {
                           <span class="summary-card__next-value">${nextFeedLabel}</span>
                         </div>
                       `
-                    : null}
+              : null}
                 `
-              : html`
+          : html`
                   <span class="summary-card__status">No feedings logged yet</span>
                   <div class="summary-card__empty">Log a feeding to see your totals.</div>
                 `}
         </div>
 
         ${this.showAiSummary
-          ? html`
+        ? html`
               <feeding-ai-summary-card
                 class="summary-card__ai"
                 .logs=${this.logs}
                 .loading=${this.loading}
               ></feeding-ai-summary-card>
             `
-          : null}
+        : null}
       </div>
     `;
   }

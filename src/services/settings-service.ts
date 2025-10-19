@@ -7,6 +7,7 @@ export interface AppSettings {
   defaultFeedType: 'formula' | 'milk';
   defaultBottleFed: boolean;
   showAiSummaryCard: boolean;
+  themeColor: string;
 }
 
 export const MIN_FEED_INTERVAL_MINUTES = 60;
@@ -18,6 +19,7 @@ export const DEFAULT_FEED_UNIT: UnitType = 'ml';
 export const DEFAULT_FEED_TYPE: 'formula' | 'milk' = 'formula';
 export const DEFAULT_BOTTLE_FED = true;
 export const DEFAULT_SHOW_AI_SUMMARY_CARD = true;
+export const DEFAULT_THEME_COLOR = '#0061a6';
 
 const SETTINGS_STORAGE_KEY = 'feeding-tracker-settings';
 
@@ -46,6 +48,7 @@ class SettingsService {
       defaultFeedType: DEFAULT_FEED_TYPE,
       defaultBottleFed: DEFAULT_BOTTLE_FED,
       showAiSummaryCard: DEFAULT_SHOW_AI_SUMMARY_CARD,
+      themeColor: DEFAULT_THEME_COLOR,
     };
   }
 
@@ -59,6 +62,13 @@ class SettingsService {
 
   private normalizeBoolean(value: unknown, fallback: boolean): boolean {
     return typeof value === 'boolean' ? value : fallback;
+  }
+
+  private normalizeThemeColor(value: unknown): string {
+    if (typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value)) {
+      return value;
+    }
+    return DEFAULT_THEME_COLOR;
   }
 
   private readFromStorage(): AppSettings {
@@ -91,6 +101,7 @@ class SettingsService {
           parsed.showAiSummaryCard,
           DEFAULT_SHOW_AI_SUMMARY_CARD
         ),
+        themeColor: this.normalizeThemeColor(parsed.themeColor),
       } satisfies AppSettings;
     } catch (error) {
       console.error('Failed to parse settings from storage, resetting to defaults.', error);
@@ -154,6 +165,9 @@ class SettingsService {
       showAiSummaryCard: this.normalizeBoolean(
         partial.showAiSummaryCard,
         current.showAiSummaryCard
+      ),
+      themeColor: this.normalizeThemeColor(
+        typeof partial.themeColor === 'string' ? partial.themeColor : current.themeColor
       ),
     };
 
