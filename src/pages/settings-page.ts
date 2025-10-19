@@ -10,11 +10,13 @@ import {
   DEFAULT_FEED_TYPE,
   DEFAULT_BOTTLE_FED,
   DEFAULT_SHOW_AI_SUMMARY_CARD,
+  DEFAULT_THEME_COLOR,
 } from '../services/settings-service.js';
 import type { AppSettings } from '../services/settings-service.js';
 import type { AppToast } from '../components/app-toast.js';
 import '../components/app-toast.js';
 import { DEFAULT_NEXT_FEED_INTERVAL_MINUTES, type UnitType } from '../types/feeding-log.js';
+import { generateThemeFromColor, PRESET_COLORS } from '../utils/theme-generator.js';
 
 @customElement('settings-page')
 export class SettingsPage extends LitElement {
@@ -309,6 +311,91 @@ export class SettingsPage extends LitElement {
       color: var(--md-sys-color-on-surface-variant);
       font-size: var(--md-sys-typescale-body-medium-font-size);
     }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .color-option {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      border-radius: var(--md-sys-shape-corner-medium);
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      background: transparent;
+      border: 2px solid transparent;
+    }
+
+    .color-option:hover {
+      background: color-mix(in srgb, var(--md-sys-color-on-surface) 5%, transparent);
+    }
+
+    .color-option[data-selected] {
+      background: var(--md-sys-color-secondary-container);
+      border-color: var(--md-sys-color-secondary);
+    }
+
+    .color-swatch {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      box-shadow: var(--md-sys-elevation-1);
+      border: 3px solid var(--md-sys-color-surface);
+    }
+
+    .color-option[data-selected] .color-swatch {
+      box-shadow: var(--md-sys-elevation-2);
+      border-color: var(--md-sys-color-on-secondary-container);
+    }
+
+    .color-name {
+      font-size: var(--md-sys-typescale-body-small-font-size);
+      color: var(--md-sys-color-on-surface-variant);
+      text-align: center;
+    }
+
+    .color-option[data-selected] .color-name {
+      color: var(--md-sys-color-on-secondary-container);
+      font-weight: 600;
+    }
+
+    .custom-color-input {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem;
+      border-radius: var(--md-sys-shape-corner-large);
+      background: var(--md-sys-color-surface-container-highest);
+      border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 65%, transparent);
+    }
+
+    .custom-color-input label {
+      flex: 1;
+    }
+
+    .custom-color-input input[type='color'] {
+      width: 64px;
+      height: 48px;
+      border: none;
+      border-radius: var(--md-sys-shape-corner-small);
+      cursor: pointer;
+      background: transparent;
+    }
+
+    .custom-color-input input[type='color']::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    .custom-color-input input[type='color']::-webkit-color-swatch {
+      border: 3px solid var(--md-sys-color-outline-variant);
+      border-radius: var(--md-sys-shape-corner-small);
+    }
   `;
 
   @state()
@@ -337,6 +424,9 @@ export class SettingsPage extends LitElement {
 
   @state()
   private showAiSummaryCard = DEFAULT_SHOW_AI_SUMMARY_CARD;
+
+  @state()
+  private themeColor = DEFAULT_THEME_COLOR;
 
   @query('app-toast')
   private toastElement?: AppToast;
@@ -372,6 +462,7 @@ export class SettingsPage extends LitElement {
       this.defaultFeedType = DEFAULT_FEED_TYPE;
       this.defaultBottleFed = DEFAULT_BOTTLE_FED;
       this.showAiSummaryCard = DEFAULT_SHOW_AI_SUMMARY_CARD;
+      this.themeColor = DEFAULT_THEME_COLOR;
     } finally {
       this.loading = false;
     }
@@ -384,6 +475,7 @@ export class SettingsPage extends LitElement {
     this.defaultFeedType = settings.defaultFeedType;
     this.defaultBottleFed = settings.defaultBottleFed;
     this.showAiSummaryCard = settings.showAiSummaryCard;
+    this.themeColor = settings.themeColor;
   }
 
   private scheduleSave(partial: Partial<AppSettings>): void {
@@ -490,6 +582,67 @@ export class SettingsPage extends LitElement {
       this.defaultBottleFed = input.value === 'true';
       this.scheduleSave({ defaultBottleFed: this.defaultBottleFed });
     }
+  }
+
+  private handleThemeColorChange(color: string): void {
+    // Validate hex format
+    if (!/^#[0-9a-fA-F]{6}$/.test(color)) {
+      return;
+    }
+
+    this.themeColor = color;
+    this.scheduleSave({ themeColor: this.themeColor });
+
+    // Apply theme immediately
+    this.applyThemeToPage(color);
+  }
+
+  private handlePresetColorClick(event: Event): void {
+    const button = event.currentTarget as HTMLElement;
+    const color = button.dataset.color;
+    if (color) {
+      this.handleThemeColorChange(color);
+    }
+  }
+
+  private handleCustomColorInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.handleThemeColorChange(input.value);
+  }
+
+  private applyThemeToPage(color: string): void {
+    const colors = generateThemeFromColor(color);
+    const root = document.documentElement;
+
+    // Apply light theme colors
+    Object.entries(colors.light).forEach(([key, value]) => {
+      const cssVar = `--md-sys-color-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+      root.style.setProperty(cssVar, value);
+    });
+
+    // For dark mode, we need to inject a style element with media query
+    const existingStyle = document.getElementById('dynamic-theme-dark');
+    if (existingStyle) {
+      existingStyle.remove();
+    }
+
+    const darkColors = Object.entries(colors.dark)
+      .map(([key, value]) => {
+        const cssVar = `--md-sys-color-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+        return `${cssVar}: ${value};`;
+      })
+      .join('\n        ');
+
+    const style = document.createElement('style');
+    style.id = 'dynamic-theme-dark';
+    style.textContent = `
+      @media (prefers-color-scheme: dark) {
+        :root {
+          ${darkColors}
+        }
+      }
+    `;
+    document.head.appendChild(style);
   }
 
   private renderStatus() {
@@ -685,6 +838,56 @@ export class SettingsPage extends LitElement {
                   Breast feeding
                 </label>
               </div>
+            </div>
+          </section>
+
+          <section class="section">
+            <div class="section__header">
+              <h2 class="section__title">Appearance</h2>
+              <p class="section__description">
+                Choose a color theme for the app. Your selection applies immediately.
+              </p>
+            </div>
+
+            <div class="form-group">
+              <span class="helper-text">Preset colors</span>
+              <div class="color-grid">
+                ${PRESET_COLORS.map(
+                  (preset) => html`
+                    <div
+                      class="color-option"
+                      ?data-selected=${this.themeColor === preset.value}
+                      @click=${this.handlePresetColorClick}
+                      data-color=${preset.value}
+                      role="button"
+                      tabindex="0"
+                      aria-label="Select ${preset.name} theme"
+                    >
+                      <div
+                        class="color-swatch"
+                        style="background-color: ${preset.value};"
+                      ></div>
+                      <span class="color-name">${preset.name}</span>
+                    </div>
+                  `
+                )}
+              </div>
+            </div>
+
+            <div class="custom-color-input">
+              <label for="custom-color">
+                <div style="display: grid; gap: 0.25rem;">
+                  <span style="font-size: var(--md-sys-typescale-title-small-font-size); font-weight: var(--md-sys-typescale-title-small-font-weight);">Custom color</span>
+                  <span style="font-size: var(--md-sys-typescale-body-small-font-size); color: var(--md-sys-color-on-surface-variant);">Pick any color you like</span>
+                </div>
+              </label>
+              <input
+                id="custom-color"
+                type="color"
+                .value=${this.themeColor}
+                @input=${this.handleCustomColorInput}
+                ?disabled=${this.loading}
+              />
             </div>
           </section>
 
