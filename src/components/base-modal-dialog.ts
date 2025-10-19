@@ -216,4 +216,3 @@ export abstract class BaseModalDialog extends LitElement {
     super.disconnectedCallback();
   }
 }
-

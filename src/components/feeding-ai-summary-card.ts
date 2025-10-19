@@ -141,13 +141,12 @@ export class FeedingAiSummaryCard extends LitElement {
   private session: LanguageModelSession | null = null;
   private lastSummaryLogIds: string[] = [];
   private summaryHelpersModule: typeof import('../utils/feeding-ai-summary-utils.js') | null = null;
-  private summaryHelpersPromise:
-    | Promise<typeof import('../utils/feeding-ai-summary-utils.js')>
-    | null = null;
+  private summaryHelpersPromise: Promise<
+    typeof import('../utils/feeding-ai-summary-utils.js')
+  > | null = null;
   private webLlmModule: typeof import('../utils/feeding-ai-web-llm.js') | null = null;
-  private webLlmModulePromise:
-    | Promise<typeof import('../utils/feeding-ai-web-llm.js')>
-    | null = null;
+  private webLlmModulePromise: Promise<typeof import('../utils/feeding-ai-web-llm.js')> | null =
+    null;
 
   connectedCallback() {
     super.connectedCallback();
@@ -252,7 +251,7 @@ export class FeedingAiSummaryCard extends LitElement {
 
     if (state === 'unavailable') {
       this.supported = false;
-  this.availabilityMessage = "AI summaries aren't available on this device yet.";
+      this.availabilityMessage = "AI summaries aren't available on this device yet.";
       this.session = null;
       return;
     }
@@ -270,7 +269,7 @@ export class FeedingAiSummaryCard extends LitElement {
         !this.availabilityMessage ||
         !this.availabilityMessage.toLowerCase().startsWith('downloading')
       ) {
-  this.availabilityMessage = 'Downloading the summary helper...';
+        this.availabilityMessage = 'Downloading the summary helper...';
       }
       return;
     }
@@ -281,12 +280,12 @@ export class FeedingAiSummaryCard extends LitElement {
   private updateDownloadProgress(value: number) {
     const clamped = Math.max(0, Math.min(1, value));
     this.availabilityState = 'downloading';
-  this.availabilityMessage = `Downloading summary helper: ${Math.round(clamped * 100)}%`;
+    this.availabilityMessage = `Downloading summary helper: ${Math.round(clamped * 100)}%`;
   }
 
   private updateWebLlmProgress(progress: { progress?: number | null; text?: string | null }) {
     if (typeof progress?.progress === 'number' && Number.isFinite(progress.progress)) {
-  this.availabilityMessage = `Setting up the local summary: ${Math.round(progress.progress * 100)}%`;
+      this.availabilityMessage = `Setting up the local summary: ${Math.round(progress.progress * 100)}%`;
       return;
     }
 
@@ -295,7 +294,7 @@ export class FeedingAiSummaryCard extends LitElement {
       return;
     }
 
-  this.availabilityMessage = 'Getting things ready...';
+    this.availabilityMessage = 'Getting things ready...';
   }
 
   private async getWebLlmModule() {
@@ -358,7 +357,7 @@ export class FeedingAiSummaryCard extends LitElement {
 
     if (eagerLoad) {
       try {
-  await this.ensureWebLlmReady();
+        await this.ensureWebLlmReady();
       } catch (error) {
         console.warn('WebLLM eager load failed', error);
       }
@@ -452,12 +451,12 @@ export class FeedingAiSummaryCard extends LitElement {
 
     const logs = this.getLast24HourLogs();
     if (logs.length === 0) {
-  this.error = 'Log at least one feeding in the last 24 hours to see a summary.';
+      this.error = 'Log at least one feeding in the last 24 hours to see a summary.';
       return;
     }
 
     if (!this.supported) {
-  this.error = this.availabilityMessage ?? "AI summaries aren't available on this device yet.";
+      this.error = this.availabilityMessage ?? "AI summaries aren't available on this device yet.";
       return;
     }
 
@@ -533,9 +532,9 @@ export class FeedingAiSummaryCard extends LitElement {
       console.warn('AI availability check failed', error);
       await this.prepareWebLlmSupport();
       if (this.aiMode !== 'web-llm') {
-  this.supported = false;
-  this.availabilityState = null;
-  this.availabilityMessage = "We couldn't check if summaries are available right now.";
+        this.supported = false;
+        this.availabilityState = null;
+        this.availabilityMessage = "We couldn't check if summaries are available right now.";
       }
     }
   }

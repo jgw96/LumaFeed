@@ -1,4 +1,8 @@
-import './app-root.js';
+import { initializeTheme } from './utils/theme/apply-theme.js';
+
+await initializeTheme();
+
+await import('./app-root.js');
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {

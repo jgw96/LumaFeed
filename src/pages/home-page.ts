@@ -29,8 +29,8 @@ export class HomePage extends LitElement {
     }
 
     .add-btn {
-      background: var(--md-sys-color-primary-container);
-      color: var(--md-sys-color-on-primary-container);
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
       border: none;
       padding: 0.875rem 1.5rem;
       border-radius: var(--md-sys-shape-corner-large);
@@ -52,8 +52,7 @@ export class HomePage extends LitElement {
     }
 
     .add-btn:hover {
-      background: var(--md-sys-color-primary);
-      color: var(--md-sys-color-on-primary);
+      background: color-mix(in srgb, var(--md-sys-color-primary) 88%, #ffffff 12%);
       box-shadow: var(--md-sys-elevation-2);
     }
 
@@ -121,12 +120,7 @@ export class HomePage extends LitElement {
       position: absolute;
       inset: 0;
       transform: translateX(-100%);
-      background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.35),
-        transparent
-      );
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
       animation: skeleton-shimmer 1.4s ease-in-out infinite;
     }
 
@@ -274,7 +268,7 @@ export class HomePage extends LitElement {
   private async loadSettings(): Promise<void> {
     try {
       this.settings = await settingsService.getSettings();
-    window.removeEventListener('feeding-tracker-settings-changed', this.handleSettingsChanged);
+      window.removeEventListener('feeding-tracker-settings-changed', this.handleSettingsChanged);
     } catch (error) {
       console.error('Failed to load settings:', error);
       this.settings = null;

@@ -88,7 +88,7 @@ export function buildAiSummaryPrompt(logs: FeedingLog[]): string {
 
   return [
     'You are helping a caregiver review feeding logs for the last 24 hours.',
-  `Reference guidance: ${AI_FEEDING_GUIDELINES}`,
+    `Reference guidance: ${AI_FEEDING_GUIDELINES}`,
     `Summary statistics:\n- Total feeds: ${stats.feedCount}\n- Bottle feeds: ${stats.bottleFeeds}\n- Nursing sessions: ${stats.nursingFeeds}\n- Total intake: ${formatNumber(stats.totalMl, 0)} ml (${formatNumber(stats.totalOz, 1)} oz)\n- Average intake per feed: ${formatNumber(stats.averageMl, 0)} ml (${formatNumber(stats.averageOz, 1)} oz)\n- Average duration: ${averageDuration}\n- Average interval: ${averageInterval}`,
     `Detailed entries:\n${details}`,
     'Create a short, upbeat summary mentioning positive trends and any gentle watch-outs. End with a reminder that caregivers should consult healthcare professionals for specific advice.',

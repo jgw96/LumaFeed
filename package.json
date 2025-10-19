@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-  "build:analyze": "tsc && vite build --mode analyze",
+    "build:analyze": "tsc && vite build --mode analyze",
     "preview": "vite preview",
     "capture:screenshots": "node ./scripts/generate-manifest-screenshots.mjs",
     "type-check": "tsc --noEmit",
@@ -36,7 +36,7 @@
     "happy-dom": "^19.0.2",
     "playwright": "^1.48.0",
     "prettier": "3.6.2",
-  "rollup-plugin-visualizer": "^5.12.0",
+    "rollup-plugin-visualizer": "^5.12.0",
     "typescript": "^5.9.3",
     "urlpattern-polyfill": "^10.1.0",
     "vite": "^5.0.0",

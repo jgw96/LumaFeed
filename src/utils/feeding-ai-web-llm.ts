@@ -59,9 +59,7 @@ interface GenerateSummaryOptions {
   maxTokens?: number;
 }
 
-export async function generateSummaryWithWebLlm(
-  options: GenerateSummaryOptions,
-): Promise<string> {
+export async function generateSummaryWithWebLlm(options: GenerateSummaryOptions): Promise<string> {
   const engine = await ensureWebLlmEngine(options.callbacks);
   const messages: WebLlmChatCompletionMessage[] = [
     { role: 'system', content: options.systemContext },
@@ -76,7 +74,7 @@ export async function generateSummaryWithWebLlm(
 
   const content = result.choices?.[0]?.message?.content?.trim();
   if (!content) {
-  throw new Error('The local summary helper did not return a result.');
+    throw new Error('The local summary helper did not return a result.');
   }
 
   return content;

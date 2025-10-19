@@ -4,8 +4,7 @@ import type { FeedingLog } from '../types/feeding-log.js';
 import { formatNextFeedLabel } from '../utils/feed-time.js';
 import type { ChartDataPoint } from '../utils/feeding-summary/draw-chart.js';
 
-type FormatNumberFn =
-  (typeof import('../utils/feeding-summary/format-number.js'))['formatNumber'];
+type FormatNumberFn = (typeof import('../utils/feeding-summary/format-number.js'))['formatNumber'];
 type ResolveNextFeedTimeFn =
   (typeof import('../utils/feeding-summary/resolve-next-feed-time.js'))['resolveNextFeedTime'];
 type DrawChartFn = (typeof import('../utils/feeding-summary/draw-chart.js'))['drawChart'];
@@ -56,24 +55,7 @@ export class FeedingSummaryCard extends LitElement {
       color: var(--md-sys-color-on-surface-variant);
     }
 
-    .summary-card__interval {
-      display: inline-flex;
-      align-items: baseline;
-      gap: 0.5rem;
-      font-size: var(--md-sys-typescale-body-medium-font-size);
-      color: var(--md-sys-color-on-surface-variant);
-      margin-top: 0.5rem;
-    }
-
-    .summary-card__interval-label {
-      font-weight: 500;
-    }
-
-    .summary-card__interval-value {
-      color: var(--md-sys-color-on-surface);
-    }
-
-    .summary-card__next {
+    .summary-card__highlight {
       background: var(--md-sys-color-secondary-container);
       color: var(--md-sys-color-on-secondary-container);
       border-radius: var(--md-sys-shape-corner-large);
@@ -82,14 +64,14 @@ export class FeedingSummaryCard extends LitElement {
       gap: 0.25rem;
     }
 
-    .summary-card__next-label {
+    .summary-card__highlight-label {
       font-size: var(--md-sys-typescale-body-small-font-size);
       text-transform: uppercase;
       letter-spacing: 0.08em;
       opacity: 0.9;
     }
 
-    .summary-card__next-value {
+    .summary-card__highlight-value {
       font-size: var(--md-sys-typescale-title-small-font-size);
       font-weight: var(--md-sys-typescale-title-small-font-weight);
     }
@@ -179,31 +161,6 @@ export class FeedingSummaryCard extends LitElement {
   disconnectedCallback(): void {
     super.disconnectedCallback();
     window.removeEventListener('resize', this.handleWindowResize);
-  }
-
-  private resolveNextFeedTime(): number | undefined {
-    if (!Array.isArray(this.logs) || this.logs.length === 0) {
-      return undefined;
-    }
-
-    let latestLog: FeedingLog | undefined;
-    let latestCompletedAt = Number.NEGATIVE_INFINITY;
-
-    for (const log of this.logs) {
-      const completedAt = typeof log.endTime === 'number' ? log.endTime : log.timestamp;
-      if (
-        typeof completedAt === 'number' &&
-        Number.isFinite(completedAt) &&
-        (latestLog === undefined || completedAt > latestCompletedAt)
-      ) {
-        latestLog = log;
-        latestCompletedAt = completedAt;
-      }
-    }
-
-    const candidate =
-      typeof latestLog?.nextFeedTime === 'number' ? latestLog.nextFeedTime : undefined;
-    return Number.isFinite(candidate) ? candidate : undefined;
   }
 
   private calculateSummary(): {
@@ -403,28 +360,19 @@ export class FeedingSummaryCard extends LitElement {
         <div class="summary-card__section">
           <span class="summary-card__title">Last 24 hours at a glance</span>
           ${this.loading
-        ? html`<span class="summary-card__status">Loading your summary…</span>`
-        : feedings > 0
-          ? html`
+            ? html`<span class="summary-card__status">Loading your summary…</span>`
+            : feedings > 0
+              ? html`
                   <span class="summary-card__status">${this.formatFeedingLabel(feedings)}</span>
                   <div class="summary-card__totals">
-                      <span>${this.formatNumberFn(totalMl)} ml</span>
+                    <span>${this.formatNumberFn(totalMl)} ml</span>
                     <span class="summary-card__secondary"
-                        >(${this.formatNumberFn(totalOz, 1)} oz)</span
+                      >(${this.formatNumberFn(totalOz, 1)} oz)</span
                     >
                   </div>
-                  ${averageIntervalMinutes !== null
-              ? html`
-                        <div class="summary-card__interval">
-                          <span class="summary-card__interval-label">Average interval:</span>
-                          <span class="summary-card__interval-value"
-                            >${this.formatInterval(averageIntervalMinutes)}</span
-                          >
-                        </div>
-                      `
-              : null}
+
                   ${hasChartData
-              ? html`
+                    ? html`
                         <div
                           class="summary-card__chart"
                           role="img"
@@ -433,37 +381,51 @@ export class FeedingSummaryCard extends LitElement {
                           <canvas id="feedChart" aria-hidden="true"></canvas>
                         </div>
                       `
-              : html`<div class="summary-card__empty">
+                    : html`<div class="summary-card__empty">
                         No chart data yet for the last 24 hours.
                       </div>`}
                   ${nextFeedLabel
-              ? html`
+                    ? html`
                         <div
-                          class="summary-card__next"
+                          class="summary-card__highlight"
                           role="note"
                           aria-label="Next suggested feed"
                         >
-                          <span class="summary-card__next-label">Next feed</span>
-                          <span class="summary-card__next-value">${nextFeedLabel}</span>
+                          <span class="summary-card__highlight-label">Next feed</span>
+                          <span class="summary-card__highlight-value">${nextFeedLabel}</span>
                         </div>
                       `
-              : null}
+                    : null}
+                  ${averageIntervalMinutes !== null
+                    ? html`
+                        <div
+                          class="summary-card__highlight"
+                          role="note"
+                          aria-label="Average interval between feedings in the last 24 hours"
+                        >
+                          <span class="summary-card__highlight-label">Average interval</span>
+                          <span class="summary-card__highlight-value"
+                            >${this.formatInterval(averageIntervalMinutes)}</span
+                          >
+                        </div>
+                      `
+                    : null}
                 `
-          : html`
+              : html`
                   <span class="summary-card__status">No feedings logged yet</span>
                   <div class="summary-card__empty">Log a feeding to see your totals.</div>
                 `}
         </div>
 
         ${this.showAiSummary
-        ? html`
+          ? html`
               <feeding-ai-summary-card
                 class="summary-card__ai"
                 .logs=${this.logs}
                 .loading=${this.loading}
               ></feeding-ai-summary-card>
             `
-        : null}
+          : null}
       </div>
     `;
   }

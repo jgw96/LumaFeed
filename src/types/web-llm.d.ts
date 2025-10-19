@@ -39,6 +39,6 @@ declare module '@mlc-ai/web-llm' {
 
   export function CreateMLCEngine(
     modelId: string,
-    config?: CreateMLCEngineConfig,
+    config?: CreateMLCEngineConfig
   ): Promise<MLCEngineInterface>;
 }

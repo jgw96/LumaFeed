@@ -10,11 +10,13 @@ import {
   DEFAULT_FEED_TYPE,
   DEFAULT_BOTTLE_FED,
   DEFAULT_SHOW_AI_SUMMARY_CARD,
+  DEFAULT_THEME_COLOR,
 } from '../services/settings-service.js';
 import type { AppSettings } from '../services/settings-service.js';
 import type { AppToast } from '../components/app-toast.js';
 import '../components/app-toast.js';
 import { DEFAULT_NEXT_FEED_INTERVAL_MINUTES, type UnitType } from '../types/feeding-log.js';
+import { setThemeColor } from '../utils/theme/apply-theme.js';
 
 @customElement('settings-page')
 export class SettingsPage extends LitElement {
@@ -38,7 +40,8 @@ export class SettingsPage extends LitElement {
       gap: 0.75rem;
       padding: 2rem;
       border-radius: var(--md-sys-shape-corner-extra-large);
-      background: linear-gradient(
+      background:
+        linear-gradient(
           135deg,
           color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent),
           transparent 45%
@@ -123,6 +126,128 @@ export class SettingsPage extends LitElement {
       outline: none;
       border-color: var(--md-sys-color-primary);
       box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
+    }
+
+    .theme-color {
+      display: grid;
+      gap: 0.5rem;
+    }
+
+    .theme-color__controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .theme-color__picker {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      padding: 12px;
+      border-radius: var(--md-sys-shape-corner-extra-large);
+      border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 55%, transparent);
+      background:
+        linear-gradient(
+          145deg,
+          color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent),
+          transparent 55%
+        ),
+        var(--md-sys-color-surface-container-highest);
+      box-shadow: var(--md-sys-elevation-1);
+      display: grid;
+      place-items: center;
+      transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+    }
+
+    .theme-color__picker input[type='color'] {
+      appearance: none;
+      border: none;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 999px;
+      box-shadow:
+        inset 0 0 0 1px color-mix(in srgb, #000 12%, transparent),
+        inset 0 0 0 3px color-mix(in srgb, #fff 18%, transparent);
+    }
+
+    .theme-color__picker input[type='color']::-webkit-color-swatch-wrapper {
+      padding: 0;
+      border-radius: inherit;
+    }
+
+    .theme-color__picker input[type='color']::-webkit-color-swatch {
+      border: none;
+      border-radius: inherit;
+    }
+
+    .theme-color__picker input[type='color']::-moz-color-swatch {
+      border: none;
+      border-radius: inherit;
+    }
+
+    .theme-color__picker:has(input[type='color']:focus-visible) {
+      box-shadow:
+        var(--md-sys-elevation-2),
+        0 0 0 4px color-mix(in srgb, var(--md-sys-color-primary) 25%, transparent);
+      transform: translateY(-1px);
+    }
+
+    .theme-color__picker:hover {
+      box-shadow: var(--md-sys-elevation-2);
+      transform: translateY(-1px);
+    }
+
+    .theme-color__value {
+      font-family:
+        'Roboto Mono', ui-monospace, SFMono-Regular, SFMono, Menlo, Monaco, Consolas,
+        'Liberation Mono', 'Courier New', monospace;
+      font-size: var(--md-sys-typescale-body-medium-font-size);
+      color: var(--md-sys-color-on-surface-variant);
+      background: var(--md-sys-color-surface-container-low);
+      padding: 0.45rem 0.8rem;
+      border-radius: var(--md-sys-shape-corner-medium);
+      border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 45%, transparent);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .theme-color__reset {
+      padding: 0.65rem 1.5rem;
+      border-radius: var(--md-sys-shape-corner-extra-large);
+      border: none;
+      background: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+      font-weight: var(--md-sys-typescale-label-large-font-weight);
+      font-size: var(--md-sys-typescale-label-large-font-size);
+      cursor: pointer;
+      box-shadow: var(--md-sys-elevation-1);
+      transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease;
+    }
+
+    .theme-color__reset:hover:not(:disabled),
+    .theme-color__reset:focus-visible {
+      background: color-mix(
+        in srgb,
+        var(--md-sys-color-secondary-container) 85%,
+        var(--md-sys-color-primary) 15%
+      );
+      box-shadow: var(--md-sys-elevation-2);
+      transform: translateY(-1px);
+    }
+
+    .theme-color__reset:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
     }
 
     .helper-text {
@@ -338,6 +463,9 @@ export class SettingsPage extends LitElement {
   @state()
   private showAiSummaryCard = DEFAULT_SHOW_AI_SUMMARY_CARD;
 
+  @state()
+  private themeColor: string = DEFAULT_THEME_COLOR;
+
   @query('app-toast')
   private toastElement?: AppToast;
 
@@ -372,6 +500,7 @@ export class SettingsPage extends LitElement {
       this.defaultFeedType = DEFAULT_FEED_TYPE;
       this.defaultBottleFed = DEFAULT_BOTTLE_FED;
       this.showAiSummaryCard = DEFAULT_SHOW_AI_SUMMARY_CARD;
+      this.themeColor = DEFAULT_THEME_COLOR;
     } finally {
       this.loading = false;
     }
@@ -384,6 +513,7 @@ export class SettingsPage extends LitElement {
     this.defaultFeedType = settings.defaultFeedType;
     this.defaultBottleFed = settings.defaultBottleFed;
     this.showAiSummaryCard = settings.showAiSummaryCard;
+    this.themeColor = settings.themeColor ?? DEFAULT_THEME_COLOR;
   }
 
   private scheduleSave(partial: Partial<AppSettings>): void {
@@ -468,6 +598,28 @@ export class SettingsPage extends LitElement {
     this.scheduleSave({ showAiSummaryCard: this.showAiSummaryCard });
   }
 
+  private handleThemeColorChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input?.value) {
+      return;
+    }
+
+    const value = input.value.toLowerCase();
+    this.themeColor = value;
+    setThemeColor(value);
+    this.scheduleSave({ themeColor: value });
+  }
+
+  private handleThemeColorReset(): void {
+    if (this.themeColor === DEFAULT_THEME_COLOR) {
+      return;
+    }
+
+    this.themeColor = DEFAULT_THEME_COLOR;
+    setThemeColor(DEFAULT_THEME_COLOR);
+    this.scheduleSave({ themeColor: DEFAULT_THEME_COLOR });
+  }
+
   private handleUnitChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.checked) {
@@ -518,6 +670,39 @@ export class SettingsPage extends LitElement {
           ${this.renderStatus()}
           <section class="section">
             <div class="section__header">
+              <h2 class="section__title">Appearance</h2>
+              <p class="section__description">
+                Choose the accent color used across buttons, highlights, and charts.
+              </p>
+            </div>
+
+            <div class="theme-color">
+              <label for="theme-color-input">Theme color</label>
+              <div class="theme-color__controls">
+                <span class="theme-color__picker">
+                  <input
+                    id="theme-color-input"
+                    type="color"
+                    name="theme-color"
+                    aria-label="Pick theme color"
+                    .value=${this.themeColor}
+                    @input=${this.handleThemeColorChange}
+                    ?disabled=${this.loading}
+                  />
+                </span>
+                <button
+                  class="theme-color__reset"
+                  type="button"
+                  @click=${this.handleThemeColorReset}
+                  ?disabled=${this.loading || this.themeColor === DEFAULT_THEME_COLOR}
+                >
+                  Reset to default
+                </button>
+              </div>
+            </div>
+          </section>
+          <section class="section">
+            <div class="section__header">
               <h2 class="section__title">Feeding rhythm</h2>
               <p class="section__description">
                 Tune the schedule and reminders used for upcoming feeds.
@@ -540,8 +725,7 @@ export class SettingsPage extends LitElement {
               />
               <p class="helper-text">
                 Choose how far apart feedings are scheduled by default. Minimum
-                ${MIN_FEED_INTERVAL_MINUTES} minutes, maximum
-                ${MAX_FEED_INTERVAL_MINUTES} minutes.
+                ${MIN_FEED_INTERVAL_MINUTES} minutes, maximum ${MAX_FEED_INTERVAL_MINUTES} minutes.
               </p>
             </div>
 
@@ -721,7 +905,6 @@ export class SettingsPage extends LitElement {
               </span>
             </label>
           </section>
-
         </form>
 
         ${this.loading
