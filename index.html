@@ -17,6 +17,130 @@
 
     <link rel="icon" type="image/png" href="/feedings-65.png" />
 
+    <script>
+      // Apply theme immediately to prevent flash
+      (function() {
+        try {
+          const SETTINGS_KEY = 'feeding-tracker-settings';
+          const DEFAULT_THEME = '#0061a6';
+          const stored = localStorage.getItem(SETTINGS_KEY);
+          
+          if (!stored) return;
+          
+          const settings = JSON.parse(stored);
+          const themeColor = settings.themeColor || DEFAULT_THEME;
+          
+          // Validate hex color
+          if (!/^#[0-9a-fA-F]{6}$/.test(themeColor)) return;
+          
+          // Generate theme colors using simplified algorithm
+          function hexToHSL(hex) {
+            const r = parseInt(hex.slice(1, 3), 16) / 255;
+            const g = parseInt(hex.slice(3, 5), 16) / 255;
+            const b = parseInt(hex.slice(5, 7), 16) / 255;
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let h = 0, s = 0;
+            const l = (max + min) / 2;
+            if (max !== min) {
+              const d = max - min;
+              s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+              switch (max) {
+                case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                case g: h = ((b - r) / d + 2) / 6; break;
+                case b: h = ((r - g) / d + 4) / 6; break;
+              }
+            }
+            return { h: h * 360, s: s * 100, l: l * 100 };
+          }
+          
+          function hslToHex(h, s, l) {
+            s /= 100; l /= 100;
+            const c = (1 - Math.abs(2 * l - 1)) * s;
+            const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+            const m = l - c / 2;
+            let r = 0, g = 0, b = 0;
+            if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
+            else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
+            else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
+            else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
+            else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
+            else { r = c; g = 0; b = x; }
+            const toHex = (n) => {
+              const hex = Math.round((n + m) * 255).toString(16);
+              return hex.length === 1 ? '0' + hex : hex;
+            };
+            return '#' + toHex(r) + toHex(g) + toHex(b);
+          }
+          
+          function variant(baseHSL, hd, sd, ld) {
+            const h = (baseHSL.h + hd + 360) % 360;
+            const s = Math.max(0, Math.min(100, baseHSL.s + sd));
+            const l = Math.max(0, Math.min(100, baseHSL.l + ld));
+            return hslToHex(h, s, l);
+          }
+          
+          const baseHSL = hexToHSL(themeColor);
+          const root = document.documentElement;
+          
+          // Apply light theme
+          root.style.setProperty('--md-sys-color-primary', themeColor);
+          root.style.setProperty('--md-sys-color-primary-container', variant(baseHSL, 0, -20, 35));
+          root.style.setProperty('--md-sys-color-on-primary-container', variant(baseHSL, 0, 0, -30));
+          root.style.setProperty('--md-sys-color-secondary', variant(baseHSL, 25, -30, -10));
+          root.style.setProperty('--md-sys-color-secondary-container', variant(baseHSL, 25, -35, 35));
+          root.style.setProperty('--md-sys-color-on-secondary-container', variant(baseHSL, 25, -20, -30));
+          root.style.setProperty('--md-sys-color-tertiary', variant(baseHSL, -35, -15, -5));
+          root.style.setProperty('--md-sys-color-tertiary-container', variant(baseHSL, -35, -20, 40));
+          root.style.setProperty('--md-sys-color-on-tertiary-container', variant(baseHSL, -35, -10, -30));
+          
+          // Apply dark theme colors via CSS (will be picked up by media query)
+          const darkPrimary = variant(baseHSL, 0, -10, 30);
+          const darkOnPrimary = variant(baseHSL, 0, 10, -25);
+          const darkPrimaryContainer = variant(baseHSL, 0, 0, -15);
+          const darkOnPrimaryContainer = variant(baseHSL, 0, -20, 35);
+          const darkSecondary = variant(baseHSL, 25, -35, 25);
+          const darkOnSecondary = variant(baseHSL, 25, -15, -25);
+          const darkSecondaryContainer = variant(baseHSL, 25, -25, -20);
+          const darkOnSecondaryContainer = variant(baseHSL, 25, -35, 35);
+          const darkTertiary = variant(baseHSL, -35, -25, 30);
+          const darkOnTertiary = variant(baseHSL, -35, -10, -25);
+          const darkTertiaryContainer = variant(baseHSL, -35, -15, -15);
+          const darkOnTertiaryContainer = variant(baseHSL, -35, -20, 40);
+          
+          // Inject dark mode styles
+          const style = document.createElement('style');
+          style.textContent = `
+            @media (prefers-color-scheme: dark) {
+              :root {
+                --md-sys-color-primary: ${darkPrimary};
+                --md-sys-color-on-primary: ${darkOnPrimary};
+                --md-sys-color-primary-container: ${darkPrimaryContainer};
+                --md-sys-color-on-primary-container: ${darkOnPrimaryContainer};
+                --md-sys-color-secondary: ${darkSecondary};
+                --md-sys-color-on-secondary: ${darkOnSecondary};
+                --md-sys-color-secondary-container: ${darkSecondaryContainer};
+                --md-sys-color-on-secondary-container: ${darkOnSecondaryContainer};
+                --md-sys-color-tertiary: ${darkTertiary};
+                --md-sys-color-on-tertiary: ${darkOnTertiary};
+                --md-sys-color-tertiary-container: ${darkTertiaryContainer};
+                --md-sys-color-on-tertiary-container: ${darkOnTertiaryContainer};
+              }
+            }
+          `;
+          document.head.appendChild(style);
+          
+          // Update meta theme-color
+          const metaLight = document.querySelector('meta[name="theme-color"][media*="light"]');
+          const metaDark = document.querySelector('meta[name="theme-color"][media*="dark"]');
+          if (metaLight) metaLight.content = variant(baseHSL, 0, -30, 45);
+          if (metaDark) metaDark.content = variant(baseHSL, 0, 10, -25);
+        } catch (e) {
+          // Silently fail - will use default theme
+        }
+      })();
+    </script>
+
     <style>
       * {
         margin: 0;
