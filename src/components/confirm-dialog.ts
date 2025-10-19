@@ -76,46 +76,69 @@ export class ConfirmDialog extends LitElement {
       margin: 0;
     }
 
-    .dialog__actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.5rem;
-      padding: 0 1.5rem 1.5rem;
-    }
-
     .dialog__button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--md-comp-button-gap);
+      min-height: var(--md-comp-button-height);
+      padding: 0 var(--md-comp-button-horizontal-padding);
+      border-radius: var(--md-sys-shape-corner-full);
       background: transparent;
       border: none;
-      padding: 0.625rem 1.5rem;
-      border-radius: var(--md-sys-shape-corner-full);
       font-size: var(--md-sys-typescale-label-large-font-size);
       font-weight: var(--md-sys-typescale-label-large-font-weight);
+      line-height: var(--md-sys-typescale-label-large-line-height);
+      letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
     }
 
     .dialog__button--cancel {
       color: var(--md-sys-color-primary);
     }
 
-    .dialog__button--cancel:hover {
-      background-color: var(--md-sys-color-primary-container);
+    .dialog__button--cancel:hover,
+    .dialog__button--cancel:focus-visible {
+      background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+      outline: none;
     }
 
     .dialog__button--confirm {
-      color: var(--md-sys-color-primary);
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+      box-shadow: var(--md-sys-elevation-1);
     }
 
-    .dialog__button--confirm:hover {
-      background-color: var(--md-sys-color-primary-container);
+    .dialog__button--confirm:hover,
+    .dialog__button--confirm:focus-visible {
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      box-shadow: var(--md-sys-elevation-2);
+      outline: none;
     }
 
     .dialog__button--confirm.destructive {
-      color: var(--md-sys-color-error);
+      background: var(--md-sys-color-error);
+      color: var(--md-sys-color-on-error);
+      box-shadow: var(--md-sys-elevation-1);
     }
 
-    .dialog__button--confirm.destructive:hover {
-      background-color: var(--md-sys-color-error-container);
+    .dialog__button--confirm.destructive:hover,
+    .dialog__button--confirm.destructive:focus-visible {
+      background: var(--md-sys-color-error-container);
+      color: var(--md-sys-color-on-error-container);
+      box-shadow: var(--md-sys-elevation-2);
+    }
+
+    .dialog__actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      padding: 0 1.5rem 1.5rem;
     }
 
     @keyframes fade-in {

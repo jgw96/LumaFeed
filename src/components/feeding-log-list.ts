@@ -150,13 +150,20 @@ export class FeedingLogList extends LitElement {
     }
 
     .empty-state-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--md-comp-button-gap);
+      min-height: var(--md-comp-button-height);
+      padding: 0 var(--md-comp-button-horizontal-padding);
       border: none;
-      border-radius: var(--md-sys-shape-corner-large);
-      padding: 0.875rem 1.5rem;
+      border-radius: var(--md-comp-button-shape);
       background: var(--md-sys-color-primary);
       color: var(--md-sys-color-on-primary);
       font-weight: var(--md-sys-typescale-label-large-font-weight);
       font-size: var(--md-sys-typescale-label-large-font-size);
+      line-height: var(--md-sys-typescale-label-large-line-height);
+      letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
       cursor: pointer;
       transition:
         background-color 0.2s,
@@ -164,10 +171,12 @@ export class FeedingLogList extends LitElement {
       box-shadow: var(--md-sys-elevation-1);
     }
 
-    .empty-state-action:hover {
+    .empty-state-action:hover,
+    .empty-state-action:focus-visible {
       background: var(--md-sys-color-primary-container);
       color: var(--md-sys-color-on-primary-container);
       box-shadow: var(--md-sys-elevation-2);
+      outline: none;
     }
 
     .empty-state-footer {
@@ -184,9 +193,9 @@ export class FeedingLogList extends LitElement {
       padding: 0.5rem;
       font-size: 1.5rem;
       transition:
-        opacity 0.2s,
-        background-color 0.2s;
-      border-radius: var(--md-sys-shape-corner-extra-small);
+        opacity 0.2s ease,
+        background-color 0.2s ease;
+      border-radius: 50%;
       width: 2.5rem;
       height: 2.5rem;
       display: flex;
@@ -194,9 +203,11 @@ export class FeedingLogList extends LitElement {
       justify-content: center;
     }
 
-    .delete-btn:hover {
+    .delete-btn:hover,
+    .delete-btn:focus-visible {
       background-color: var(--md-sys-color-error-container);
       opacity: 0.9;
+      outline: none;
     }
   `;
 

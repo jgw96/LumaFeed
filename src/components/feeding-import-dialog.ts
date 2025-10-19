@@ -143,7 +143,7 @@ export class FeedingImportDialog extends BaseModalDialog {
       color: var(--md-sys-color-error);
       cursor: pointer;
       font-size: 0.875rem;
-      padding: 0.35rem 0.75rem;
+      padding: 0.5rem 1rem;
       border-radius: var(--md-sys-shape-corner-small);
       transition: background-color 0.2s ease;
     }
@@ -239,7 +239,7 @@ export class FeedingImportDialog extends BaseModalDialog {
     }
 
     .field-error {
-      margin-top: 0.35rem;
+      margin-top: 0.5rem;
       color: var(--md-sys-color-error);
       font-size: var(--md-sys-typescale-body-small-font-size);
     }
@@ -247,21 +247,30 @@ export class FeedingImportDialog extends BaseModalDialog {
     .add-entry-btn {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
+      justify-content: center;
+      gap: var(--md-comp-button-gap);
       align-self: flex-start;
+      min-height: var(--md-comp-button-height);
+      padding: 0 1.25rem;
       background: none;
       border: 1px dashed var(--md-sys-color-outline-variant);
       color: var(--md-sys-color-primary);
-      padding: 0.6rem 1rem;
-      border-radius: var(--md-sys-shape-corner-large);
+      font-weight: var(--md-sys-typescale-label-large-font-weight);
+      font-size: var(--md-sys-typescale-label-large-font-size);
+      letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
+      border-radius: var(--md-sys-shape-corner-full);
       cursor: pointer;
-      transition: background-color 0.2s ease;
+      transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
     }
 
     .add-entry-btn:hover,
     .add-entry-btn:focus-visible {
-      background: var(--md-sys-color-primary-container);
-      color: var(--md-sys-color-on-primary-container);
+      background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+      color: var(--md-sys-color-primary);
+      border-color: var(--md-sys-color-primary);
       outline: none;
     }
 
@@ -275,14 +284,23 @@ export class FeedingImportDialog extends BaseModalDialog {
 
     .text-btn,
     .primary-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--md-comp-button-gap);
+      min-height: var(--md-comp-button-height);
+      padding: 0 var(--md-comp-button-horizontal-padding);
       border: none;
-      border-radius: var(--md-sys-shape-corner-large);
-      padding: 0.75rem 1.5rem;
-      font: inherit;
+      border-radius: var(--md-comp-button-shape);
+      font-size: var(--md-sys-typescale-label-large-font-size);
+      font-weight: var(--md-sys-typescale-label-large-font-weight);
+      line-height: var(--md-sys-typescale-label-large-line-height);
+      letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
       cursor: pointer;
       transition:
         background-color 0.2s ease,
-        box-shadow 0.2s ease;
+        box-shadow 0.2s ease,
+        color 0.2s ease;
       min-width: 96px;
     }
 
@@ -293,8 +311,8 @@ export class FeedingImportDialog extends BaseModalDialog {
 
     .text-btn:hover,
     .text-btn:focus-visible {
-      background: var(--md-sys-color-primary-container);
-      color: var(--md-sys-color-on-primary-container);
+      background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+      color: var(--md-sys-color-primary);
       outline: none;
     }
 

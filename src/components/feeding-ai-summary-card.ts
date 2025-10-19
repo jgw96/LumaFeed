@@ -50,20 +50,33 @@ export class FeedingAiSummaryCard extends LitElement {
       background: var(--md-sys-color-secondary-container);
       color: var(--md-sys-color-on-secondary-container);
       border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: var(--md-sys-shape-corner-large);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--md-comp-button-gap);
+      min-height: var(--md-comp-button-height);
+      padding: 0 var(--md-comp-button-horizontal-padding);
+      border-radius: var(--md-comp-button-shape);
       font-size: var(--md-sys-typescale-label-large-font-size);
       font-weight: var(--md-sys-typescale-label-large-font-weight);
+      line-height: var(--md-sys-typescale-label-large-line-height);
+      letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
       cursor: pointer;
       transition:
         background-color 0.2s ease,
-        transform 0.2s ease;
+        color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+      box-shadow: var(--md-sys-elevation-1);
     }
 
-    button:hover:not(:disabled) {
+    button:hover:not(:disabled),
+    button:focus-visible:not(:disabled) {
       background: var(--md-sys-color-secondary);
       color: var(--md-sys-color-on-secondary);
       transform: translateY(-1px);
+      box-shadow: var(--md-sys-elevation-2);
+      outline: none;
     }
 
     button:disabled {

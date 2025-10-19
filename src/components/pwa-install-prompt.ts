@@ -20,11 +20,9 @@ export class PWAInstallPrompt extends LitElement {
       right: 0;
       background: var(--md-sys-color-surface);
       color: var(--md-sys-color-on-surface);
-      border-radius: 16px 16px 0 0;
+      border-radius: var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-large) 0 0;
       padding: 1rem;
-      box-shadow:
-        0 -4px 16px rgba(0, 0, 0, 0.2),
-        0 -2px 8px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--md-sys-elevation-4);
       z-index: 1000;
       transform: translateY(100%);
       opacity: 0;
@@ -42,10 +40,8 @@ export class PWAInstallPrompt extends LitElement {
         right: 1rem;
         transform: translateX(-50%) translateY(calc(100% + 2rem));
         max-width: 400px;
-        border-radius: 16px;
-        box-shadow:
-          0 8px 16px rgba(0, 0, 0, 0.2),
-          0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: var(--md-sys-shape-corner-extra-large);
+        box-shadow: var(--md-sys-elevation-5);
       }
 
       .prompt--visible {
@@ -131,12 +127,18 @@ export class PWAInstallPrompt extends LitElement {
     }
 
     .prompt__button {
-      padding: 0.625rem 1.5rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--md-comp-button-gap);
+      min-height: var(--md-comp-button-height);
+      padding: 0 var(--md-comp-button-horizontal-padding);
       border: none;
-      border-radius: 20px;
+      border-radius: var(--md-comp-button-shape);
       font-size: var(--md-sys-typescale-label-large-font-size);
       font-weight: var(--md-sys-typescale-label-large-font-weight);
       line-height: var(--md-sys-typescale-label-large-line-height);
+      letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
       cursor: pointer;
       transition:
         background-color 0.2s ease,
@@ -148,35 +150,24 @@ export class PWAInstallPrompt extends LitElement {
       color: var(--md-sys-color-primary);
     }
 
-    .prompt__button--text:hover {
-      background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+    .prompt__button--text:hover,
+    .prompt__button--text:focus-visible {
+      background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+      outline: none;
     }
 
     .prompt__button--filled {
       background: var(--md-sys-color-primary);
       color: var(--md-sys-color-on-primary);
+      box-shadow: var(--md-sys-elevation-1);
     }
 
-    .prompt__button--filled:hover {
-      box-shadow:
-        0 1px 3px rgba(0, 0, 0, 0.12),
-        0 1px 2px rgba(0, 0, 0, 0.24);
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .prompt {
-        box-shadow:
-          0 -4px 16px rgba(0, 0, 0, 0.4),
-          0 -2px 8px rgba(0, 0, 0, 0.3);
-      }
-
-      @media (min-width: 768px) {
-        .prompt {
-          box-shadow:
-            0 8px 16px rgba(0, 0, 0, 0.4),
-            0 4px 8px rgba(0, 0, 0, 0.3);
-        }
-      }
+    .prompt__button--filled:hover,
+    .prompt__button--filled:focus-visible {
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      box-shadow: var(--md-sys-elevation-2);
+      outline: none;
     }
 
     /* iOS-specific styles for Safari */

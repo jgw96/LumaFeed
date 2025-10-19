@@ -29,39 +29,55 @@ export class HomePage extends LitElement {
     }
 
     .add-btn {
-      background: var(--md-sys-color-primary);
-      color: var(--md-sys-color-on-primary);
-      border: none;
-      padding: 0.875rem 1.5rem;
-      border-radius: var(--md-sys-shape-corner-large);
-      font-size: var(--md-sys-typescale-label-large-font-size);
-      font-weight: var(--md-sys-typescale-label-large-font-weight);
-      cursor: pointer;
-      transition:
-        background-color 0.2s,
-        box-shadow 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      box-shadow: var(--md-sys-elevation-1);
-
       position: fixed;
       right: 16px;
       bottom: calc(45px + var(--bottom-nav-height, 0px));
       z-index: 30;
+
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--md-comp-fab-gap);
+      min-height: var(--md-comp-fab-height);
+      padding: 0 var(--md-comp-fab-horizontal-padding);
+      border: none;
+      border-radius: var(--md-comp-fab-shape);
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+      font-size: var(--md-sys-typescale-label-large-font-size);
+      font-weight: var(--md-sys-typescale-label-large-font-weight);
+      line-height: var(--md-sys-typescale-label-large-line-height);
+      letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
+      cursor: pointer;
+      box-shadow: var(--md-sys-elevation-3);
+      transition:
+        background-color 0.2s ease,
+        box-shadow 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
     }
 
-    .add-btn:hover {
-      background: color-mix(in srgb, var(--md-sys-color-primary) 88%, #ffffff 12%);
-      box-shadow: var(--md-sys-elevation-2);
+    .add-btn:hover,
+    .add-btn:focus-visible {
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      box-shadow: var(--md-sys-elevation-4);
+      transform: translateY(-2px);
+      outline: none;
     }
 
     .add-btn:active {
-      box-shadow: var(--md-sys-elevation-1);
+      transform: translateY(0);
+      box-shadow: var(--md-sys-elevation-3);
     }
 
     .add-btn::before {
       content: '+';
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--md-comp-fab-icon-size);
+      height: var(--md-comp-fab-icon-size);
       font-size: 1.5rem;
       line-height: 1;
     }

@@ -40,20 +40,30 @@ export class NotFoundPage extends LitElement {
     a {
       color: var(--md-sys-color-primary);
       text-decoration: none;
-      font-weight: 500;
-      padding: 0.625rem 1.5rem;
-      border-radius: var(--md-sys-shape-corner-extra-large);
+      font-weight: var(--md-sys-typescale-label-large-font-weight);
+      font-size: var(--md-sys-typescale-label-large-font-size);
+      line-height: var(--md-sys-typescale-label-large-line-height);
+      letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--md-comp-button-gap);
+      min-height: var(--md-comp-button-height);
+      padding: 0 var(--md-comp-button-horizontal-padding);
+      border-radius: var(--md-comp-button-shape);
       background: var(--md-sys-color-primary-container);
-      display: inline-block;
       transition:
         background-color 0.2s,
-        box-shadow 0.2s;
+        box-shadow 0.2s,
+        color 0.2s;
     }
 
-    a:hover {
+    a:hover,
+    a:focus-visible {
       background: var(--md-sys-color-primary);
       color: var(--md-sys-color-on-primary);
       box-shadow: var(--md-sys-elevation-1);
+      outline: none;
     }
   `;
 

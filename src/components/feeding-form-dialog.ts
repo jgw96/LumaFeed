@@ -209,19 +209,30 @@ export class FeedingFormDialog extends BaseModalDialog {
     }
 
     .link-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      min-height: var(--md-comp-button-height);
+      padding: 0 1rem;
       background: none;
       border: none;
       color: var(--md-sys-color-primary);
-      font-size: var(--md-sys-typescale-body-medium-font-size);
-      font-weight: 500;
+      font-size: var(--md-sys-typescale-label-large-font-size);
+      font-weight: var(--md-sys-typescale-label-large-font-weight);
+      letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
       cursor: pointer;
-      padding: 0.25rem 0.5rem;
-      border-radius: var(--md-sys-shape-corner-small);
+      border-radius: var(--md-sys-shape-corner-full);
+      transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
     }
 
-    .link-button:hover {
-      background: var(--md-sys-color-primary-container);
-      color: var(--md-sys-color-on-primary-container);
+    .link-button:hover,
+    .link-button:focus-visible {
+      background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+      color: var(--md-sys-color-primary);
+      outline: none;
     }
 
     .form-group {
@@ -330,16 +341,23 @@ export class FeedingFormDialog extends BaseModalDialog {
     }
 
     button {
-      padding: 0.625rem 1.5rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--md-comp-button-gap);
+      min-height: var(--md-comp-button-height);
+      padding: 0 var(--md-comp-button-horizontal-padding);
       border: none;
-      border-radius: var(--md-sys-shape-corner-extra-large);
+      border-radius: var(--md-comp-button-shape);
       font-size: var(--md-sys-typescale-label-large-font-size);
       font-weight: var(--md-sys-typescale-label-large-font-weight);
+      line-height: var(--md-sys-typescale-label-large-line-height);
+      letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
       cursor: pointer;
       transition:
-        background-color 0.2s,
-        box-shadow 0.2s;
-      min-height: 40px;
+        background-color 0.2s ease,
+        box-shadow 0.2s ease,
+        color 0.2s ease;
     }
 
     .btn-cancel {
@@ -347,8 +365,10 @@ export class FeedingFormDialog extends BaseModalDialog {
       color: var(--md-sys-color-primary);
     }
 
-    .btn-cancel:hover {
-      background: var(--md-sys-color-primary-container);
+    .btn-cancel:hover,
+    .btn-cancel:focus-visible {
+      background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+      outline: none;
     }
 
     .btn-save {
@@ -357,10 +377,12 @@ export class FeedingFormDialog extends BaseModalDialog {
       box-shadow: var(--md-sys-elevation-1);
     }
 
-    .btn-save:hover {
+    .btn-save:hover,
+    .btn-save:focus-visible {
       background: var(--md-sys-color-primary-container);
       color: var(--md-sys-color-on-primary-container);
       box-shadow: var(--md-sys-elevation-2);
+      outline: none;
     }
 
     .btn-save:active {

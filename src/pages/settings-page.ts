@@ -81,8 +81,8 @@ export class SettingsPage extends LitElement {
       gap: 1.25rem;
       padding: 1.5rem;
       border-radius: var(--md-sys-shape-corner-extra-large);
-      background: var(--md-sys-color-surface-container-highest);
-      border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 65%, transparent);
+      background: var(--md-sys-color-surface-container-low);
+      border: 1px solid var(--md-sys-color-outline-variant);
       box-shadow: var(--md-sys-elevation-1);
     }
 
@@ -210,37 +210,47 @@ export class SettingsPage extends LitElement {
       font-size: var(--md-sys-typescale-body-medium-font-size);
       color: var(--md-sys-color-on-surface-variant);
       background: var(--md-sys-color-surface-container-low);
-      padding: 0.45rem 0.8rem;
+      padding: 0.5rem 0.75rem;
       border-radius: var(--md-sys-shape-corner-medium);
       border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 45%, transparent);
       font-variant-numeric: tabular-nums;
     }
 
     .theme-color__reset {
-      padding: 0.65rem 1.5rem;
-      border-radius: var(--md-sys-shape-corner-extra-large);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--md-comp-button-gap);
+      min-height: var(--md-comp-button-height);
+      padding: 0 var(--md-comp-button-horizontal-padding);
+      border-radius: var(--md-comp-button-shape);
       border: none;
       background: var(--md-sys-color-secondary-container);
       color: var(--md-sys-color-on-secondary-container);
       font-weight: var(--md-sys-typescale-label-large-font-weight);
       font-size: var(--md-sys-typescale-label-large-font-size);
+      line-height: var(--md-sys-typescale-label-large-line-height);
+      letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
       cursor: pointer;
       box-shadow: var(--md-sys-elevation-1);
       transition:
         transform 0.2s ease,
         box-shadow 0.2s ease,
-        background-color 0.2s ease;
+        background-color 0.2s ease,
+        color 0.2s ease;
     }
 
     .theme-color__reset:hover:not(:disabled),
     .theme-color__reset:focus-visible {
       background: color-mix(
         in srgb,
-        var(--md-sys-color-secondary-container) 85%,
-        var(--md-sys-color-primary) 15%
+        var(--md-sys-color-secondary-container) 70%,
+        var(--md-sys-color-primary) 30%
       );
+      color: var(--md-sys-color-on-secondary-container);
       box-shadow: var(--md-sys-elevation-2);
       transform: translateY(-1px);
+      outline: none;
     }
 
     .theme-color__reset:disabled {
@@ -394,18 +404,34 @@ export class SettingsPage extends LitElement {
     }
 
     button[type='submit'] {
-      padding: 0.65rem 1.5rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--md-comp-button-gap);
+      min-height: var(--md-comp-button-height);
+      padding: 0 var(--md-comp-button-horizontal-padding);
       border: none;
-      border-radius: var(--md-sys-shape-corner-extra-large);
+      border-radius: var(--md-comp-button-shape);
       background: var(--md-sys-color-primary);
       color: var(--md-sys-color-on-primary);
       font-weight: var(--md-sys-typescale-label-large-font-weight);
       font-size: var(--md-sys-typescale-label-large-font-size);
+      line-height: var(--md-sys-typescale-label-large-line-height);
+      letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
       cursor: pointer;
       box-shadow: var(--md-sys-elevation-1);
       transition:
         background-color 0.2s ease,
-        box-shadow 0.2s ease;
+        box-shadow 0.2s ease,
+        color 0.2s ease;
+    }
+
+    button[type='submit']:hover,
+    button[type='submit']:focus-visible {
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      box-shadow: var(--md-sys-elevation-2);
+      outline: none;
     }
 
     button[type='submit']:disabled {
