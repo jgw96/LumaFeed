@@ -49,6 +49,23 @@ export class FeedingSummaryCard extends LitElement {
       color: var(--md-sys-color-on-surface-variant);
     }
 
+    .summary-card__interval {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      font-size: var(--md-sys-typescale-body-medium-font-size);
+      color: var(--md-sys-color-on-surface-variant);
+      margin-top: 0.5rem;
+    }
+
+    .summary-card__interval-label {
+      font-weight: 500;
+    }
+
+    .summary-card__interval-value {
+      color: var(--md-sys-color-on-surface);
+    }
+
     .summary-card__next {
       background: var(--md-sys-color-secondary-container);
       color: var(--md-sys-color-on-secondary-container);
@@ -159,16 +176,23 @@ export class FeedingSummaryCard extends LitElement {
     return Number.isFinite(candidate) ? candidate : undefined;
   }
 
-  private calculateSummary(): { feedings: number; totalMl: number; totalOz: number } {
+  private calculateSummary(): {
+    feedings: number;
+    totalMl: number;
+    totalOz: number;
+    averageIntervalMinutes: number | null;
+  } {
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
     let feedings = 0;
     let totalMl = 0;
     let totalOz = 0;
+    const feedTimestamps: number[] = [];
 
     for (const log of this.logs) {
       const timestamp = typeof log.endTime === 'number' ? log.endTime : log.timestamp;
       if (typeof timestamp === 'number' && timestamp >= cutoff) {
         feedings += 1;
+        feedTimestamps.push(timestamp);
         if (Number.isFinite(log.amountMl)) {
           totalMl += log.amountMl as number;
         }
@@ -178,7 +202,23 @@ export class FeedingSummaryCard extends LitElement {
       }
     }
 
-    return { feedings, totalMl, totalOz };
+    let averageIntervalMinutes: number | null = null;
+    if (feedTimestamps.length >= 2) {
+      // Sort timestamps in ascending order
+      feedTimestamps.sort((a, b) => a - b);
+
+      // Calculate intervals between consecutive feeds
+      const intervals: number[] = [];
+      for (let i = 1; i < feedTimestamps.length; i++) {
+        intervals.push(feedTimestamps[i] - feedTimestamps[i - 1]);
+      }
+
+      // Calculate average interval in minutes
+      const totalInterval = intervals.reduce((sum, interval) => sum + interval, 0);
+      averageIntervalMinutes = Math.round(totalInterval / intervals.length / 60_000);
+    }
+
+    return { feedings, totalMl, totalOz, averageIntervalMinutes };
   }
 
   private formatNumber(value: number, maxFractionDigits = 0): string {
@@ -191,6 +231,18 @@ export class FeedingSummaryCard extends LitElement {
 
   private formatFeedingLabel(count: number): string {
     return count === 1 ? '1 feeding' : `${count} feedings`;
+  }
+
+  private formatInterval(minutes: number): string {
+    if (minutes < 60) {
+      return `${minutes} min`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    if (remainingMinutes === 0) {
+      return hours === 1 ? '1 hr' : `${hours} hrs`;
+    }
+    return `${hours} hr ${remainingMinutes} min`;
   }
 
   private getChartDescription(): string {
@@ -358,7 +410,7 @@ export class FeedingSummaryCard extends LitElement {
 
   render() {
     const summary = this.calculateSummary();
-    const { feedings, totalMl, totalOz } = summary;
+    const { feedings, totalMl, totalOz, averageIntervalMinutes } = summary;
     const filtered = this.filteredLogs();
     const hasChartData = filtered.length > 0;
     const nextFeedTime = this.resolveNextFeedTime();
@@ -380,6 +432,16 @@ export class FeedingSummaryCard extends LitElement {
                       >(${this.formatNumber(totalOz, 1)} oz)</span
                     >
                   </div>
+                  ${averageIntervalMinutes !== null
+                    ? html`
+                        <div class="summary-card__interval">
+                          <span class="summary-card__interval-label">Average interval:</span>
+                          <span class="summary-card__interval-value"
+                            >${this.formatInterval(averageIntervalMinutes)}</span
+                          >
+                        </div>
+                      `
+                    : null}
                   ${hasChartData
                     ? html`
                         <div
