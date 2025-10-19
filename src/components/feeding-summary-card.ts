@@ -2,6 +2,13 @@ import { LitElement, html, css, PropertyValues } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { FeedingLog } from '../types/feeding-log.js';
 import { formatNextFeedLabel } from '../utils/feed-time.js';
+import type { ChartDataPoint } from '../utils/feeding-summary/draw-chart.js';
+
+type FormatNumberFn =
+  (typeof import('../utils/feeding-summary/format-number.js'))['formatNumber'];
+type ResolveNextFeedTimeFn =
+  (typeof import('../utils/feeding-summary/resolve-next-feed-time.js'))['resolveNextFeedTime'];
+type DrawChartFn = (typeof import('../utils/feeding-summary/draw-chart.js'))['drawChart'];
 import './feeding-ai-summary-card.js';
 
 @customElement('feeding-summary-card')
@@ -108,15 +115,38 @@ export class FeedingSummaryCard extends LitElement {
   @property({ type: Boolean })
   showAiSummary = true;
 
+  private utilitiesReady = false;
+
+  private utilitiesPromise?: Promise<void>;
+
+  private formatNumberFn!: FormatNumberFn;
+
+  private resolveNextFeedTimeFn!: ResolveNextFeedTimeFn;
+
+  private drawChartFn?: DrawChartFn;
+
+  private drawChartPromise?: Promise<DrawChartFn>;
+
   private readonly handleWindowResize = () => {
     if (!this.loading) {
-      this.drawChart();
+      this.renderChart();
     }
   };
 
+  protected shouldUpdate(changed: PropertyValues<this>): boolean {
+    if (!this.utilitiesReady) {
+      if (!this.utilitiesPromise) {
+        this.utilitiesPromise = this.loadUtilities();
+      }
+      return false;
+    }
+
+    return super.shouldUpdate(changed);
+  }
+
   protected firstUpdated(): void {
     window.addEventListener('resize', this.handleWindowResize);
-    void this.updateComplete.then(() => this.drawChart());
+    void this.updateComplete.then(() => this.renderChart());
   }
 
   protected updated(changed: PropertyValues<this>): void {
@@ -125,38 +155,13 @@ export class FeedingSummaryCard extends LitElement {
     const loadingKey: keyof FeedingSummaryCard = 'loading';
 
     if ((changed.has(logsKey) || changed.has(loadingKey)) && !this.loading) {
-      void this.updateComplete.then(() => this.drawChart());
+      void this.updateComplete.then(() => this.renderChart());
     }
   }
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
     window.removeEventListener('resize', this.handleWindowResize);
-  }
-
-  private resolveNextFeedTime(): number | undefined {
-    if (!Array.isArray(this.logs) || this.logs.length === 0) {
-      return undefined;
-    }
-
-    let latestLog: FeedingLog | undefined;
-    let latestCompletedAt = Number.NEGATIVE_INFINITY;
-
-    for (const log of this.logs) {
-      const completedAt = typeof log.endTime === 'number' ? log.endTime : log.timestamp;
-      if (
-        typeof completedAt === 'number' &&
-        Number.isFinite(completedAt) &&
-        (latestLog === undefined || completedAt > latestCompletedAt)
-      ) {
-        latestLog = log;
-        latestCompletedAt = completedAt;
-      }
-    }
-
-    const candidate =
-      typeof latestLog?.nextFeedTime === 'number' ? latestLog.nextFeedTime : undefined;
-    return Number.isFinite(candidate) ? candidate : undefined;
   }
 
   private calculateSummary(): { feedings: number; totalMl: number; totalOz: number } {
@@ -179,14 +184,6 @@ export class FeedingSummaryCard extends LitElement {
     }
 
     return { feedings, totalMl, totalOz };
-  }
-
-  private formatNumber(value: number, maxFractionDigits = 0): string {
-    const hasFraction = Math.abs(value - Math.trunc(value)) > Number.EPSILON;
-    return new Intl.NumberFormat(undefined, {
-      maximumFractionDigits: maxFractionDigits,
-      minimumFractionDigits: maxFractionDigits > 0 && hasFraction ? 1 : 0,
-    }).format(value);
   }
 
   private formatFeedingLabel(count: number): string {
@@ -223,7 +220,7 @@ export class FeedingSummaryCard extends LitElement {
     return 0;
   }
 
-  private filteredLogs(): Array<{ amount: number; timestamp: number }> {
+  private filteredLogs(): ChartDataPoint[] {
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
     return this.logs
       .filter((log) => {
@@ -238,122 +235,81 @@ export class FeedingSummaryCard extends LitElement {
       .filter((entry) => Number.isFinite(entry.timestamp));
   }
 
-  private drawChart(): void {
+  private async loadUtilities(): Promise<void> {
+    try {
+      const [{ formatNumber }, { resolveNextFeedTime }] = await Promise.all([
+        import('../utils/feeding-summary/format-number.js'),
+        import('../utils/feeding-summary/resolve-next-feed-time.js'),
+      ]);
+      this.formatNumberFn = formatNumber;
+      this.resolveNextFeedTimeFn = resolveNextFeedTime;
+    } catch (error) {
+      console.error('Failed to load feeding summary helpers', error);
+      this.formatNumberFn = (value: number, maxFractionDigits = 0) =>
+        value.toLocaleString(undefined, { maximumFractionDigits: maxFractionDigits });
+      this.resolveNextFeedTimeFn = () => undefined;
+    } finally {
+      this.utilitiesReady = true;
+      this.requestUpdate();
+    }
+  }
+
+  private loadChartModule(): Promise<DrawChartFn> {
+    if (this.drawChartFn) {
+      return Promise.resolve(this.drawChartFn);
+    }
+
+    if (!this.drawChartPromise) {
+      this.drawChartPromise = import('../utils/feeding-summary/draw-chart.js')
+        .then((module) => {
+          this.drawChartFn = module.drawChart;
+          return module.drawChart;
+        })
+        .finally(() => {
+          this.drawChartPromise = undefined;
+        });
+    }
+
+    return this.drawChartPromise;
+  }
+
+  private renderChart(): void {
+    if (this.loading) {
+      return;
+    }
+
     const canvas = this.renderRoot?.querySelector<HTMLCanvasElement>('#feedChart');
     if (!canvas) {
       return;
     }
 
     const data = this.filteredLogs();
-    const displayWidth = canvas.clientWidth;
-    const displayHeight = canvas.clientHeight;
-
-    if (!displayWidth || !displayHeight) {
-      return;
-    }
-
-    const dpr = window.devicePixelRatio ?? 1;
-    const width = Math.floor(displayWidth * dpr);
-    const height = Math.floor(displayHeight * dpr);
-
-    if (canvas.width !== width || canvas.height !== height) {
-      canvas.width = width;
-      canvas.height = height;
-    }
-
-    const context = canvas.getContext('2d');
-    if (!context) {
-      return;
-    }
-
-    context.setTransform(dpr, 0, 0, dpr, 0, 0);
-    context.clearRect(0, 0, displayWidth, displayHeight);
-
     if (!data.length) {
-      return;
-    }
-
-    const styles = getComputedStyle(this);
-    const primaryColor = styles.getPropertyValue('--md-sys-color-primary').trim() || '#6750a4';
-    const gridColor =
-      styles.getPropertyValue('--md-sys-color-outline-variant').trim() || 'rgba(0,0,0,0.1)';
-    const baselineColor =
-      styles.getPropertyValue('--md-sys-color-outline').trim() || 'rgba(0,0,0,0.2)';
-    const textColor =
-      styles.getPropertyValue('--md-sys-color-on-surface-variant').trim() || '#625b71';
-
-    const topPadding = 16;
-    const leftPadding = data.length > 6 ? 28 : 16;
-    const rightPadding = 16;
-    const bottomPadding = data.length > 6 ? 64 : 32;
-    const chartHeight = Math.max(0, displayHeight - topPadding - bottomPadding);
-    const chartWidth = Math.max(0, displayWidth - leftPadding - rightPadding);
-
-    const maxAmount = data.reduce((max, entry) => Math.max(max, entry.amount), 0);
-    if (maxAmount <= 0 || chartWidth <= 0 || chartHeight <= 0) {
-      return;
-    }
-
-    context.strokeStyle = gridColor;
-    context.lineWidth = 1;
-    context.font = '12px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-    context.textBaseline = 'top';
-
-    const gridLines = 4;
-    for (let i = 1; i < gridLines; i += 1) {
-      const ratio = i / gridLines;
-      const y = topPadding + chartHeight - chartHeight * ratio;
-      context.globalAlpha = 0.5;
-      context.beginPath();
-      context.moveTo(leftPadding, y);
-      context.lineTo(leftPadding + chartWidth, y);
-      context.stroke();
-    }
-    context.globalAlpha = 1;
-
-    context.strokeStyle = baselineColor;
-    context.beginPath();
-    context.moveTo(leftPadding, topPadding + chartHeight + 0.5);
-    context.lineTo(leftPadding + chartWidth, topPadding + chartHeight + 0.5);
-    context.stroke();
-
-    const barWidth = Math.max(6, chartWidth / (data.length * 1.7));
-    const gap =
-      data.length > 1 ? Math.max(4, (chartWidth - barWidth * data.length) / (data.length - 1)) : 0;
-    const timeFormatter = new Intl.DateTimeFormat(undefined, {
-      hour: 'numeric',
-      minute: '2-digit',
-    });
-
-    let x = leftPadding;
-    for (let i = 0; i < data.length; i += 1) {
-      const entry = data[i];
-      const barHeight = (entry.amount / maxAmount) * chartHeight;
-      const y = topPadding + chartHeight - barHeight;
-
-      context.fillStyle = primaryColor;
-      context.globalAlpha = 0.85;
-      context.fillRect(x, y, barWidth, barHeight);
-      context.globalAlpha = 1;
-
-      const timestamp = entry.timestamp;
-      const label = timeFormatter.format(timestamp);
-
-      context.save();
-      const labelYOffset = data.length > 6 ? 20 : 10;
-      context.translate(x + barWidth / 2, topPadding + chartHeight + labelYOffset);
-      if (data.length > 6) {
-        context.rotate(-Math.PI / 4);
-        context.textAlign = 'right';
-      } else {
-        context.textAlign = 'center';
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
       }
-      context.fillStyle = textColor;
-      context.fillText(label, 0, 0);
-      context.restore();
-
-      x += barWidth + gap;
+      return;
     }
+
+    if (this.drawChartFn) {
+      this.drawChartFn({ canvas, host: this, data });
+      return;
+    }
+
+    void this.loadChartModule()
+      .then((drawChart) => {
+        if (!this.isConnected) {
+          return;
+        }
+        if (!canvas.isConnected) {
+          return;
+        }
+        drawChart({ canvas, host: this, data });
+      })
+      .catch((error) => {
+        console.error('Failed to render feeding chart', error);
+      });
   }
 
   render() {
@@ -361,7 +317,7 @@ export class FeedingSummaryCard extends LitElement {
     const { feedings, totalMl, totalOz } = summary;
     const filtered = this.filteredLogs();
     const hasChartData = filtered.length > 0;
-    const nextFeedTime = this.resolveNextFeedTime();
+    const nextFeedTime = this.resolveNextFeedTimeFn(this.logs);
     const nextFeedLabel =
       typeof nextFeedTime === 'number' ? formatNextFeedLabel(nextFeedTime) : null;
 
@@ -375,9 +331,9 @@ export class FeedingSummaryCard extends LitElement {
               ? html`
                   <span class="summary-card__status">${this.formatFeedingLabel(feedings)}</span>
                   <div class="summary-card__totals">
-                    <span>${this.formatNumber(totalMl)} ml</span>
+                      <span>${this.formatNumberFn(totalMl)} ml</span>
                     <span class="summary-card__secondary"
-                      >(${this.formatNumber(totalOz, 1)} oz)</span
+                        >(${this.formatNumberFn(totalOz, 1)} oz)</span
                     >
                   </div>
                   ${hasChartData

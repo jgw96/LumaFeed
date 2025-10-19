@@ -80,16 +80,100 @@ export class FeedingLogList extends LitElement {
 
     .empty-state {
       text-align: center;
-      padding: 3rem 1rem;
-      color: var(--md-sys-color-on-surface-variant);
+      padding: 3rem 1.5rem;
+      color: var(--md-sys-color-on-surface);
       background: var(--md-sys-color-surface-container-low);
       border-radius: var(--md-sys-shape-corner-large);
+      display: grid;
+      gap: 1.5rem;
+      max-width: 420px;
+      margin: 0 auto;
     }
 
     .empty-state-icon {
       font-size: 3rem;
       margin-bottom: 1rem;
       opacity: 0.7;
+    }
+
+    .empty-state-title {
+      font-size: var(--md-sys-typescale-headline-small-font-size);
+      font-weight: var(--md-sys-typescale-headline-small-font-weight);
+      line-height: var(--md-sys-typescale-headline-small-line-height);
+      color: var(--md-sys-color-on-surface);
+    }
+
+    .empty-state-description {
+      color: var(--md-sys-color-on-surface-variant);
+      font-size: var(--md-sys-typescale-body-medium-font-size);
+      line-height: var(--md-sys-typescale-body-medium-line-height);
+      margin: 0;
+    }
+
+    .empty-state-highlights {
+      display: grid;
+      gap: 1rem;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+      text-align: left;
+    }
+
+    .highlight-item {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.75rem;
+      align-items: start;
+      background: color-mix(in srgb, var(--md-sys-color-surface) 70%, transparent);
+      border: 1px dashed color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
+      border-radius: var(--md-sys-shape-corner-medium);
+      padding: 0.75rem 1rem;
+    }
+
+    .highlight-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+      color: var(--md-sys-color-primary);
+    }
+
+    .highlight-title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      color: var(--md-sys-color-on-surface);
+      font-size: var(--md-sys-typescale-label-large-font-size);
+    }
+
+    .highlight-copy {
+      color: var(--md-sys-color-on-surface-variant);
+      font-size: var(--md-sys-typescale-body-small-font-size);
+      margin: 0;
+    }
+
+    .empty-state-action {
+      border: none;
+      border-radius: var(--md-sys-shape-corner-large);
+      padding: 0.875rem 1.5rem;
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+      font-weight: var(--md-sys-typescale-label-large-font-weight);
+      font-size: var(--md-sys-typescale-label-large-font-size);
+      cursor: pointer;
+      transition:
+        background-color 0.2s,
+        box-shadow 0.2s;
+      box-shadow: var(--md-sys-elevation-1);
+    }
+
+    .empty-state-action:hover {
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      box-shadow: var(--md-sys-elevation-2);
+    }
+
+    .empty-state-footer {
+      color: var(--md-sys-color-on-surface-variant);
+      font-size: var(--md-sys-typescale-body-small-font-size);
+      margin: 0;
     }
 
     .delete-btn {
@@ -118,6 +202,15 @@ export class FeedingLogList extends LitElement {
 
   @property({ type: Array })
   logs: FeedingLog[] = [];
+
+  private handleEmptyStateAction() {
+    this.dispatchEvent(
+      new CustomEvent('log-add-requested', {
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
 
   private formatTimeRange(log: FeedingLog): string {
     const start = new Date(log.startTime ?? log.timestamp);
@@ -177,9 +270,53 @@ export class FeedingLogList extends LitElement {
   render() {
     if (this.logs.length === 0) {
       return html`
-        <div class="empty-state">
-          <div class="empty-state-icon">🍼</div>
-          <p>No feeding logs yet. Add your first feeding session!</p>
+        <div class="empty-state" role="status" aria-live="polite">
+          <div>
+            <div class="empty-state-icon" aria-hidden="true">🍼</div>
+            <h3 class="empty-state-title">Start tracking feedings</h3>
+            <p class="empty-state-description">
+              Capture nursing or bottle sessions, keep an eye on timing, and know exactly when the
+              next feeding is due.
+            </p>
+          </div>
+          <ul class="empty-state-highlights" aria-label="Benefits of logging feedings">
+            <li class="highlight-item">
+              <span class="highlight-icon" aria-hidden="true">⏱️</span>
+              <div>
+                <div class="highlight-title">Log sessions effortlessly</div>
+                <p class="highlight-copy">
+                  Use the timer or quick-entry form to record start, end, and feeding amounts in
+                  seconds.
+                </p>
+              </div>
+            </li>
+            <li class="highlight-item">
+              <span class="highlight-icon" aria-hidden="true">🔔</span>
+              <div>
+                <div class="highlight-title">Stay ahead of the next feed</div>
+                <p class="highlight-copy">
+                  We calculate the next feeding window automatically and can remind you when it is
+                  coming up.
+                </p>
+              </div>
+            </li>
+            <li class="highlight-item">
+              <span class="highlight-icon" aria-hidden="true">📈</span>
+              <div>
+                <div class="highlight-title">Spot patterns quickly</div>
+                <p class="highlight-copy">
+                  Summaries highlight daily totals so you can share updates with caregivers or your
+                  pediatrician.
+                </p>
+              </div>
+            </li>
+          </ul>
+          <div>
+            <button class="empty-state-action" type="button" @click=${this.handleEmptyStateAction}>
+              Start a feeding
+            </button>
+          </div>
+          <p class="empty-state-footer">You can fine-tune reminders anytime from Settings.</p>
         </div>
       `;
     }

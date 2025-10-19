@@ -75,10 +75,84 @@ export class HomePage extends LitElement {
       margin-bottom: 1rem;
     }
 
-    .loading {
-      text-align: center;
-      padding: 2rem;
-      color: var(--md-sys-color-on-surface-variant);
+    .logs-skeleton {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .log-skeleton {
+      padding: 1rem;
+      border-radius: var(--md-sys-shape-corner-large);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      background: var(--md-sys-color-surface-container);
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .log-skeleton__row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .log-skeleton__meta,
+    .log-skeleton__details {
+      display: grid;
+      gap: 0.5rem;
+      flex: 1;
+    }
+
+    .log-skeleton__details {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.75rem;
+    }
+
+    .skeleton {
+      position: relative;
+      overflow: hidden;
+      background: var(--md-sys-color-surface-variant);
+      opacity: 0.35;
+      border-radius: 999px;
+      min-height: 12px;
+    }
+
+    .skeleton::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      transform: translateX(-100%);
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.35),
+        transparent
+      );
+      animation: skeleton-shimmer 1.4s ease-in-out infinite;
+    }
+
+    .skeleton--circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+    }
+
+    .skeleton--line {
+      height: 12px;
+      width: 100%;
+    }
+
+    .skeleton--line-short {
+      width: 55%;
+    }
+
+    .skeleton--line-tiny {
+      width: 35%;
+    }
+
+    @keyframes skeleton-shimmer {
+      100% {
+        transform: translateX(100%);
+      }
     }
 
     .toast {
@@ -176,6 +250,7 @@ export class HomePage extends LitElement {
 
   private feedingDialogLoaded = false;
   private confirmDialogLoaded = false;
+  private readonly skeletonPlaceholders = [0, 1, 2];
 
   private readonly handleSettingsChanged = (event: Event) => {
     const detail = (event as CustomEvent<AppSettings>).detail;
@@ -319,10 +394,38 @@ export class HomePage extends LitElement {
         <div class="logs-section">
           <h2 class="section-title">Recent Feedings</h2>
           ${this.loading
-            ? html`<div class="loading">Loading...</div>`
+            ? html`
+                <div
+                  class="logs-skeleton"
+                  role="status"
+                  aria-live="polite"
+                  aria-busy="true"
+                  aria-label="Loading recent feedings"
+                >
+                  ${this.skeletonPlaceholders.map(
+                    () => html`
+                      <div class="log-skeleton" aria-hidden="true">
+                        <div class="log-skeleton__row">
+                          <div class="skeleton skeleton--circle"></div>
+                          <div class="log-skeleton__meta">
+                            <div class="skeleton skeleton--line"></div>
+                            <div class="skeleton skeleton--line skeleton--line-short"></div>
+                          </div>
+                        </div>
+                        <div class="log-skeleton__details">
+                          <div class="skeleton skeleton--line"></div>
+                          <div class="skeleton skeleton--line"></div>
+                          <div class="skeleton skeleton--line skeleton--line-tiny"></div>
+                        </div>
+                      </div>
+                    `
+                  )}
+                </div>
+              `
             : html`
                 <feeding-log-list
                   .logs=${this.logs}
+                  @log-add-requested=${this.handleAddClick}
                   @log-deleted=${this.handleLogDeleted}
                 ></feeding-log-list>
               `}

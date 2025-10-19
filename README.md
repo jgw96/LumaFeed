@@ -65,6 +65,7 @@ LumaFeed is an open-source Progressive Web App built with Lit web components. If
 - Run the local dev server: `npm run dev`
 - Execute type checks: `npm run type-check`
 - Launch tests: `npm test`
+- Inspect bundle composition: `npm run build:analyze` (writes `bundle-analysis.html` at the repo root and opens it automatically)
 
 See `src/app-root.ts` and `src/pages/home-page.ts` for the core experience and review `.github/copilot-instructions.md` for architectural guidance.
 
