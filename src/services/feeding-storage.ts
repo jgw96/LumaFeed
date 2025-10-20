@@ -101,6 +101,38 @@ export class FeedingStorageService {
     const filtered = logs.filter((log) => log.id !== id);
     await this.saveLogs(filtered);
   }
+
+  async getLog(id: string): Promise<FeedingLog | null> {
+    const logs = await this.loadLogs();
+    return logs.find((log) => log.id === id) ?? null;
+  }
+
+  async updateLog(updatedLog: FeedingLog): Promise<void> {
+    const logs = await this.loadLogs();
+    const index = logs.findIndex((log) => log.id === updatedLog.id);
+    
+    if (index === -1) {
+      throw new Error(`Log with id ${updatedLog.id} not found`);
+    }
+
+    const baseTime = typeof updatedLog.endTime === 'number' ? updatedLog.endTime : updatedLog.timestamp;
+    const defaultInterval = await settingsService.getDefaultFeedIntervalMinutes();
+    const normalizedLog: FeedingLog = {
+      ...updatedLog,
+      nextFeedTime:
+        typeof updatedLog.nextFeedTime === 'number' && updatedLog.nextFeedTime > baseTime
+          ? updatedLog.nextFeedTime
+          : calculateNextFeedTime(baseTime, defaultInterval),
+    };
+
+    logs[index] = normalizedLog;
+    logs.sort((a, b) => {
+      const aTime = typeof a.endTime === 'number' ? a.endTime : a.timestamp;
+      const bTime = typeof b.endTime === 'number' ? b.endTime : b.timestamp;
+      return bTime - aTime;
+    });
+    await this.saveLogs(logs);
+  }
 }
 
 export const feedingStorage = new FeedingStorageService();

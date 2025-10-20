@@ -39,6 +39,28 @@ export class AppRoot extends LitElement {
       position: sticky;
       top: 0;
       z-index: 10;
+      gap: 1rem;
+    }
+
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border: none;
+      border-radius: 50%;
+      background: var(--md-sys-color-surface-container);
+      color: var(--md-sys-color-on-surface);
+      cursor: pointer;
+      font-size: 1.5rem;
+      transition: background-color 0.2s;
+    }
+
+    .back-button:hover,
+    .back-button:focus-visible {
+      background: var(--md-sys-color-surface-container-high);
+      outline: none;
     }
 
     .brand {
@@ -311,6 +333,9 @@ export class AppRoot extends LitElement {
   @state()
   private currentRoute: string | null = null;
 
+  @state()
+  private showBackButton = false;
+
   @query('.page-container')
   private pageContainer?: HTMLElement;
 
@@ -340,6 +365,11 @@ export class AppRoot extends LitElement {
         {
           pattern: '/',
           component: 'home-page',
+        },
+        {
+          pattern: '/log',
+          component: 'log-detail-page',
+          loader: () => import('./pages/log-detail-page.js'),
         },
         {
           pattern: '/diapers',
@@ -390,6 +420,8 @@ export class AppRoot extends LitElement {
   private performRouteTransition(route: string) {
     const updateRoute = async () => {
       this.currentRoute = route;
+      // Show back button for detail pages
+      this.showBackButton = route === 'log-detail-page';
       await this.updateComplete;
     };
 
@@ -458,6 +490,18 @@ export class AppRoot extends LitElement {
         </aside>
         <div class="content-area">
           <header>
+            ${this.showBackButton
+              ? html`
+                  <button
+                    class="back-button"
+                    @click=${() => window.history.back()}
+                    aria-label="Go back"
+                    title="Go back"
+                  >
+                    ←
+                  </button>
+                `
+              : nothing}
             <div class="brand">
               <img src="/feedings-65.png" alt="LumaFeed" width="24" height="24" />
 
@@ -651,6 +695,8 @@ export class AppRoot extends LitElement {
     switch (this.currentRoute) {
       case 'home-page':
         return html`<home-page></home-page>`;
+      case 'log-detail-page':
+        return html`<log-detail-page></log-detail-page>`;
       case 'diaper-page':
         return html`<diaper-page></diaper-page>`;
       case 'settings-page':
