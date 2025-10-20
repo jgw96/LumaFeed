@@ -30,11 +30,9 @@ describe('DiaperLogList', () => {
     await logList.updateComplete;
 
     const eventPromise = new Promise<CustomEvent>((resolve) => {
-      logList.addEventListener(
-        'log-add-requested',
-        (event) => resolve(event as CustomEvent),
-        { once: true }
-      );
+      logList.addEventListener('log-add-requested', (event) => resolve(event as CustomEvent), {
+        once: true,
+      });
     });
 
     const cta = queryShadow<HTMLButtonElement>(logList, '.empty-state button');
@@ -113,11 +111,9 @@ describe('DiaperLogList', () => {
     await Promise.resolve();
 
     const eventPromise = new Promise<CustomEvent>((resolve) => {
-      logList.addEventListener(
-        'log-deleted',
-        (event) => resolve(event as CustomEvent),
-        { once: true }
-      );
+      logList.addEventListener('log-deleted', (event) => resolve(event as CustomEvent), {
+        once: true,
+      });
     });
 
     const deleteButton = queryShadow<HTMLButtonElement>(logList, '.delete-btn');

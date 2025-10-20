@@ -763,7 +763,6 @@ export class SettingsPage extends LitElement {
   render() {
     return html`
       <div class="container">
-
         <form aria-busy=${this.loading || this.saving}>
           ${this.renderStatus()}
           <section class="section">

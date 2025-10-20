@@ -138,10 +138,7 @@ describe('SettingsPage', () => {
     let settings = await settingsService.getSettings();
     expect(settings.themePreference).toBe('dark');
 
-    const resetButton = queryShadow<HTMLButtonElement>(
-      settingsPage,
-      '.appearance__device-reset'
-    );
+    const resetButton = queryShadow<HTMLButtonElement>(settingsPage, '.appearance__device-reset');
     expect(resetButton).toBeTruthy();
 
     resetButton!.click();

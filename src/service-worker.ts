@@ -57,6 +57,6 @@ self.addEventListener('notificationclick', (event) => {
       if (fallbackUrl) {
         return self.clients.openWindow(fallbackUrl);
       }
-    })(),
+    })()
   );
 });

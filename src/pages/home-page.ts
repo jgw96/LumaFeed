@@ -441,7 +441,9 @@ export class HomePage extends LitElement {
               `}
         </div>
 
-        ${this.logs.length > 0 ? html`<button class="add-btn" @click=${this.handleAddClick}>Start feeding</button>` : null}
+        ${this.logs.length > 0
+          ? html`<button class="add-btn" @click=${this.handleAddClick}>Start feeding</button>`
+          : null}
 
         <feeding-form-dialog @log-added=${this.handleLogAdded}></feeding-form-dialog>
       </div>

@@ -39,14 +39,12 @@ describe('HomePage', () => {
 
   it('should show loading state initially', async () => {
     let resolveLogs: ((value: FeedingLog[]) => void) | undefined;
-    const loadLogsSpy = vi
-      .spyOn(feedingStorage, 'loadLogs')
-      .mockImplementation(
-        () =>
-          new Promise<FeedingLog[]>((resolve) => {
-            resolveLogs = resolve;
-          })
-      );
+    const loadLogsSpy = vi.spyOn(feedingStorage, 'loadLogs').mockImplementation(
+      () =>
+        new Promise<FeedingLog[]>((resolve) => {
+          resolveLogs = resolve;
+        })
+    );
 
     try {
       const homePage = await mountComponent<HomePage>('home-page');
@@ -110,18 +108,16 @@ describe('HomePage', () => {
     await customElements.whenDefined('feeding-form-dialog');
 
     const logList = queryShadow<HTMLElement>(homePage, 'feeding-log-list');
-    const addButton = logList ? queryShadow<HTMLButtonElement>(logList, '.empty-state-action') : null;
+    const addButton = logList
+      ? queryShadow<HTMLButtonElement>(logList, '.empty-state-action')
+      : null;
     const dialog = queryShadow<FeedingFormDialog>(homePage, 'feeding-form-dialog');
 
     const openSpy = vi.spyOn(dialog!, 'open');
 
     addButton!.click();
 
-    await waitFor(
-      () => openSpy.mock.calls.length > 0,
-      3000,
-      'Feeding form dialog did not open'
-    );
+    await waitFor(() => openSpy.mock.calls.length > 0, 3000, 'Feeding form dialog did not open');
 
     expect(openSpy).toHaveBeenCalled();
   });

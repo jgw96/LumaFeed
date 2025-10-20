@@ -42,14 +42,12 @@ describe('DiaperPage', () => {
 
   it('should show a loading skeleton while logs load', async () => {
     let resolveLogs: ((value: DiaperLog[]) => void) | undefined;
-    const loadSpy = vi
-      .spyOn(diaperStorage, 'loadLogs')
-      .mockImplementation(
-        () =>
-          new Promise<DiaperLog[]>((resolve) => {
-            resolveLogs = resolve;
-          })
-      );
+    const loadSpy = vi.spyOn(diaperStorage, 'loadLogs').mockImplementation(
+      () =>
+        new Promise<DiaperLog[]>((resolve) => {
+          resolveLogs = resolve;
+        })
+    );
 
     try {
       const page = await mountComponent<DiaperPage>('diaper-page');
@@ -85,11 +83,7 @@ describe('DiaperPage', () => {
       })
     );
 
-    await waitFor(
-      () => openSpy.mock.calls.length > 0,
-      3000,
-      'Diaper form dialog did not open'
-    );
+    await waitFor(() => openSpy.mock.calls.length > 0, 3000, 'Diaper form dialog did not open');
 
     expect(openSpy).toHaveBeenCalled();
   });
@@ -227,11 +221,7 @@ describe('DiaperPage', () => {
       })
     );
 
-    await waitFor(
-      () => showSpy.mock.calls.length > 0,
-      3000,
-      'Confirm dialog was not shown'
-    );
+    await waitFor(() => showSpy.mock.calls.length > 0, 3000, 'Confirm dialog was not shown');
 
     expect(deleteSpy).not.toHaveBeenCalled();
   });

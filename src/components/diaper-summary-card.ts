@@ -324,14 +324,13 @@ export class DiaperSummaryCard extends LitElement {
 
     const summary = this.computeSummary();
     const hasAnyLogs = summary !== null;
-    const safeSummary: DiaperSummaryStats =
-      summary ?? {
-        last24Hours: { wet: 0, dirty: 0, both: 0, total: 0 },
-        last7Days: { wet: 0, dirty: 0, both: 0, total: 0 },
-        lastWetTime: null,
-        lastDirtyTime: null,
-        averageIntervalMinutes: null,
-      };
+    const safeSummary: DiaperSummaryStats = summary ?? {
+      last24Hours: { wet: 0, dirty: 0, both: 0, total: 0 },
+      last7Days: { wet: 0, dirty: 0, both: 0, total: 0 },
+      lastWetTime: null,
+      lastDirtyTime: null,
+      averageIntervalMinutes: null,
+    };
 
     const total24 = safeSummary.last24Hours.total;
     const wet24 = safeSummary.last24Hours.wet + safeSummary.last24Hours.both;
@@ -375,9 +374,7 @@ export class DiaperSummaryCard extends LitElement {
                   </div>
                   <div class="summary-card__metric">
                     <span class="summary-card__metric-label">Wet diapers</span>
-                    <span class="summary-card__metric-value"
-                      >${this.formatDiaperCount(wet24)}</span
-                    >
+                    <span class="summary-card__metric-value">${this.formatDiaperCount(wet24)}</span>
                   </div>
                   <div class="summary-card__metric">
                     <span class="summary-card__metric-label">Dirty diapers</span>
@@ -430,16 +427,12 @@ export class DiaperSummaryCard extends LitElement {
                   </div>
                   <div class="summary-card__metric">
                     <span class="summary-card__metric-label">Average per day</span>
-                    <span class="summary-card__metric-value"
-                      >${formattedAveragePerDay}</span
-                    >
+                    <span class="summary-card__metric-value">${formattedAveragePerDay}</span>
                     <span class="summary-card__metric-subtle">over the last week</span>
                   </div>
                   <div class="summary-card__metric">
                     <span class="summary-card__metric-label">Wet diapers</span>
-                    <span class="summary-card__metric-value"
-                      >${this.formatDiaperCount(wet7)}</span
-                    >
+                    <span class="summary-card__metric-value">${this.formatDiaperCount(wet7)}</span>
                   </div>
                   <div class="summary-card__metric">
                     <span class="summary-card__metric-label">Dirty diapers</span>

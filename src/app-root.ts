@@ -33,8 +33,8 @@ export class AppRoot extends LitElement {
       align-items: center;
       justify-content: space-between;
       padding: 1rem 1.5rem;
-          background: transparent;
-    backdrop-filter: blur(46px);
+      background: transparent;
+      backdrop-filter: blur(46px);
       color: var(--md-sys-color-on-surface);
       position: sticky;
       top: 0;
@@ -325,10 +325,10 @@ export class AppRoot extends LitElement {
     label: string;
     icon: string;
   }> = [
-      { href: '/', component: 'home-page', label: 'Home', icon: 'home' },
-      { href: '/diapers', component: 'diaper-page', label: 'Diapers', icon: 'diaper' },
-      { href: '/settings', component: 'settings-page', label: 'Settings', icon: 'settings' },
-    ];
+    { href: '/', component: 'home-page', label: 'Home', icon: 'home' },
+    { href: '/diapers', component: 'diaper-page', label: 'Diapers', icon: 'diaper' },
+    { href: '/settings', component: 'settings-page', label: 'Settings', icon: 'settings' },
+  ];
 
   private router: Router;
 
@@ -407,7 +407,7 @@ export class AppRoot extends LitElement {
 
     try {
       const transition = startTransition(updateRoute);
-      transition?.finished?.catch(() => { });
+      transition?.finished?.catch(() => {});
     } catch {
       void updateRoute();
     }
@@ -587,7 +587,7 @@ export class AppRoot extends LitElement {
         aria-hidden="true"
       >
         ${paths.map(
-      (segment) => svg`<path
+          (segment) => svg`<path
             d=${segment.d}
             fill=${segment.fill ?? (segment.stroke ? 'none' : 'currentColor')}
             stroke=${ifDefined(segment.stroke)}
@@ -597,7 +597,7 @@ export class AppRoot extends LitElement {
             fill-rule=${ifDefined(segment.fillRule)}
             clip-rule=${ifDefined(segment.clipRule)}
           ></path>`
-    )}
+        )}
       </svg>
     `;
   }

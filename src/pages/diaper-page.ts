@@ -352,7 +352,9 @@ export class DiaperPage extends LitElement {
               `}
         </div>
 
-        ${this.logs.length > 0 ? html`<button class="add-btn" @click=${this.handleAddClick}>Log diaper</button>` : null}
+        ${this.logs.length > 0
+          ? html`<button class="add-btn" @click=${this.handleAddClick}>Log diaper</button>`
+          : null}
 
         <diaper-form-dialog @log-added=${this.handleLogAdded}></diaper-form-dialog>
       </div>

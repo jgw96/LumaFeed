@@ -7,7 +7,12 @@ export interface DrawDiaperChartParams {
   labelFormatter?: (timestamp: number) => string;
 }
 
-export function drawDiaperChart({ canvas, host, data, labelFormatter }: DrawDiaperChartParams): void {
+export function drawDiaperChart({
+  canvas,
+  host,
+  data,
+  labelFormatter,
+}: DrawDiaperChartParams): void {
   const displayWidth = canvas.clientWidth;
   const displayHeight = canvas.clientHeight;
 
