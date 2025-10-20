@@ -32,10 +32,13 @@ describe('AppRoot', () => {
     const appRoot = await mountComponent<AppRoot>('app-root');
 
     const homeLink = queryShadow<HTMLAnchorElement>(appRoot, 'a[href="/"]');
+    const diaperLink = queryShadow<HTMLAnchorElement>(appRoot, 'a[href="/diapers"]');
     const settingsLink = queryShadow<HTMLAnchorElement>(appRoot, 'a[href="/settings"]');
 
     expect(homeLink).toBeTruthy();
     expect(homeLink?.textContent?.trim()).toBe('Home');
+    expect(diaperLink).toBeTruthy();
+    expect(diaperLink?.textContent?.trim()).toBe('Diapers');
     expect(settingsLink).toBeTruthy();
     expect(settingsLink?.textContent?.trim()).toBe('Settings');
   });
@@ -76,6 +79,27 @@ describe('AppRoot', () => {
 
     const settingsPage = queryShadow(appRoot, 'settings-page');
     expect(settingsPage).toBeTruthy();
+  });
+
+  it('should navigate to diaper page when diapers link is clicked', async () => {
+    const appRoot = await mountComponent<AppRoot>('app-root');
+
+    const diapersLink = queryShadow<HTMLAnchorElement>(appRoot, 'a[href="/diapers"]');
+    expect(diapersLink).toBeTruthy();
+
+    diapersLink!.click();
+
+    await waitFor(
+      () => {
+        const diaperPage = queryShadow(appRoot, 'diaper-page');
+        return diaperPage !== null;
+      },
+      3000,
+      'Diaper page not rendered after navigation'
+    );
+
+    const diaperPage = queryShadow(appRoot, 'diaper-page');
+    expect(diaperPage).toBeTruthy();
   });
 
   it('should apply active class to current navigation link', async () => {

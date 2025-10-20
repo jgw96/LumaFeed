@@ -92,6 +92,8 @@ export class FeedingSummaryCard extends LitElement {
       width: 100%;
       height: 100%;
       display: block;
+      border-radius: var(--md-sys-shape-corner-large);
+      background: var(--md-sys-color-surface-container);
     }
 
     .summary-card__section {

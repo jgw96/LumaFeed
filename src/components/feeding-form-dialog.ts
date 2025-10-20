@@ -9,6 +9,7 @@ import {
 } from '../services/settings-service.js';
 import type { AppSettings } from '../services/settings-service.js';
 import { BaseModalDialog } from './base-modal-dialog.js';
+import { dialogCancelButtonStyles, dialogHeaderStyles } from './dialog-shared-styles.js';
 
 interface WakeLockSentinelLike extends EventTarget {
   released: boolean;
@@ -23,491 +24,462 @@ const DEFAULT_FEEDING_DURATION_MINUTES = 20;
 
 @customElement('feeding-form-dialog')
 export class FeedingFormDialog extends BaseModalDialog {
-  static styles = css`
-    dialog {
-      border: none;
-      border-radius: var(--md-sys-shape-corner-extra-large);
-      padding: 0;
-      width: min(560px, calc(100vw - 2rem));
-      margin: auto;
-      background: var(--md-sys-color-surface-container-high);
-      color: var(--md-sys-color-on-surface);
-      box-shadow: var(--md-sys-elevation-3);
-      opacity: 0;
-      transform: translateY(-12px);
-      box-sizing: border-box;
-      max-height: calc(100vh - 2rem);
-      overflow: auto;
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    dialog::backdrop {
-      background: rgba(0, 0, 0, 0.32);
-      opacity: 0;
-      backdrop-filter: blur(24px);
-    }
-
-    .dialog-header {
-      background: var(--md-sys-color-surface);
-      color: var(--md-sys-color-on-surface);
-      padding: 1.5rem;
-      border-radius: var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-extra-large) 0
-        0;
-    }
-
-    .dialog-header h2 {
-      margin: 0;
-      font-size: var(--md-sys-typescale-headline-large-font-size);
-      font-weight: var(--md-sys-typescale-headline-large-font-weight);
-      line-height: var(--md-sys-typescale-headline-large-line-height);
-    }
-
-    .dialog-content {
-      padding: 1.5rem;
-    }
-
-    .dialog-header .subtitle {
-      margin-top: 0.5rem;
-      color: var(--md-sys-color-on-surface-variant);
-      font-size: var(--md-sys-typescale-body-medium-font-size);
-      line-height: var(--md-sys-typescale-body-medium-line-height);
-    }
-
-    .start-screen,
-    .timer-screen {
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1.75rem;
-    }
-
-    .start-intro {
-      color: var(--md-sys-color-on-surface-variant);
-      font-size: var(--md-sys-typescale-body-large-font-size);
-      line-height: var(--md-sys-typescale-body-large-line-height);
-    }
-
-    .start-highlights {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1rem;
-    }
-
-    .start-highlight {
-      padding: 1rem 1.25rem;
-      border-radius: var(--md-sys-shape-corner-large);
-      background: var(--md-sys-color-surface-container-lowest);
-      border: 1px solid var(--md-sys-color-outline-variant);
-      color: var(--md-sys-color-on-surface-variant);
-      font-size: var(--md-sys-typescale-body-medium-font-size);
-      line-height: var(--md-sys-typescale-body-medium-line-height);
-    }
-
-    .timer-highlight {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 1.75rem 1.5rem;
-      border-radius: var(--md-sys-shape-corner-extra-large);
-      background: var(--md-sys-color-secondary-container);
-      color: var(--md-sys-color-on-secondary-container);
-      text-align: center;
-      box-shadow: var(--md-sys-elevation-1);
-    }
-
-    .timer-display {
-      font-size: clamp(2.25rem, 8vw, 3.5rem);
-      letter-spacing: 0.08em;
-      font-weight: 600;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .timer-metadata {
-      display: flex;
-      gap: 1.5rem;
-      font-size: var(--md-sys-typescale-body-medium-font-size);
-      line-height: var(--md-sys-typescale-body-medium-line-height);
-    }
-
-    .timer-metadata span {
-      display: inline-flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.25rem;
-    }
-
-    .timer-metadata .label {
-      opacity: 0.8;
-      font-size: var(--md-sys-typescale-label-small-font-size);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .timer-actions,
-    .start-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.75rem;
-      padding: 0 1.5rem 1.5rem;
-    }
-
-    .time-summary {
-      padding: 1.25rem 1.5rem;
-      border-radius: var(--md-sys-shape-corner-large);
-      background: var(--md-sys-color-surface-container-lowest);
-      border: 1px solid var(--md-sys-color-outline-variant);
-      display: grid;
-      gap: 1rem;
-    }
-
-    .time-summary-heading {
-      font-weight: 600;
-      color: var(--md-sys-color-on-surface);
-    }
-
-    .time-summary-grid {
-      display: grid;
-      gap: 0.75rem;
-    }
-
-    .time-summary-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 1rem;
-    }
-
-    .time-summary-label {
-      color: var(--md-sys-color-on-surface-variant);
-      font-size: var(--md-sys-typescale-body-medium-font-size);
-    }
-
-    .time-summary-value {
-      font-weight: 600;
-      color: var(--md-sys-color-on-surface);
-    }
-
-    .time-summary-duration {
-      padding: 0.75rem 1rem;
-      border-radius: var(--md-sys-shape-corner-large);
-      background: var(--md-sys-color-secondary-container);
-      color: var(--md-sys-color-on-secondary-container);
-      font-weight: 600;
-      text-align: center;
-    }
-
-    .time-section {
-      display: grid;
-      gap: 1rem;
-    }
-
-    .manual-entry {
-      padding: 0 1.5rem 1.5rem;
-      text-align: center;
-    }
-
-    .link-button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      min-height: var(--md-comp-button-height);
-      padding: 0 1rem;
-      background: none;
-      border: none;
-      color: var(--md-sys-color-primary);
-      font-size: var(--md-sys-typescale-label-large-font-size);
-      font-weight: var(--md-sys-typescale-label-large-font-weight);
-      letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
-      cursor: pointer;
-      border-radius: var(--md-sys-shape-corner-full);
-      transition:
-        background-color 0.2s ease,
-        color 0.2s ease;
-    }
-
-    .link-button:hover,
-    .link-button:focus-visible {
-      background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
-      color: var(--md-sys-color-primary);
-      outline: none;
-    }
-
-    .form-group {
-      margin-bottom: 1.5rem;
-    }
-
-    label {
-      display: block;
-      font-weight: 500;
-      color: var(--md-sys-color-on-surface);
-      font-size: var(--md-sys-typescale-body-large-font-size);
-    }
-
-    .form-label {
-      margin-bottom: 0.5rem;
-    }
-
-    input[type='number'],
-    input[type='datetime-local'],
-    select {
-      padding: 0.875rem 1rem;
-      border: 1px solid var(--md-sys-color-outline);
-      border-radius: var(--md-sys-shape-corner-large);
-      font-size: var(--md-sys-typescale-body-large-font-size);
-      font-family: inherit;
-      background: var(--md-sys-color-surface-container-lowest);
-      color: var(--md-sys-color-on-surface);
-      transition:
-        border-color 0.2s,
-        box-shadow 0.2s;
-    }
-
-    input[type='number'],
-    input[type='datetime-local'] {
-      width: 100%;
-      box-sizing: border-box;
-      min-width: 0;
-    }
-
-    select {
-      box-sizing: border-box;
-      min-width: 0;
-      max-width: 100%;
-    }
-
-    input[type='number']:focus,
-    input[type='datetime-local']:focus,
-    select:focus {
-      outline: none;
-      border-color: var(--md-sys-color-primary);
-      box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
-    }
-
-    .radio-group {
-      display: flex;
-      gap: 1.5rem;
-      flex-wrap: wrap;
-    }
-
-    .radio-option {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      min-width: 0;
-    }
-
-    input[type='radio'] {
-      width: 20px;
-      height: 20px;
-      cursor: pointer;
-    }
-
-    .amount-group {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 0.75rem;
-    }
-
-    .time-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 0.75rem;
-    }
-
-    .time-input {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .computed-duration {
-      padding: 0.875rem 1rem;
-      border-radius: var(--md-sys-shape-corner-large);
-      background: var(--md-sys-color-surface-container-lowest);
-      border: 1px solid var(--md-sys-color-outline-variant);
-      font-weight: 500;
-      color: var(--md-sys-color-on-surface);
-    }
-
-    .dialog-actions {
-      display: flex;
-      gap: 0.75rem;
-      justify-content: flex-end;
-      padding: 1.5rem;
-      border-top: 1px solid var(--md-sys-color-outline-variant);
-    }
-
-    button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: var(--md-comp-button-gap);
-      min-height: var(--md-comp-button-height);
-      padding: 0 var(--md-comp-button-horizontal-padding);
-      border: none;
-      border-radius: var(--md-comp-button-shape);
-      font-size: var(--md-sys-typescale-label-large-font-size);
-      font-weight: var(--md-sys-typescale-label-large-font-weight);
-      line-height: var(--md-sys-typescale-label-large-line-height);
-      letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
-      cursor: pointer;
-      transition:
-        background-color 0.2s ease,
-        box-shadow 0.2s ease,
-        color 0.2s ease;
-    }
-
-    .btn-cancel {
-      background: transparent;
-      color: var(--md-sys-color-primary);
-    }
-
-    .btn-cancel:hover,
-    .btn-cancel:focus-visible {
-      background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
-      outline: none;
-    }
-
-    .btn-save {
-      background: var(--md-sys-color-primary);
-      color: var(--md-sys-color-on-primary);
-      box-shadow: var(--md-sys-elevation-1);
-    }
-
-    .btn-save:hover,
-    .btn-save:focus-visible {
-      background: var(--md-sys-color-primary-container);
-      color: var(--md-sys-color-on-primary-container);
-      box-shadow: var(--md-sys-elevation-2);
-      outline: none;
-    }
-
-    .btn-save:active {
-      box-shadow: var(--md-sys-elevation-1);
-    }
-
-    .btn-save:disabled {
-      background: var(--md-sys-color-surface-variant);
-      color: var(--md-sys-color-on-surface-variant);
-      cursor: not-allowed;
-      box-shadow: none;
-      opacity: 0.38;
-    }
-
-    dialog[open]:not(.closing) {
-      animation: dialog-enter 200ms ease forwards;
-    }
-
-    dialog[open]:not(.closing)::backdrop {
-      animation: backdrop-enter 200ms ease forwards;
-    }
-
-    dialog.closing {
-      animation: dialog-exit 200ms ease forwards;
-    }
-
-    dialog.closing::backdrop {
-      animation: backdrop-exit 200ms ease forwards;
-    }
-
-    @keyframes dialog-enter {
-      0% {
-        opacity: 0;
-        transform: translateY(-12px);
-      }
-
-      100% {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes dialog-exit {
-      0% {
-        opacity: 1;
-        transform: translateY(0);
-        display: block;
-      }
-
-      100% {
-        opacity: 0;
-        transform: translateY(-12px);
-        display: none;
-      }
-    }
-
-    @keyframes backdrop-enter {
-      0% {
-        opacity: 0;
-      }
-
-      100% {
-        opacity: 1;
-      }
-    }
-
-    @keyframes backdrop-exit {
-      0% {
-        opacity: 1;
-      }
-
-      100% {
-        opacity: 0;
-      }
-    }
-
-    @supports (transition-behavior: allow-discrete) {
+  static styles = [
+    dialogHeaderStyles,
+    dialogCancelButtonStyles,
+    css`
       dialog {
-        animation: none;
-        transition:
-          opacity 200ms ease,
-          transform 200ms ease,
-          overlay 200ms ease allow-discrete,
-          display 200ms ease allow-discrete;
+        border: none;
+        border-radius: var(--md-sys-shape-corner-extra-large);
+        padding: 0;
+        width: min(560px, calc(100vw - 2rem));
+        margin: auto;
+        background: var(--md-sys-color-surface-container-high);
+        color: var(--md-sys-color-on-surface);
+        box-shadow: var(--md-sys-elevation-3);
         opacity: 0;
         transform: translateY(-12px);
+        box-sizing: border-box;
+        max-height: calc(100vh - 2rem);
+        overflow: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
       }
 
       dialog::backdrop {
-        animation: none;
-        transition:
-          opacity 200ms ease,
-          background-color 200ms ease,
-          overlay 200ms ease allow-discrete,
-          display 200ms ease allow-discrete;
+        background: rgba(0, 0, 0, 0.32);
         opacity: 0;
+        backdrop-filter: blur(24px);
       }
 
-      dialog:open:not(.closing) {
-        opacity: 1;
-        transform: translateY(0);
+      .dialog-content {
+        padding: 1.5rem;
       }
 
-      dialog:open:not(.closing)::backdrop {
-        opacity: 1;
+      .start-screen,
+      .timer-screen {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.75rem;
+      }
+
+      .start-intro {
+        color: var(--md-sys-color-on-surface-variant);
+        font-size: var(--md-sys-typescale-body-large-font-size);
+        line-height: var(--md-sys-typescale-body-large-line-height);
+      }
+
+      .start-highlights {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+      }
+
+      .start-highlight {
+        padding: 1rem 1.25rem;
+        border-radius: var(--md-sys-shape-corner-large);
+        background: var(--md-sys-color-surface-container-lowest);
+        border: 1px solid var(--md-sys-color-outline-variant);
+        color: var(--md-sys-color-on-surface-variant);
+        font-size: var(--md-sys-typescale-body-medium-font-size);
+        line-height: var(--md-sys-typescale-body-medium-line-height);
+      }
+
+      .timer-highlight {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.75rem 1.5rem;
+        border-radius: var(--md-sys-shape-corner-extra-large);
+        background: var(--md-sys-color-secondary-container);
+        color: var(--md-sys-color-on-secondary-container);
+        text-align: center;
+        box-shadow: var(--md-sys-elevation-1);
+      }
+
+      .timer-display {
+        font-size: clamp(2.25rem, 8vw, 3.5rem);
+        letter-spacing: 0.08em;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .timer-metadata {
+        display: flex;
+        gap: 1.5rem;
+        font-size: var(--md-sys-typescale-body-medium-font-size);
+        line-height: var(--md-sys-typescale-body-medium-line-height);
+      }
+
+      .timer-metadata span {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .timer-metadata .label {
+        opacity: 0.8;
+        font-size: var(--md-sys-typescale-label-small-font-size);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .timer-actions,
+      .start-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        padding: 0 1.5rem 1.5rem;
+      }
+
+      .time-summary {
+        padding: 1.25rem 1.5rem;
+        border-radius: var(--md-sys-shape-corner-large);
+        background: var(--md-sys-color-surface-container-lowest);
+        border: 1px solid var(--md-sys-color-outline-variant);
+        display: grid;
+        gap: 1rem;
+      }
+
+      .time-summary-heading {
+        font-weight: 600;
+        color: var(--md-sys-color-on-surface);
+      }
+
+      .time-summary-grid {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .time-summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 1rem;
+      }
+
+      .time-summary-label {
+        color: var(--md-sys-color-on-surface-variant);
+        font-size: var(--md-sys-typescale-body-medium-font-size);
+      }
+
+      .time-summary-value {
+        font-weight: 600;
+        color: var(--md-sys-color-on-surface);
+      }
+
+      .time-summary-duration {
+        padding: 0.75rem 1rem;
+        border-radius: var(--md-sys-shape-corner-large);
+        background: var(--md-sys-color-secondary-container);
+        color: var(--md-sys-color-on-secondary-container);
+        font-weight: 600;
+        text-align: center;
+      }
+
+      .time-section {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .manual-entry {
+        padding: 0 1.5rem 1.5rem;
+        text-align: center;
+      }
+
+      .link-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        min-height: var(--md-comp-button-height);
+        padding: 0 1rem;
+        background: none;
+        border: none;
+        color: var(--md-sys-color-primary);
+        font-size: var(--md-sys-typescale-label-large-font-size);
+        font-weight: var(--md-sys-typescale-label-large-font-weight);
+        letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
+        cursor: pointer;
+        border-radius: var(--md-sys-shape-corner-full);
+        transition:
+          background-color 0.2s ease,
+          color 0.2s ease;
+      }
+
+      .link-button:hover,
+      .link-button:focus-visible {
+        background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+        color: var(--md-sys-color-primary);
+        outline: none;
+      }
+
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+
+      label {
+        display: block;
+        font-weight: 500;
+        color: var(--md-sys-color-on-surface);
+        font-size: var(--md-sys-typescale-body-large-font-size);
+      }
+
+      .form-label {
+        margin-bottom: 0.5rem;
+      }
+
+      input[type='number'],
+      input[type='datetime-local'],
+      select {
+        padding: 0.875rem 1rem;
+        border: 1px solid var(--md-sys-color-outline);
+        border-radius: var(--md-sys-shape-corner-large);
+        font-size: var(--md-sys-typescale-body-large-font-size);
+        font-family: inherit;
+        background: var(--md-sys-color-surface-container-lowest);
+        color: var(--md-sys-color-on-surface);
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+      }
+
+      input[type='number'],
+      input[type='datetime-local'] {
+        width: 100%;
+        box-sizing: border-box;
+        min-width: 0;
+      }
+
+      select {
+        box-sizing: border-box;
+        min-width: 0;
+        max-width: 100%;
+      }
+
+      input[type='number']:focus,
+      input[type='datetime-local']:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--md-sys-color-primary);
+        box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
+      }
+
+      .radio-group {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+      }
+
+      .radio-option {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 0;
+      }
+
+      input[type='radio'] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+      }
+
+      .amount-group {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.75rem;
+      }
+
+      .time-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.75rem;
+      }
+
+      .time-input {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .computed-duration {
+        padding: 0.875rem 1rem;
+        border-radius: var(--md-sys-shape-corner-large);
+        background: var(--md-sys-color-surface-container-lowest);
+        border: 1px solid var(--md-sys-color-outline-variant);
+        font-weight: 500;
+        color: var(--md-sys-color-on-surface);
+      }
+
+      .dialog-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        padding: 1.5rem;
+        border-top: 1px solid var(--md-sys-color-outline-variant);
+      }
+
+      button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--md-comp-button-gap);
+        min-height: var(--md-comp-button-height);
+        padding: 0 var(--md-comp-button-horizontal-padding);
+        border: none;
+        border-radius: var(--md-comp-button-shape);
+        font-size: var(--md-sys-typescale-label-large-font-size);
+        font-weight: var(--md-sys-typescale-label-large-font-weight);
+        line-height: var(--md-sys-typescale-label-large-line-height);
+        letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
+        cursor: pointer;
+        transition:
+          background-color 0.2s ease,
+          box-shadow 0.2s ease,
+          color 0.2s ease;
+      }
+
+      .btn-save {
+        background: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary);
+        box-shadow: var(--md-sys-elevation-1);
+      }
+
+      .btn-save:hover,
+      .btn-save:focus-visible {
+        background: var(--md-sys-color-primary-container);
+        color: var(--md-sys-color-on-primary-container);
+        box-shadow: var(--md-sys-elevation-2);
+        outline: none;
+      }
+
+      .btn-save:active {
+        box-shadow: var(--md-sys-elevation-1);
+      }
+
+      .btn-save:disabled {
+        background: var(--md-sys-color-surface-variant);
+        color: var(--md-sys-color-on-surface-variant);
+        cursor: not-allowed;
+        box-shadow: none;
+        opacity: 0.38;
+      }
+
+      dialog[open]:not(.closing) {
+        animation: dialog-enter 200ms ease forwards;
+      }
+
+      dialog[open]:not(.closing)::backdrop {
+        animation: backdrop-enter 200ms ease forwards;
       }
 
       dialog.closing {
-        opacity: 0;
-        transform: translateY(-12px);
+        animation: dialog-exit 200ms ease forwards;
       }
 
       dialog.closing::backdrop {
-        opacity: 0;
+        animation: backdrop-exit 200ms ease forwards;
       }
-    }
 
-    @media (prefers-reduced-motion: reduce) {
-      dialog,
-      dialog::backdrop {
-        animation: none !important;
-        transition: none !important;
+      @keyframes dialog-enter {
+        0% {
+          opacity: 0;
+          transform: translateY(-12px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
-    }
-  `;
+
+      @keyframes dialog-exit {
+        0% {
+          opacity: 1;
+          transform: translateY(0);
+          display: block;
+        }
+
+        100% {
+          opacity: 0;
+          transform: translateY(-12px);
+          display: none;
+        }
+      }
+
+      @keyframes backdrop-enter {
+        0% {
+          opacity: 0;
+        }
+
+        100% {
+          opacity: 1;
+        }
+      }
+
+      @keyframes backdrop-exit {
+        0% {
+          opacity: 1;
+        }
+
+        100% {
+          opacity: 0;
+        }
+      }
+
+      @supports (transition-behavior: allow-discrete) {
+        dialog {
+          animation: none;
+          transition:
+            opacity 200ms ease,
+            transform 200ms ease,
+            overlay 200ms ease allow-discrete,
+            display 200ms ease allow-discrete;
+          opacity: 0;
+          transform: translateY(-12px);
+        }
+
+        dialog::backdrop {
+          animation: none;
+          transition:
+            opacity 200ms ease,
+            background-color 200ms ease,
+            overlay 200ms ease allow-discrete,
+            display 200ms ease allow-discrete;
+          opacity: 0;
+        }
+
+        dialog:open:not(.closing) {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        dialog:open:not(.closing)::backdrop {
+          opacity: 1;
+        }
+
+        dialog.closing {
+          opacity: 0;
+          transform: translateY(-12px);
+        }
+
+        dialog.closing::backdrop {
+          opacity: 0;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        dialog,
+        dialog::backdrop {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    `,
+  ];
 
   @state()
   private feedType: 'formula' | 'milk' = 'formula';
@@ -982,7 +954,9 @@ export class FeedingFormDialog extends BaseModalDialog {
         </div>
       </div>
       <div class="start-actions">
-        <button type="button" class="btn-cancel" @click=${this.handleCancel}>Cancel</button>
+        <button type="button" class="dialog-cancel-button" @click=${this.handleCancel}>
+          Cancel
+        </button>
         <button type="button" class="btn-save" @click=${this.startFeeding}>Start feed</button>
       </div>
       <div class="manual-entry">
@@ -1029,7 +1003,9 @@ export class FeedingFormDialog extends BaseModalDialog {
         </p>
       </div>
       <div class="timer-actions">
-        <button type="button" class="btn-cancel" @click=${this.cancelTimerAndClose}>Cancel</button>
+        <button type="button" class="dialog-cancel-button" @click=${this.cancelTimerAndClose}>
+          Cancel
+        </button>
         <button type="button" class="btn-save" @click=${this.completeFeeding}>Feeding done</button>
       </div>
     `;
@@ -1200,7 +1176,9 @@ export class FeedingFormDialog extends BaseModalDialog {
         </div>
 
         <div class="dialog-actions">
-          <button type="button" class="btn-cancel" @click=${this.handleCancel}>Cancel</button>
+          <button type="button" class="dialog-cancel-button" @click=${this.handleCancel}>
+            Cancel
+          </button>
           <button type="submit" class="btn-save" ?disabled=${!this.isValid}>Save Log</button>
         </div>
       </form>

@@ -13,16 +13,6 @@ const NEUTRAL: Rgb = { r: 120, g: 120, b: 120 };
 const prefersDark =
   typeof window !== 'undefined' ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
-const lightThemeMeta =
-  typeof document !== 'undefined'
-    ? document.querySelector<HTMLMetaElement>("meta[name='theme-color'][media*='light']")
-    : null;
-
-const darkThemeMeta =
-  typeof document !== 'undefined'
-    ? document.querySelector<HTMLMetaElement>("meta[name='theme-color'][media*='dark']")
-    : null;
-
 let currentColor = DEFAULT_THEME_COLOR;
 
 const sanitizeHex = (value: string): string => {
@@ -147,28 +137,11 @@ const applyPalette = (palette: Record<string, string>): void => {
   }
 };
 
-const updateMetaThemeColor = (scheme: 'light' | 'dark', palette: Record<string, string>): void => {
-  const primary = palette['--md-sys-color-primary'];
-  if (!primary) {
-    return;
-  }
-
-  if (scheme === 'dark') {
-    if (darkThemeMeta) {
-      darkThemeMeta.content = primary;
-    }
-  } else if (lightThemeMeta) {
-    lightThemeMeta.content = primary;
-  }
-};
-
 const applyCurrentColor = (): void => {
   const palette = createPalette(currentColor);
   const scheme = prefersDark?.matches ? 'dark' : 'light';
   const schemePalette = palette[scheme];
   applyPalette(schemePalette);
-  updateMetaThemeColor('light', palette.light);
-  updateMetaThemeColor('dark', palette.dark);
 };
 
 const handleSettingsChange = (event: Event): void => {

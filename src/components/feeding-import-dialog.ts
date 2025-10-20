@@ -4,6 +4,7 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { calculateNextFeedTime, type FeedingLog, type UnitType } from '../types/feeding-log.js';
 import { settingsService } from '../services/settings-service.js';
 import { BaseModalDialog } from './base-modal-dialog.js';
+import { dialogCancelButtonStyles, dialogHeaderStyles } from './dialog-shared-styles.js';
 
 const ML_PER_FL_OZ = 29.5735;
 const DEFAULT_DURATION_MINUTES = 20;
@@ -34,412 +35,379 @@ interface NormalizedEntry {
 
 @customElement('feeding-import-dialog')
 export class FeedingImportDialog extends BaseModalDialog {
-  static styles = css`
-    dialog {
-      border: none;
-      border-radius: var(--md-sys-shape-corner-extra-large);
-      padding: 0;
-      max-width: 560px;
-      width: 90vw;
-      margin: auto;
-      background: var(--md-sys-color-surface-container-high);
-      color: var(--md-sys-color-on-surface);
-      box-shadow: var(--md-sys-elevation-3);
-      opacity: 0;
-      transform: translateY(-12px);
-      max-height: calc(100vh - 2rem);
-      overflow: auto;
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
-      box-sizing: border-box;
-    }
-
-    dialog::backdrop {
-      background: rgba(0, 0, 0, 0.32);
-      backdrop-filter: blur(24px);
-      opacity: 0;
-    }
-
-    dialog[open]:not(.closing) {
-      animation: dialog-enter 200ms ease forwards;
-    }
-
-    dialog[open]:not(.closing)::backdrop {
-      animation: backdrop-enter 200ms ease forwards;
-    }
-
-    dialog.closing {
-      animation: dialog-exit 200ms ease forwards;
-    }
-
-    dialog.closing::backdrop {
-      animation: backdrop-exit 200ms ease forwards;
-    }
-
-    form {
-      display: grid;
-      gap: 0;
-    }
-
-    .dialog-header {
-      background: var(--md-sys-color-surface);
-      color: var(--md-sys-color-on-surface);
-      padding: 1.5rem;
-      border-radius: var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-extra-large) 0
-        0;
-      display: grid;
-      gap: 0.5rem;
-    }
-
-    .dialog-header h2 {
-      margin: 0;
-      font-size: var(--md-sys-typescale-headline-large-font-size);
-      font-weight: var(--md-sys-typescale-headline-large-font-weight);
-      line-height: var(--md-sys-typescale-headline-large-line-height);
-    }
-
-    .dialog-header .subtitle {
-      margin: 0.5rem 0 0 0;
-      color: var(--md-sys-color-on-surface-variant);
-      font-size: var(--md-sys-typescale-body-medium-font-size);
-      line-height: var(--md-sys-typescale-body-medium-line-height);
-    }
-
-    .dialog-content {
-      display: grid;
-      gap: 1.5rem;
-      padding: 1.5rem;
-    }
-
-    .entries {
-      display: grid;
-      gap: 1rem;
-    }
-
-    .entry-card {
-      display: grid;
-      gap: 1rem;
-      padding: 1.25rem 1.5rem;
-      border-radius: var(--md-sys-shape-corner-large);
-      background: var(--md-sys-color-surface-container-low);
-      border: 1px solid var(--md-sys-color-outline-variant);
-    }
-
-    .entry-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .entry-title {
-      font-weight: 600;
-      color: var(--md-sys-color-on-surface);
-    }
-
-    .remove-btn {
-      background: none;
-      border: none;
-      color: var(--md-sys-color-error);
-      cursor: pointer;
-      font-size: 0.875rem;
-      padding: 0.5rem 1rem;
-      border-radius: var(--md-sys-shape-corner-small);
-      transition: background-color 0.2s ease;
-    }
-
-    .remove-btn:hover,
-    .remove-btn:focus-visible {
-      background: var(--md-sys-color-error-container);
-      color: var(--md-sys-color-on-error-container);
-      outline: none;
-    }
-
-    .entry-grid {
-      display: grid;
-      gap: 1.25rem;
-    }
-
-    .form-label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-size: var(--md-sys-typescale-label-large-font-size);
-      font-weight: var(--md-sys-typescale-label-large-font-weight);
-      color: var(--md-sys-color-on-surface);
-    }
-
-    input,
-    select {
-      width: 87%;
-      border-radius: var(--md-sys-shape-corner-large);
-      border: 1px solid var(--md-sys-color-outline-variant);
-      background: var(--md-sys-color-surface-container-lowest);
-      color: var(--md-sys-color-on-surface);
-      font: inherit;
-      padding: 0.75rem 1rem;
-      transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
-    }
-
-    input:focus-visible,
-    select:focus-visible {
-      outline: none;
-      border-color: var(--md-sys-color-primary);
-      box-shadow: 0 0 0 3px var(--md-sys-color-primary-container);
-    }
-
-    .amount-group {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 0.75rem;
-      align-items: start;
-    }
-
-    .radio-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.5rem;
-    }
-
-    .radio-option {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      color: var(--md-sys-color-on-surface);
-    }
-
-    .radio-option input {
-      width: 20px;
-      height: 20px;
-      margin: 0;
-      cursor: pointer;
-    }
-
-    .time-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 0.75rem;
-    }
-
-    .time-input {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .computed-duration {
-      margin-top: 0.5rem;
-      padding: 0.75rem 1rem;
-      border-radius: var(--md-sys-shape-corner-large);
-      background: var(--md-sys-color-surface-container-lowest);
-      border: 1px solid var(--md-sys-color-outline-variant);
-      font-weight: 500;
-      color: var(--md-sys-color-on-surface);
-    }
-
-    .field-error {
-      margin-top: 0.5rem;
-      color: var(--md-sys-color-error);
-      font-size: var(--md-sys-typescale-body-small-font-size);
-    }
-
-    .add-entry-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: var(--md-comp-button-gap);
-      align-self: flex-start;
-      min-height: var(--md-comp-button-height);
-      padding: 0 1.25rem;
-      background: none;
-      border: 1px dashed var(--md-sys-color-outline-variant);
-      color: var(--md-sys-color-primary);
-      font-weight: var(--md-sys-typescale-label-large-font-weight);
-      font-size: var(--md-sys-typescale-label-large-font-size);
-      letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
-      border-radius: var(--md-sys-shape-corner-full);
-      cursor: pointer;
-      transition:
-        background-color 0.2s ease,
-        color 0.2s ease,
-        border-color 0.2s ease;
-    }
-
-    .add-entry-btn:hover,
-    .add-entry-btn:focus-visible {
-      background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
-      color: var(--md-sys-color-primary);
-      border-color: var(--md-sys-color-primary);
-      outline: none;
-    }
-
-    .dialog-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.75rem;
-      padding: 1.5rem;
-      border-top: 1px solid var(--md-sys-color-outline-variant);
-    }
-
-    .text-btn,
-    .primary-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: var(--md-comp-button-gap);
-      min-height: var(--md-comp-button-height);
-      padding: 0 var(--md-comp-button-horizontal-padding);
-      border: none;
-      border-radius: var(--md-comp-button-shape);
-      font-size: var(--md-sys-typescale-label-large-font-size);
-      font-weight: var(--md-sys-typescale-label-large-font-weight);
-      line-height: var(--md-sys-typescale-label-large-line-height);
-      letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
-      cursor: pointer;
-      transition:
-        background-color 0.2s ease,
-        box-shadow 0.2s ease,
-        color 0.2s ease;
-      min-width: 96px;
-    }
-
-    .text-btn {
-      background: transparent;
-      color: var(--md-sys-color-primary);
-    }
-
-    .text-btn:hover,
-    .text-btn:focus-visible {
-      background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
-      color: var(--md-sys-color-primary);
-      outline: none;
-    }
-
-    .primary-btn {
-      background: var(--md-sys-color-primary);
-      color: var(--md-sys-color-on-primary);
-      box-shadow: var(--md-sys-elevation-1);
-    }
-
-    .primary-btn:hover,
-    .primary-btn:focus-visible {
-      background: var(--md-sys-color-primary-container);
-      color: var(--md-sys-color-on-primary-container);
-      outline: none;
-      box-shadow: var(--md-sys-elevation-2);
-    }
-
-    .primary-btn:disabled {
-      background: var(--md-sys-color-surface-variant);
-      color: var(--md-sys-color-on-surface-variant);
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-
-    .form-error {
-      color: var(--md-sys-color-error);
-      background: var(--md-sys-color-error-container);
-      border-radius: var(--md-sys-shape-corner-large);
-      padding: 0.75rem 1rem;
-      font-size: var(--md-sys-typescale-body-small-font-size);
-    }
-
-    @keyframes dialog-enter {
-      0% {
-        opacity: 0;
-        transform: translateY(-12px);
-      }
-
-      100% {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes dialog-exit {
-      0% {
-        opacity: 1;
-        transform: translateY(0);
-        display: block;
-      }
-
-      100% {
-        opacity: 0;
-        transform: translateY(-12px);
-        display: none;
-      }
-    }
-
-    @keyframes backdrop-enter {
-      0% {
-        opacity: 0;
-      }
-
-      100% {
-        opacity: 1;
-      }
-    }
-
-    @keyframes backdrop-exit {
-      0% {
-        opacity: 1;
-      }
-
-      100% {
-        opacity: 0;
-      }
-    }
-
-    @supports (transition-behavior: allow-discrete) {
+  static styles = [
+    dialogHeaderStyles,
+    dialogCancelButtonStyles,
+    css`
       dialog {
-        animation: none;
-        transition:
-          opacity 200ms ease,
-          transform 200ms ease,
-          overlay 200ms ease allow-discrete,
-          display 200ms ease allow-discrete;
+        border: none;
+        border-radius: var(--md-sys-shape-corner-extra-large);
+        padding: 0;
+        max-width: 560px;
+        width: 90vw;
+        margin: auto;
+        background: var(--md-sys-color-surface-container-high);
+        color: var(--md-sys-color-on-surface);
+        box-shadow: var(--md-sys-elevation-3);
         opacity: 0;
         transform: translateY(-12px);
+        max-height: calc(100vh - 2rem);
+        overflow: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        box-sizing: border-box;
       }
 
       dialog::backdrop {
-        animation: none;
-        transition:
-          opacity 200ms ease,
-          background-color 200ms ease,
-          overlay 200ms ease allow-discrete,
-          display 200ms ease allow-discrete;
+        background: rgba(0, 0, 0, 0.32);
+        backdrop-filter: blur(24px);
         opacity: 0;
       }
 
-      dialog:open:not(.closing) {
-        opacity: 1;
-        transform: translateY(0);
+      dialog[open]:not(.closing) {
+        animation: dialog-enter 200ms ease forwards;
       }
 
-      dialog:open:not(.closing)::backdrop {
-        opacity: 1;
+      dialog[open]:not(.closing)::backdrop {
+        animation: backdrop-enter 200ms ease forwards;
       }
 
       dialog.closing {
-        opacity: 0;
-        transform: translateY(-12px);
+        animation: dialog-exit 200ms ease forwards;
       }
 
       dialog.closing::backdrop {
-        opacity: 0;
+        animation: backdrop-exit 200ms ease forwards;
       }
-    }
 
-    @media (prefers-reduced-motion: reduce) {
-      dialog,
-      dialog::backdrop {
-        animation: none !important;
-        transition: none !important;
+      form {
+        display: grid;
+        gap: 0;
       }
-    }
-  `;
+
+      .dialog-content {
+        display: grid;
+        gap: 1.5rem;
+        padding: 1.5rem;
+      }
+
+      .entries {
+        display: grid;
+        gap: 1rem;
+      }
+
+      .entry-card {
+        display: grid;
+        gap: 1rem;
+        padding: 1.25rem 1.5rem;
+        border-radius: var(--md-sys-shape-corner-large);
+        background: var(--md-sys-color-surface-container-low);
+        border: 1px solid var(--md-sys-color-outline-variant);
+      }
+
+      .entry-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .entry-title {
+        font-weight: 600;
+        color: var(--md-sys-color-on-surface);
+      }
+
+      .remove-btn {
+        background: none;
+        border: none;
+        color: var(--md-sys-color-error);
+        cursor: pointer;
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+        border-radius: var(--md-sys-shape-corner-small);
+        transition: background-color 0.2s ease;
+      }
+
+      .remove-btn:hover,
+      .remove-btn:focus-visible {
+        background: var(--md-sys-color-error-container);
+        color: var(--md-sys-color-on-error-container);
+        outline: none;
+      }
+
+      .entry-grid {
+        display: grid;
+        gap: 1.25rem;
+      }
+
+      .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-size: var(--md-sys-typescale-label-large-font-size);
+        font-weight: var(--md-sys-typescale-label-large-font-weight);
+        color: var(--md-sys-color-on-surface);
+      }
+
+      input,
+      select {
+        width: 87%;
+        border-radius: var(--md-sys-shape-corner-large);
+        border: 1px solid var(--md-sys-color-outline-variant);
+        background: var(--md-sys-color-surface-container-lowest);
+        color: var(--md-sys-color-on-surface);
+        font: inherit;
+        padding: 0.75rem 1rem;
+        transition:
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+
+      input:focus-visible,
+      select:focus-visible {
+        outline: none;
+        border-color: var(--md-sys-color-primary);
+        box-shadow: 0 0 0 3px var(--md-sys-color-primary-container);
+      }
+
+      .amount-group {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.75rem;
+        align-items: start;
+      }
+
+      .radio-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+      }
+
+      .radio-option {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--md-sys-color-on-surface);
+      }
+
+      .radio-option input {
+        width: 20px;
+        height: 20px;
+        margin: 0;
+        cursor: pointer;
+      }
+
+      .time-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.75rem;
+      }
+
+      .time-input {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .computed-duration {
+        margin-top: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-radius: var(--md-sys-shape-corner-large);
+        background: var(--md-sys-color-surface-container-lowest);
+        border: 1px solid var(--md-sys-color-outline-variant);
+        font-weight: 500;
+        color: var(--md-sys-color-on-surface);
+      }
+
+      .field-error {
+        margin-top: 0.5rem;
+        color: var(--md-sys-color-error);
+        font-size: var(--md-sys-typescale-body-small-font-size);
+      }
+
+      .add-entry-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--md-comp-button-gap);
+        align-self: flex-start;
+        min-height: var(--md-comp-button-height);
+        padding: 0 1.25rem;
+        background: none;
+        border: 1px dashed var(--md-sys-color-outline-variant);
+        color: var(--md-sys-color-primary);
+        font-weight: var(--md-sys-typescale-label-large-font-weight);
+        font-size: var(--md-sys-typescale-label-large-font-size);
+        letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
+        border-radius: var(--md-sys-shape-corner-full);
+        cursor: pointer;
+        transition:
+          background-color 0.2s ease,
+          color 0.2s ease,
+          border-color 0.2s ease;
+      }
+
+      .add-entry-btn:hover,
+      .add-entry-btn:focus-visible {
+        background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+        color: var(--md-sys-color-primary);
+        border-color: var(--md-sys-color-primary);
+        outline: none;
+      }
+
+      .dialog-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        padding: 1.5rem;
+        border-top: 1px solid var(--md-sys-color-outline-variant);
+      }
+
+      .primary-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--md-comp-button-gap);
+        min-height: var(--md-comp-button-height);
+        padding: 0 var(--md-comp-button-horizontal-padding);
+        border: none;
+        border-radius: var(--md-comp-button-shape);
+        font-size: var(--md-sys-typescale-label-large-font-size);
+        font-weight: var(--md-sys-typescale-label-large-font-weight);
+        line-height: var(--md-sys-typescale-label-large-line-height);
+        letter-spacing: var(--md-sys-typescale-label-large-letter-spacing);
+        cursor: pointer;
+        transition:
+          background-color 0.2s ease,
+          box-shadow 0.2s ease,
+          color 0.2s ease;
+        min-width: 96px;
+      }
+
+      .primary-btn {
+        background: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary);
+        box-shadow: var(--md-sys-elevation-1);
+      }
+
+      .primary-btn:hover,
+      .primary-btn:focus-visible {
+        background: var(--md-sys-color-primary-container);
+        color: var(--md-sys-color-on-primary-container);
+        outline: none;
+        box-shadow: var(--md-sys-elevation-2);
+      }
+
+      .primary-btn:disabled {
+        background: var(--md-sys-color-surface-variant);
+        color: var(--md-sys-color-on-surface-variant);
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .form-error {
+        color: var(--md-sys-color-error);
+        background: var(--md-sys-color-error-container);
+        border-radius: var(--md-sys-shape-corner-large);
+        padding: 0.75rem 1rem;
+        font-size: var(--md-sys-typescale-body-small-font-size);
+      }
+
+      @keyframes dialog-enter {
+        0% {
+          opacity: 0;
+          transform: translateY(-12px);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes dialog-exit {
+        0% {
+          opacity: 1;
+          transform: translateY(0);
+          display: block;
+        }
+
+        100% {
+          opacity: 0;
+          transform: translateY(-12px);
+          display: none;
+        }
+      }
+
+      @keyframes backdrop-enter {
+        0% {
+          opacity: 0;
+        }
+
+        100% {
+          opacity: 1;
+        }
+      }
+
+      @keyframes backdrop-exit {
+        0% {
+          opacity: 1;
+        }
+
+        100% {
+          opacity: 0;
+        }
+      }
+
+      @supports (transition-behavior: allow-discrete) {
+        dialog {
+          animation: none;
+          transition:
+            opacity 200ms ease,
+            transform 200ms ease,
+            overlay 200ms ease allow-discrete,
+            display 200ms ease allow-discrete;
+          opacity: 0;
+          transform: translateY(-12px);
+        }
+
+        dialog::backdrop {
+          animation: none;
+          transition:
+            opacity 200ms ease,
+            background-color 200ms ease,
+            overlay 200ms ease allow-discrete,
+            display 200ms ease allow-discrete;
+          opacity: 0;
+        }
+
+        dialog:open:not(.closing) {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        dialog:open:not(.closing)::backdrop {
+          opacity: 1;
+        }
+
+        dialog.closing {
+          opacity: 0;
+          transform: translateY(-12px);
+        }
+
+        dialog.closing::backdrop {
+          opacity: 0;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        dialog,
+        dialog::backdrop {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    `,
+  ];
 
   @state()
   private entries: ImportEntry[] = [];
@@ -892,7 +860,9 @@ export class FeedingImportDialog extends BaseModalDialog {
           </div>
 
           <div class="dialog-actions">
-            <button type="button" class="text-btn" @click=${this.handleCancel}>Cancel</button>
+            <button type="button" class="dialog-cancel-button" @click=${this.handleCancel}>
+              Cancel
+            </button>
             <button type="submit" class="primary-btn" ?disabled=${this.submitting}>
               ${this.submitting ? 'Adding…' : 'Add feeds'}
             </button>

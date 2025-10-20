@@ -1,9 +1,10 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, nothing, svg } from 'lit';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { customElement, state, query } from 'lit/decorators.js';
 import { Router } from './router/router.js';
-import './pages/home-page.js';
 import './components/app-header-menu.js';
 import './components/pwa-install-prompt.js';
+import './pages/home-page.js';
 
 import type { HomePage } from './pages/home-page.js';
 
@@ -188,7 +189,9 @@ export class AppRoot extends LitElement {
     }
 
     .nav-icon path {
-      fill: currentColor;
+      transition:
+        fill 0.2s ease,
+        stroke 0.2s ease;
     }
 
     .nav-label {
@@ -323,6 +326,7 @@ export class AppRoot extends LitElement {
     icon: string;
   }> = [
     { href: '/', component: 'home-page', label: 'Home', icon: 'home' },
+    { href: '/diapers', component: 'diaper-page', label: 'Diapers', icon: 'diaper' },
     { href: '/settings', component: 'settings-page', label: 'Settings', icon: 'settings' },
   ];
 
@@ -336,6 +340,11 @@ export class AppRoot extends LitElement {
         {
           pattern: '/',
           component: 'home-page',
+        },
+        {
+          pattern: '/diapers',
+          component: 'diaper-page',
+          loader: () => import('./pages/diaper-page.js'),
         },
         {
           pattern: '/settings',
@@ -476,33 +485,119 @@ export class AppRoot extends LitElement {
   }
 
   private getIconSvg(iconName: string, active: boolean) {
-    const icons: Record<string, { filled: string; outlined: string }> = {
+    type IconPath = {
+      d: string;
+      fill?: string;
+      stroke?: string;
+      strokeWidth?: string;
+      strokeLinecap?: 'round' | 'butt' | 'square';
+      strokeLinejoin?: 'round' | 'bevel' | 'miter';
+      fillRule?: 'evenodd' | 'nonzero';
+      clipRule?: 'evenodd' | 'nonzero';
+    };
+
+    type IconDefinition = {
+      viewBox?: string;
+      outlined: IconPath[];
+      filled: IconPath[];
+    };
+
+    const icons: Record<string, IconDefinition> = {
       home: {
-        outlined: 'M12 5.69l5 4.5V18h-2v-6H9v6H7v-7.81l5-4.5M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z',
-        filled: 'M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm0 2.69l5 4.5V18h-2v-6H9v6H7v-7.81l5-4.5z',
+        outlined: [
+          {
+            d: 'M12 4L4 10.5V20h5.5v-5.5h5V20H20V10.5L12 4z',
+            fill: 'none',
+            stroke: 'currentColor',
+            strokeWidth: '1.6',
+            strokeLinecap: 'round',
+            strokeLinejoin: 'round',
+          },
+          {
+            d: 'M10 20v-5.5h4V20',
+            fill: 'none',
+            stroke: 'currentColor',
+            strokeWidth: '1.6',
+            strokeLinecap: 'round',
+          },
+        ],
+        filled: [
+          {
+            d: 'M10 20v-5.5h4V20h5.5v-8.88L12 3 4.5 11.12V20z',
+            fill: 'currentColor',
+            fillRule: 'evenodd',
+            clipRule: 'evenodd',
+          },
+        ],
       },
       settings: {
-        outlined:
-          'M19.43 12.98c.04-.32.07-.65.07-.98 0-.33-.03-.66-.07-.98l2.11-1.65a.5.5 0 0 0 .12-.63l-2-3.46a.5.5 0 0 0-.61-.22l-2.49 1a7.11 7.11 0 0 0-1.68-.98L14.5 2h-5l-.38 2.08a7.11 7.11 0 0 0-1.68.98l-2.49-1a.5.5 0 0 0-.61.22l-2 3.46a.5.5 0 0 0 .12.63l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65a.5.5 0 0 0-.12.63l2 3.46c.12.22.39.31.61.22l2.49-1c.52.4 1.08.73 1.68.98L9.5 22h5l.38-2.08c.6-.25 1.16-.58 1.68-.98l2.49 1c.22.09.49 0 .61-.22l2-3.46a.5.5 0 0 0-.12-.63l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5S10.07 8.5 12 8.5s3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z',
-        filled:
-          'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z',
+        viewBox: '0 0 512 512',
+        outlined: [
+          {
+            d: 'M262.29 192.31a64 64 0 1057.4 57.4 64.13 64.13 0 00-57.4-57.4zM416.39 256a154.34 154.34 0 01-1.53 20.79l45.21 35.46a10.81 10.81 0 012.45 13.75l-42.77 74a10.81 10.81 0 01-13.14 4.59l-44.9-18.08a16.11 16.11 0 00-15.17 1.75A164.48 164.48 0 01325 400.8a15.94 15.94 0 00-8.82 12.14l-6.73 47.89a11.08 11.08 0 01-10.68 9.17h-85.54a11.11 11.11 0 01-10.69-8.87l-6.72-47.82a16.07 16.07 0 00-9-12.22 155.3 155.3 0 01-21.46-12.57 16 16 0 00-15.11-1.71l-44.89 18.07a10.81 10.81 0 01-13.14-4.58l-42.77-74a10.8 10.8 0 012.45-13.75l38.21-30a16.05 16.05 0 006-14.08c-.36-4.17-.58-8.33-.58-12.5s.21-8.27.58-12.35a16 16 0 00-6.07-13.94l-38.19-30A10.81 10.81 0 0149.48 186l42.77-74a10.81 10.81 0 0113.14-4.59l44.9 18.08a16.11 16.11 0 0015.17-1.75A164.48 164.48 0 01187 111.2a15.94 15.94 0 008.82-12.14l6.73-47.89A11.08 11.08 0 01213.23 42h85.54a11.11 11.11 0 0110.69 8.87l6.72 47.82a16.07 16.07 0 009 12.22 155.3 155.3 0 0121.46 12.57 16 16 0 0015.11 1.71l44.89-18.07a10.81 10.81 0 0113.14 4.58l42.77 74a10.8 10.8 0 01-2.45 13.75l-38.21 30a16.05 16.05 0 00-6.05 14.08c.33 4.14.55 8.3.55 12.47z',
+            stroke: 'currentColor',
+            strokeWidth: '32',
+            strokeLinecap: 'round',
+            strokeLinejoin: 'round',
+          },
+        ],
+        filled: [
+          {
+            d: 'M262.29 192.31a64 64 0 1057.4 57.4 64.13 64.13 0 00-57.4-57.4zM416.39 256a154.34 154.34 0 01-1.53 20.79l45.21 35.46a10.81 10.81 0 012.45 13.75l-42.77 74a10.81 10.81 0 01-13.14 4.59l-44.9-18.08a16.11 16.11 0 00-15.17 1.75A164.48 164.48 0 01325 400.8a15.94 15.94 0 00-8.82 12.14l-6.73 47.89a11.08 11.08 0 01-10.68 9.17h-85.54a11.11 11.11 0 01-10.69-8.87l-6.72-47.82a16.07 16.07 0 00-9-12.22 155.3 155.3 0 01-21.46-12.57 16 16 0 00-15.11-1.71l-44.89 18.07a10.81 10.81 0 01-13.14-4.58l-42.77-74a10.8 10.8 0 012.45-13.75l38.21-30a16.05 16.05 0 006-14.08c-.36-4.17-.58-8.33-.58-12.5s.21-8.27.58-12.35a16 16 0 00-6.07-13.94l-38.19-30A10.81 10.81 0 0149.48 186l42.77-74a10.81 10.81 0 0113.14-4.59l44.9 18.08a16.11 16.11 0 0015.17-1.75A164.48 164.48 0 01187 111.2a15.94 15.94 0 008.82-12.14l6.73-47.89A11.08 11.08 0 01213.23 42h85.54a11.11 11.11 0 0110.69 8.87l6.72 47.82a16.07 16.07 0 009 12.22 155.3 155.3 0 0121.46 12.57 16 16 0 0015.11 1.71l44.89-18.07a10.81 10.81 0 0113.14 4.58l42.77 74a10.8 10.8 0 01-2.45 13.75l-38.21 30a16.05 16.05 0 00-6.05 14.08c.33 4.14.55 8.3.55 12.47z',
+            fill: 'currentColor',
+            fillRule: 'evenodd',
+            clipRule: 'evenodd',
+          },
+        ],
+      },
+      diaper: {
+        outlined: [
+          {
+            d: 'M12 2c-4.41 0-8 3.59-8 8 0 5.46 7.08 11.72 7.38 11.99.17.14.38.21.62.21s.45-.07.62-.21C12.92 21.72 20 15.46 20 10c0-4.41-3.59-8-8-8zm0 18.07c-2.3-2.13-6-6.26-6-10.07 0-3.31 2.69-6 6-6s6 2.69 6 6c0 3.81-3.7 7.94-6 10.07z',
+            fill: 'none',
+            stroke: 'currentColor',
+            strokeWidth: '1.6',
+            strokeLinecap: 'round',
+            strokeLinejoin: 'round',
+          },
+        ],
+        filled: [
+          {
+            d: 'M12 2C7.59 2 4 5.59 4 10c0 5.46 7.08 11.72 7.38 11.99.17.14.38.21.62.21s.45-.07.62-.21C12.92 21.72 20 15.46 20 10c0-4.41-3.59-8-8-8zm0 16c-1.79-1.66-5-5.07-5-8 0-2.76 2.24-5 5-5s5 2.24 5 5c0 2.93-3.21 6.34-5 8z',
+            fill: 'currentColor',
+            fillRule: 'evenodd',
+            clipRule: 'evenodd',
+          },
+        ],
       },
     };
 
     const icon = icons[iconName];
-    if (!icon) return html``;
+    if (!icon) {
+      return nothing;
+    }
 
-    const path = active ? icon.filled : icon.outlined;
+    const paths = active ? icon.filled : icon.outlined;
 
-    return html`
+    return svg`
       <svg
         class="nav-icon"
-        viewBox="0 0 24 24"
+        viewBox=${icon.viewBox ?? '0 0 24 24'}
         xmlns="http://www.w3.org/2000/svg"
         aria-hidden="true"
-        fill="currentColor"
       >
-        <path d="${path}" fill-rule="evenodd" clip-rule="evenodd"></path>
+        ${paths.map(
+          (segment) => svg`<path
+            d=${segment.d}
+            fill=${segment.fill ?? (segment.stroke ? 'none' : 'currentColor')}
+            stroke=${ifDefined(segment.stroke)}
+            stroke-width=${ifDefined(segment.strokeWidth)}
+            stroke-linecap=${ifDefined(segment.strokeLinecap)}
+            stroke-linejoin=${ifDefined(segment.strokeLinejoin)}
+            fill-rule=${ifDefined(segment.fillRule)}
+            clip-rule=${ifDefined(segment.clipRule)}
+          ></path>`
+        )}
       </svg>
     `;
   }
@@ -556,6 +651,8 @@ export class AppRoot extends LitElement {
     switch (this.currentRoute) {
       case 'home-page':
         return html`<home-page></home-page>`;
+      case 'diaper-page':
+        return html`<diaper-page></diaper-page>`;
       case 'settings-page':
         return html`<settings-page></settings-page>`;
       case 'not-found-page':
