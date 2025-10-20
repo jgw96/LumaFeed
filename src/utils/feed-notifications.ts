@@ -32,7 +32,11 @@ export async function showNextFeedNotification(log: FeedingLog): Promise<void> {
     tag: 'next-feed-reminder',
     icon: '/maskable_icon_x512.png',
     badge: '/monochrome.png',
-    data: { logId: log.id ?? null, nextFeedTime: log.nextFeedTime },
+    data: {
+      logId: log.id ?? null,
+      nextFeedTime: log.nextFeedTime,
+      url: new URL('/', window.location.origin).href,
+    },
   };
 
   try {
