@@ -323,7 +323,7 @@ export class DiaperPage extends LitElement {
             `
           : null}
         <div class="logs-section">
-          <h2 class="section-title">Recent Diapers</h2>
+          ${this.logs.length > 0 ? html`<h2 class="section-title">Recent Diapers</h2>` : null}
           ${this.loading
             ? html`
                 <div class="logs-skeleton" role="status" aria-live="polite" aria-busy="true">
@@ -352,7 +352,7 @@ export class DiaperPage extends LitElement {
               `}
         </div>
 
-        <button class="add-btn" @click=${this.handleAddClick}>Log diaper</button>
+        ${this.logs.length > 0 ? html`<button class="add-btn" @click=${this.handleAddClick}>Log diaper</button>` : null}
 
         <diaper-form-dialog @log-added=${this.handleLogAdded}></diaper-form-dialog>
       </div>

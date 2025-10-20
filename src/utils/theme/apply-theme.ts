@@ -2,6 +2,7 @@ import {
   DEFAULT_THEME_COLOR,
   settingsService,
   type AppSettings,
+  type ThemePreference,
 } from '../../services/settings-service.js';
 
 type Rgb = { r: number; g: number; b: number };
@@ -11,9 +12,12 @@ const BLACK: Rgb = { r: 0, g: 0, b: 0 };
 const NEUTRAL: Rgb = { r: 120, g: 120, b: 120 };
 
 const prefersDark =
-  typeof window !== 'undefined' ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(prefers-color-scheme: dark)')
+    : null;
 
 let currentColor = DEFAULT_THEME_COLOR;
+let currentPreference: ThemePreference = 'system';
 
 const sanitizeHex = (value: string): string => {
   const hex = value.trim().toLowerCase();
@@ -137,11 +141,34 @@ const applyPalette = (palette: Record<string, string>): void => {
   }
 };
 
-const applyCurrentColor = (): void => {
+const resolveScheme = (): 'light' | 'dark' => {
+  if (currentPreference === 'system') {
+    return prefersDark?.matches ? 'dark' : 'light';
+  }
+
+  return currentPreference;
+};
+
+const applyDocumentScheme = (scheme: 'light' | 'dark'): void => {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const root = document.documentElement;
+  if (currentPreference === 'system') {
+    root.removeAttribute('data-theme');
+  } else {
+    root.setAttribute('data-theme', scheme);
+  }
+  root.style.colorScheme = scheme;
+};
+
+const applyCurrentTheme = (): void => {
   const palette = createPalette(currentColor);
-  const scheme = prefersDark?.matches ? 'dark' : 'light';
+  const scheme = resolveScheme();
   const schemePalette = palette[scheme];
   applyPalette(schemePalette);
+  applyDocumentScheme(scheme);
 };
 
 const handleSettingsChange = (event: Event): void => {
@@ -151,15 +178,33 @@ const handleSettingsChange = (event: Event): void => {
   }
 
   const next = sanitizeHex(detail.themeColor ?? DEFAULT_THEME_COLOR);
+  const nextPreference = detail.themePreference ?? 'system';
+
+  let changed = false;
+
   if (next !== currentColor) {
     currentColor = next;
-    applyCurrentColor();
+    changed = true;
+  }
+
+  if (nextPreference !== currentPreference) {
+    currentPreference = nextPreference;
+    changed = true;
+  }
+
+  if (changed) {
+    applyCurrentTheme();
   }
 };
 
 export const setThemeColor = (hexColor: string): void => {
   currentColor = sanitizeHex(hexColor);
-  applyCurrentColor();
+  applyCurrentTheme();
+};
+
+export const setThemePreference = (preference: ThemePreference): void => {
+  currentPreference = preference;
+  applyCurrentTheme();
 };
 
 export const initializeTheme = async (): Promise<void> => {
@@ -170,12 +215,14 @@ export const initializeTheme = async (): Promise<void> => {
   try {
     const settings = await settingsService.getSettings();
     currentColor = sanitizeHex(settings.themeColor ?? DEFAULT_THEME_COLOR);
+    currentPreference = settings.themePreference ?? 'system';
   } catch (error) {
     console.warn('Falling back to default theme color.', error);
     currentColor = DEFAULT_THEME_COLOR;
+    currentPreference = 'system';
   }
 
-  applyCurrentColor();
+  applyCurrentTheme();
 
   const mediaQuery = prefersDark as
     | (MediaQueryList & {
@@ -183,10 +230,16 @@ export const initializeTheme = async (): Promise<void> => {
       })
     | null;
 
+  const handleMediaChange = () => {
+    if (currentPreference === 'system') {
+      applyCurrentTheme();
+    }
+  };
+
   if (mediaQuery?.addEventListener) {
-    mediaQuery.addEventListener('change', applyCurrentColor);
+    mediaQuery.addEventListener('change', handleMediaChange);
   } else if (mediaQuery?.addListener) {
-    mediaQuery.addListener(applyCurrentColor);
+    mediaQuery.addListener(handleMediaChange);
   }
   window.addEventListener('feeding-tracker-settings-changed', handleSettingsChange);
 };

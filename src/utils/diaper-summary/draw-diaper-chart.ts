@@ -4,9 +4,10 @@ export interface DrawDiaperChartParams {
   canvas: HTMLCanvasElement;
   host: HTMLElement;
   data: DiaperChartPoint[];
+  labelFormatter?: (timestamp: number) => string;
 }
 
-export function drawDiaperChart({ canvas, host, data }: DrawDiaperChartParams): void {
+export function drawDiaperChart({ canvas, host, data, labelFormatter }: DrawDiaperChartParams): void {
   const displayWidth = canvas.clientWidth;
   const displayHeight = canvas.clientHeight;
 
@@ -100,7 +101,7 @@ export function drawDiaperChart({ canvas, host, data }: DrawDiaperChartParams): 
   const gap =
     data.length > 1 ? Math.max(6, (chartWidth - barWidth * data.length) / (data.length - 1)) : 0;
 
-  const dateFormatter = new Intl.DateTimeFormat(undefined, {
+  const fallbackFormatter = new Intl.DateTimeFormat(undefined, {
     weekday: 'short',
     hour: 'numeric',
   });
@@ -136,7 +137,7 @@ export function drawDiaperChart({ canvas, host, data }: DrawDiaperChartParams): 
 
     context.globalAlpha = 1;
 
-    const label = dateFormatter.format(entry.timestamp);
+    const label = labelFormatter?.(entry.timestamp) ?? fallbackFormatter.format(entry.timestamp);
 
     context.save();
     const labelYOffset = data.length > 6 ? 24 : 12;

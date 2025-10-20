@@ -1,12 +1,19 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ConfirmDialog } from '../src/components/confirm-dialog.js';
-import { mountComponent, queryShadow } from './helpers.js';
+import { cleanup, mountComponent, queryShadow } from './helpers.js';
 
 describe('ConfirmDialog', () => {
   let dialog: ConfirmDialog;
 
   beforeEach(async () => {
+    if (!customElements.get('confirm-dialog')) {
+      customElements.define('confirm-dialog', ConfirmDialog);
+    }
     dialog = await mountComponent<ConfirmDialog>('confirm-dialog');
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it('should render without errors', () => {
@@ -105,6 +112,7 @@ describe('ConfirmDialog', () => {
     const confirmBtn = queryShadow<HTMLButtonElement>(dialog, '.dialog__button--confirm');
     expect(confirmBtn?.classList.contains('destructive')).toBe(true);
 
+    const cancelBtn = queryShadow<HTMLButtonElement>(dialog, '.dialog__button--cancel');
     cancelBtn?.click();
     await promise;
   });

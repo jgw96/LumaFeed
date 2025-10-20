@@ -5,6 +5,8 @@ import type { FeedingSummaryCard } from '../src/components/feeding-summary-card.
 import type { FeedingLog } from '../src/types/feeding-log.js';
 import { calculateNextFeedTime } from '../src/types/feeding-log.js';
 
+const AVERAGE_INTERVAL_ARIA_LABEL = 'Average interval between feedings in the last 24 hours';
+
 describe('FeedingSummaryCard', () => {
   let sampleLogs: FeedingLog[];
 
@@ -100,10 +102,17 @@ describe('FeedingSummaryCard', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const intervalElement = queryShadow(card, '.summary-card__interval');
-    expect(intervalElement).toBeTruthy();
-    expect(intervalElement?.textContent).toContain('Average interval:');
-    expect(intervalElement?.textContent).toContain('3 hr'); // Average of 3 hours and 3 hours
+    const intervalHighlight = queryShadow(
+      card,
+      `.summary-card__highlight[aria-label="${AVERAGE_INTERVAL_ARIA_LABEL}"]`
+    );
+    expect(intervalHighlight).toBeTruthy();
+
+    const label = intervalHighlight?.querySelector('.summary-card__highlight-label');
+    expect(label?.textContent?.trim()).toBe('Average interval');
+
+    const value = intervalHighlight?.querySelector('.summary-card__highlight-value');
+    expect(value?.textContent).toContain('3 hrs'); // Average of 3 hours and 3 hours
   });
 
   it('should not display average interval when only 1 feed', async () => {
@@ -113,8 +122,11 @@ describe('FeedingSummaryCard', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const intervalElement = queryShadow(card, '.summary-card__interval');
-    expect(intervalElement).toBeFalsy();
+    const intervalHighlight = queryShadow(
+      card,
+      `.summary-card__highlight[aria-label="${AVERAGE_INTERVAL_ARIA_LABEL}"]`
+    );
+    expect(intervalHighlight).toBeFalsy();
   });
 
   it('should format interval in hours and minutes', async () => {
@@ -152,8 +164,14 @@ describe('FeedingSummaryCard', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const intervalValue = queryShadow(card, '.summary-card__interval-value');
-    expect(intervalValue?.textContent).toContain('hr'); // 2.5 hours = 2 hr 30 min
+    const intervalHighlight = queryShadow(
+      card,
+      `.summary-card__highlight[aria-label="${AVERAGE_INTERVAL_ARIA_LABEL}"]`
+    );
+    expect(intervalHighlight).toBeTruthy();
+
+    const intervalValue = intervalHighlight?.querySelector('.summary-card__highlight-value');
+    expect(intervalValue?.textContent).toContain('2 hr 30 min'); // 2.5 hours = 2 hr 30 min
   });
 
   it('should only consider feeds in last 24 hours', async () => {
@@ -194,7 +212,10 @@ describe('FeedingSummaryCard', () => {
     const status = queryShadow(card, '.summary-card__status');
     expect(status?.textContent).toContain('1 feeding'); // Only one within 24 hours
 
-    const intervalElement = queryShadow(card, '.summary-card__interval');
-    expect(intervalElement).toBeFalsy(); // No interval with only 1 feed
+    const intervalHighlight = queryShadow(
+      card,
+      `.summary-card__highlight[aria-label="${AVERAGE_INTERVAL_ARIA_LABEL}"]`
+    );
+    expect(intervalHighlight).toBeFalsy(); // No interval with only 1 feed
   });
 });

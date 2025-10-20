@@ -402,7 +402,7 @@ export class HomePage extends LitElement {
             `
           : null}
         <div class="logs-section">
-          <h2 class="section-title">Recent Feedings</h2>
+          ${this.logs.length > 0 ? html`<h2 class="section-title">Recent Feedings</h2>` : null}
           ${this.loading
             ? html`
                 <div
@@ -441,7 +441,7 @@ export class HomePage extends LitElement {
               `}
         </div>
 
-        <button class="add-btn" @click=${this.handleAddClick}>Start feeding</button>
+        ${this.logs.length > 0 ? html`<button class="add-btn" @click=${this.handleAddClick}>Start feeding</button>` : null}
 
         <feeding-form-dialog @log-added=${this.handleLogAdded}></feeding-form-dialog>
       </div>

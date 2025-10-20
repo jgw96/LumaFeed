@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, nothing } from 'lit';
 import { customElement, state, query } from 'lit/decorators.js';
 import {
   settingsService,
@@ -11,12 +11,14 @@ import {
   DEFAULT_BOTTLE_FED,
   DEFAULT_SHOW_AI_SUMMARY_CARD,
   DEFAULT_THEME_COLOR,
+  DEFAULT_THEME_PREFERENCE,
+  type ThemePreference,
 } from '../services/settings-service.js';
 import type { AppSettings } from '../services/settings-service.js';
 import type { AppToast } from '../components/app-toast.js';
 import '../components/app-toast.js';
 import { DEFAULT_NEXT_FEED_INTERVAL_MINUTES, type UnitType } from '../types/feeding-log.js';
-import { setThemeColor } from '../utils/theme/apply-theme.js';
+import { setThemeColor, setThemePreference } from '../utils/theme/apply-theme.js';
 
 @customElement('settings-page')
 export class SettingsPage extends LitElement {
@@ -260,6 +262,16 @@ export class SettingsPage extends LitElement {
       transform: none;
     }
 
+    .appearance__mode {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .appearance__device-reset {
+      justify-self: start;
+      align-self: start;
+    }
+
     .helper-text {
       color: var(--md-sys-color-on-surface-variant);
       font-size: var(--md-sys-typescale-body-medium-font-size);
@@ -492,19 +504,44 @@ export class SettingsPage extends LitElement {
   @state()
   private themeColor: string = DEFAULT_THEME_COLOR;
 
+  @state()
+  private themePreference: ThemePreference = DEFAULT_THEME_PREFERENCE;
+
+  @state()
+  private systemPrefersDark = false;
+
   @query('app-toast')
   private toastElement?: AppToast;
 
   private pendingUpdate: Partial<AppSettings> = {};
   private saveTimeoutId: number | null = null;
+  private prefersColorSchemeMedia: MediaQueryList | null = null;
+  private readonly handleSystemSchemeChange = (event: MediaQueryListEvent): void => {
+    this.systemPrefersDark = event.matches;
+    if (this.themePreference === 'system') {
+      this.requestUpdate();
+    }
+  };
 
   connectedCallback(): void {
     super.connectedCallback();
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      const media = window.matchMedia('(prefers-color-scheme: dark)');
+      this.prefersColorSchemeMedia = media;
+      this.systemPrefersDark = media.matches;
+      media.addEventListener?.('change', this.handleSystemSchemeChange);
+      media.addListener?.(this.handleSystemSchemeChange);
+    }
     this.loadSettings();
   }
 
   disconnectedCallback(): void {
     this.clearSaveTimeout();
+    if (this.prefersColorSchemeMedia) {
+      this.prefersColorSchemeMedia.removeEventListener?.('change', this.handleSystemSchemeChange);
+      this.prefersColorSchemeMedia.removeListener?.(this.handleSystemSchemeChange);
+      this.prefersColorSchemeMedia = null;
+    }
     super.disconnectedCallback();
   }
 
@@ -527,6 +564,8 @@ export class SettingsPage extends LitElement {
       this.defaultBottleFed = DEFAULT_BOTTLE_FED;
       this.showAiSummaryCard = DEFAULT_SHOW_AI_SUMMARY_CARD;
       this.themeColor = DEFAULT_THEME_COLOR;
+      this.themePreference = DEFAULT_THEME_PREFERENCE;
+      setThemePreference(DEFAULT_THEME_PREFERENCE);
     } finally {
       this.loading = false;
     }
@@ -540,6 +579,8 @@ export class SettingsPage extends LitElement {
     this.defaultBottleFed = settings.defaultBottleFed;
     this.showAiSummaryCard = settings.showAiSummaryCard;
     this.themeColor = settings.themeColor ?? DEFAULT_THEME_COLOR;
+    this.themePreference = settings.themePreference ?? DEFAULT_THEME_PREFERENCE;
+    setThemePreference(this.themePreference);
   }
 
   private scheduleSave(partial: Partial<AppSettings>): void {
@@ -600,6 +641,29 @@ export class SettingsPage extends LitElement {
     }
   }
 
+  private get isUsingDeviceTheme(): boolean {
+    return this.themePreference === 'system';
+  }
+
+  private get isDarkModeEnabled(): boolean {
+    if (this.themePreference === 'system') {
+      return this.systemPrefersDark;
+    }
+    return this.themePreference === 'dark';
+  }
+
+  private get themePreferenceSupportingText(): string {
+    if (this.themePreference === 'system') {
+      return this.systemPrefersDark
+        ? 'Following your device dark theme.'
+        : 'Following your device light theme.';
+    }
+
+    return this.themePreference === 'dark'
+      ? 'Forces the dark theme across the app.'
+      : 'Forces the light theme across the app.';
+  }
+
   private handleIntervalInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     const value = Number.parseInt(input.value, 10);
@@ -616,6 +680,20 @@ export class SettingsPage extends LitElement {
     const input = event.target as HTMLInputElement;
     this.enableNextFeedReminder = input.checked;
     this.scheduleSave({ enableNextFeedReminder: this.enableNextFeedReminder });
+  }
+
+  private handleThemePreferenceToggle(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const nextPreference: ThemePreference = input.checked ? 'dark' : 'light';
+    this.themePreference = nextPreference;
+    setThemePreference(nextPreference);
+    this.scheduleSave({ themePreference: nextPreference });
+  }
+
+  private handleUseDeviceTheme(): void {
+    this.themePreference = DEFAULT_THEME_PREFERENCE;
+    setThemePreference(DEFAULT_THEME_PREFERENCE);
+    this.scheduleSave({ themePreference: DEFAULT_THEME_PREFERENCE });
   }
 
   private handleAiSummaryToggle(event: Event): void {
@@ -685,12 +763,6 @@ export class SettingsPage extends LitElement {
   render() {
     return html`
       <div class="container">
-        <div class="hero">
-          <h1>Settings</h1>
-          <p class="description">
-            Adjust how the tracker behaves. Updates apply to future feeding entries.
-          </p>
-        </div>
 
         <form aria-busy=${this.loading || this.saving}>
           ${this.renderStatus()}
@@ -698,8 +770,45 @@ export class SettingsPage extends LitElement {
             <div class="section__header">
               <h2 class="section__title">Appearance</h2>
               <p class="section__description">
-                Choose the accent color used across buttons, highlights, and charts.
+                Switch between light and dark mode and choose the accent color used across the app.
               </p>
+            </div>
+
+            <div class="appearance__mode">
+              <label
+                class="switch"
+                ?data-checked=${this.isDarkModeEnabled}
+                ?data-disabled=${this.loading}
+              >
+                <span class="switch__label">
+                  <span class="switch__title">Dark mode</span>
+                  <span class="switch__supporting">${this.themePreferenceSupportingText}</span>
+                </span>
+                <span class="switch__control">
+                  <input
+                    class="switch__input"
+                    type="checkbox"
+                    name="dark-mode"
+                    .checked=${this.isDarkModeEnabled}
+                    @change=${this.handleThemePreferenceToggle}
+                    ?disabled=${this.loading}
+                  />
+                  <span class="switch__track"></span>
+                  <span class="switch__thumb"></span>
+                </span>
+              </label>
+              ${this.isUsingDeviceTheme
+                ? nothing
+                : html`
+                    <button
+                      class="theme-color__reset appearance__device-reset"
+                      type="button"
+                      @click=${this.handleUseDeviceTheme}
+                      ?disabled=${this.loading}
+                    >
+                      Use device theme
+                    </button>
+                  `}
             </div>
 
             <div class="theme-color">
@@ -898,7 +1007,7 @@ export class SettingsPage extends LitElement {
             </div>
           </section>
 
-          <section class="section">
+          <!-- <section class="section">
             <div class="section__header">
               <h2 class="section__title">Insights</h2>
               <p class="section__description">
@@ -930,7 +1039,7 @@ export class SettingsPage extends LitElement {
                 <span class="switch__thumb"></span>
               </span>
             </label>
-          </section>
+          </section> -->
         </form>
 
         ${this.loading

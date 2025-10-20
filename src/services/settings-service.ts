@@ -8,6 +8,7 @@ export interface AppSettings {
   defaultBottleFed: boolean;
   showAiSummaryCard: boolean;
   themeColor: string;
+  themePreference: ThemePreference;
 }
 
 export const MIN_FEED_INTERVAL_MINUTES = 60;
@@ -19,7 +20,9 @@ export const DEFAULT_FEED_UNIT: UnitType = 'ml';
 export const DEFAULT_FEED_TYPE: 'formula' | 'milk' = 'formula';
 export const DEFAULT_BOTTLE_FED = true;
 export const DEFAULT_SHOW_AI_SUMMARY_CARD = true;
+export type ThemePreference = 'system' | 'light' | 'dark';
 export const DEFAULT_THEME_COLOR = '#0061a6';
+export const DEFAULT_THEME_PREFERENCE: ThemePreference = 'system';
 
 const SETTINGS_STORAGE_KEY = 'feeding-tracker-settings';
 
@@ -49,6 +52,7 @@ class SettingsService {
       defaultBottleFed: DEFAULT_BOTTLE_FED,
       showAiSummaryCard: DEFAULT_SHOW_AI_SUMMARY_CARD,
       themeColor: DEFAULT_THEME_COLOR,
+      themePreference: DEFAULT_THEME_PREFERENCE,
     };
   }
 
@@ -71,6 +75,13 @@ class SettingsService {
 
     const hex = value.trim().toLowerCase();
     return /^#[0-9a-f]{6}$/.test(hex) ? hex : fallback;
+  }
+
+  private normalizeThemePreference(value: unknown, fallback: ThemePreference): ThemePreference {
+    if (value === 'light' || value === 'dark' || value === 'system') {
+      return value;
+    }
+    return fallback;
   }
 
   private readFromStorage(): AppSettings {
@@ -104,6 +115,10 @@ class SettingsService {
           DEFAULT_SHOW_AI_SUMMARY_CARD
         ),
         themeColor: this.normalizeThemeColor(parsed.themeColor, DEFAULT_THEME_COLOR),
+        themePreference: this.normalizeThemePreference(
+          parsed.themePreference,
+          DEFAULT_THEME_PREFERENCE
+        ),
       } satisfies AppSettings;
     } catch (error) {
       console.error('Failed to parse settings from storage, resetting to defaults.', error);
@@ -168,6 +183,10 @@ class SettingsService {
       themeColor: this.normalizeThemeColor(
         typeof partial.themeColor === 'string' ? partial.themeColor : current.themeColor,
         current.themeColor
+      ),
+      themePreference: this.normalizeThemePreference(
+        partial.themePreference,
+        current.themePreference ?? DEFAULT_THEME_PREFERENCE
       ),
     };
 

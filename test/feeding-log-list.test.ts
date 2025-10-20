@@ -51,7 +51,12 @@ describe('FeedingLogList', () => {
 
     const emptyState = queryShadow(logList, '.empty-state');
     expect(emptyState).toBeTruthy();
-    expect(emptyState?.textContent).toContain('No feeding logs yet');
+    const title = emptyState?.querySelector('.empty-state-title');
+    expect(title?.textContent?.trim()).toBe('Start tracking feedings');
+
+    const action = queryShadow<HTMLButtonElement>(logList, '.empty-state-action');
+    expect(action).toBeTruthy();
+    expect(action?.textContent?.trim()).toBe('Start a feeding');
   });
 
   it('should render log items when logs are provided', async () => {

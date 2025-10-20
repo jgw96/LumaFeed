@@ -283,7 +283,9 @@ export class FeedingLogList extends LitElement {
       return html`
         <div class="empty-state" role="status" aria-live="polite">
           <div>
-            <div class="empty-state-icon" aria-hidden="true">🍼</div>
+            <div class="empty-state-icon" aria-hidden="true">
+              <img src="/feedings-65.png" alt="Feeding icon" width="48" height="48" />
+            </div>
             <h3 class="empty-state-title">Start tracking feedings</h3>
             <p class="empty-state-description">
               Capture nursing or bottle sessions, keep an eye on timing, and know exactly when the

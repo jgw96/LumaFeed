@@ -15,6 +15,17 @@ export class DiaperSummaryCard extends LitElement {
       --diaper-dirty-color: color-mix(in srgb, var(--md-sys-color-tertiary) 82%, transparent);
     }
 
+    .summary-grid {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 720px) {
+      .summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
     .summary-card {
       background: var(--md-sys-color-surface-container-low);
       border-radius: var(--md-sys-shape-corner-extra-large);
@@ -22,12 +33,7 @@ export class DiaperSummaryCard extends LitElement {
       padding: 1.25rem 1.5rem;
       box-shadow: var(--md-sys-elevation-1);
       display: grid;
-      gap: 1.75rem;
-    }
-
-    .summary-card__section {
-      display: grid;
-      gap: 0.75rem;
+      gap: 1rem;
     }
 
     .summary-card__title {
@@ -43,59 +49,43 @@ export class DiaperSummaryCard extends LitElement {
       color: var(--md-sys-color-on-surface-variant);
     }
 
-    .summary-card__totals {
-      display: inline-flex;
-      align-items: baseline;
-      gap: 0.5rem;
-      font-size: var(--md-sys-typescale-title-small-font-size);
-      font-weight: var(--md-sys-typescale-title-small-font-weight);
-      color: var(--md-sys-color-on-surface);
+    .summary-card__metrics {
+      display: grid;
+      gap: 0.75rem;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     }
 
-    .summary-card__secondary {
-      font-size: var(--md-sys-typescale-body-small-font-size);
-      color: var(--md-sys-color-on-surface-variant);
-    }
-
-    .summary-card__highlight {
-      background: var(--md-sys-color-secondary-container);
-      color: var(--md-sys-color-on-secondary-container);
+    .summary-card__metric {
+      background: var(--md-sys-color-surface-container-lowest);
       border-radius: var(--md-sys-shape-corner-large);
+      border: 1px solid var(--md-sys-color-outline-variant);
       padding: 0.75rem 1rem;
       display: grid;
       gap: 0.25rem;
     }
 
-    .summary-card__highlight-label {
+    .summary-card__metric-label {
       font-size: var(--md-sys-typescale-label-small-font-size);
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      opacity: 0.92;
+      color: var(--md-sys-color-on-surface-variant);
     }
 
-    .summary-card__highlight-value {
-      font-size: var(--md-sys-typescale-title-small-font-size);
+    .summary-card__metric-value {
+      color: var(--md-sys-color-on-surface);
       font-weight: var(--md-sys-typescale-title-small-font-weight);
-      display: flex;
-      align-items: baseline;
-      gap: 0.5rem;
+      font-size: var(--md-sys-typescale-title-small-font-size);
     }
 
-    .summary-card__highlight-subtle {
+    .summary-card__metric-subtle {
       font-size: var(--md-sys-typescale-body-small-font-size);
-      color: color-mix(in srgb, var(--md-sys-color-on-secondary-container) 80%, transparent);
-    }
-
-    .summary-card__highlights {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 0.75rem;
+      color: color-mix(in srgb, var(--md-sys-color-on-surface) 80%, transparent);
     }
 
     .summary-card__metadata {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.75rem;
       padding: 0.75rem 1rem;
       border-radius: var(--md-sys-shape-corner-large);
       background: var(--md-sys-color-surface-container-lowest);
@@ -126,7 +116,7 @@ export class DiaperSummaryCard extends LitElement {
 
     .summary-card__chart canvas {
       width: 100%;
-      height: 200px;
+      height: 220px;
       display: block;
       border-radius: var(--md-sys-shape-corner-large);
       background: var(--md-sys-color-surface-container);
@@ -160,12 +150,9 @@ export class DiaperSummaryCard extends LitElement {
       padding: 1rem;
     }
 
-    @media (max-width: 480px) {
-      .summary-card__totals {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.25rem;
-      }
+    .summary-card__helper {
+      font-size: var(--md-sys-typescale-body-small-font-size);
+      color: var(--md-sys-color-on-surface-variant);
     }
   `;
 
@@ -181,6 +168,10 @@ export class DiaperSummaryCard extends LitElement {
   private resizeObserver?: ResizeObserver;
 
   private readonly numberFormatter = new Intl.NumberFormat();
+
+  private readonly averageFormatter = new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: 1,
+  });
 
   protected firstUpdated(): void {
     const resizeObserverCtor = (
@@ -221,7 +212,10 @@ export class DiaperSummaryCard extends LitElement {
       return;
     }
 
-    const chartData = buildDiaperChartData(this.logs);
+    const chartData = buildDiaperChartData(this.logs, {
+      hoursSpan: 7 * 24,
+      bucketSizeHours: 24,
+    });
     const hasData = chartData.some((point) => point.total > 0);
 
     if (!hasData) {
@@ -232,10 +226,15 @@ export class DiaperSummaryCard extends LitElement {
       return;
     }
 
+    const weekdayFormatter = new Intl.DateTimeFormat(undefined, {
+      weekday: 'short',
+    });
+
     drawDiaperChart({
       canvas: this.canvas,
       host: this,
       data: chartData,
+      labelFormatter: (timestamp) => weekdayFormatter.format(timestamp),
     });
   };
 
@@ -311,108 +310,165 @@ export class DiaperSummaryCard extends LitElement {
 
   render() {
     if (this.loading) {
-      return html`<div class="summary-card" role="status" aria-live="polite">
-        <div class="summary-card__empty">Loading diaper summary…</div>
-      </div>`;
+      return html`
+        <div class="summary-grid" role="status" aria-live="polite">
+          <section class="summary-card">
+            <div class="summary-card__empty">Loading diaper summary…</div>
+          </section>
+          <section class="summary-card">
+            <div class="summary-card__empty">Loading diaper summary…</div>
+          </section>
+        </div>
+      `;
     }
 
     const summary = this.computeSummary();
+    const hasAnyLogs = summary !== null;
+    const safeSummary: DiaperSummaryStats =
+      summary ?? {
+        last24Hours: { wet: 0, dirty: 0, both: 0, total: 0 },
+        last7Days: { wet: 0, dirty: 0, both: 0, total: 0 },
+        lastWetTime: null,
+        lastDirtyTime: null,
+        averageIntervalMinutes: null,
+      };
 
-    if (!summary) {
-      return html`<div class="summary-card">
-        <div class="summary-card__empty">
-          Log a few diapers to see helpful trend insights for your pediatrician.
-        </div>
-      </div>`;
-    }
+    const total24 = safeSummary.last24Hours.total;
+    const wet24 = safeSummary.last24Hours.wet + safeSummary.last24Hours.both;
+    const dirty24 = safeSummary.last24Hours.dirty + safeSummary.last24Hours.both;
 
-    const total24 = summary.last24Hours.total;
-    const total7 = summary.last7Days.total;
-    const hasChartData = buildDiaperChartData(this.logs).some((point) => point.total > 0);
-    const wet24 = summary.last24Hours.wet + summary.last24Hours.both;
-    const dirty24 = summary.last24Hours.dirty + summary.last24Hours.both;
-    const wet7 = summary.last7Days.wet + summary.last7Days.both;
-    const dirty7 = summary.last7Days.dirty + summary.last7Days.both;
+    const total7 = safeSummary.last7Days.total;
+    const wet7 = safeSummary.last7Days.wet + safeSummary.last7Days.both;
+    const dirty7 = safeSummary.last7Days.dirty + safeSummary.last7Days.both;
+
+    const averagePerDay = total7 > 0 ? total7 / 7 : 0;
+    const formattedAveragePerDay = total7 > 0 ? this.averageFormatter.format(averagePerDay) : '—';
+
+    const hasWeeklyChartData = buildDiaperChartData(this.logs, {
+      hoursSpan: 7 * 24,
+      bucketSizeHours: 24,
+    }).some((point) => point.total > 0);
+
+    const empty24Message = hasAnyLogs
+      ? 'No diapers logged in the last 24 hours.'
+      : 'No diapers logged yet.';
+    const empty7Message = hasAnyLogs
+      ? 'No diapers logged in the last 7 days.'
+      : 'Log a few diapers to see weekly trends for your pediatrician.';
+    const empty7Helper = hasAnyLogs
+      ? 'Keep logging diapers and we will surface weekly trends here.'
+      : 'Once you have a few days of history we will surface averages and charts here.';
 
     return html`
-      <div class="summary-card" role="status" aria-live="polite">
-        <div class="summary-card__section">
-          <span class="summary-card__title">Last 24 hours at a glance</span>
+      <div class="summary-grid" role="region" aria-live="polite">
+        <section class="summary-card" aria-label="Last 24 hours">
+          <span class="summary-card__title">Last 24 hours</span>
           ${total24 > 0
             ? html`
                 <span class="summary-card__status">${this.formatDiaperLabel(total24)}</span>
-                <div class="summary-card__chart">
-                  ${hasChartData
-                    ? html`
-                        <canvas
-                          role="img"
-                          aria-label="Diaper frequency chart for the last 48 hours"
-                        ></canvas>
-                        ${this.renderLegend()}
-                      `
-                    : html`
-                        <div class="summary-card__empty">
-                          No chart data yet for the last 48 hours.
-                        </div>
-                      `}
-                </div>
-                <div class="summary-card__totals">
-                  <span>${this.formatDiaperCount(total24)} diapers</span>
-                  <span class="summary-card__secondary"
-                    >(${this.formatDiaperCount(total7)} in last 7 days)</span
-                  >
-                </div>
-
-                <div class="summary-card__highlights">
-                  <div class="summary-card__highlight">
-                    <span class="summary-card__highlight-label">Wet diapers</span>
-                    <span class="summary-card__highlight-value">
-                      ${this.formatDiaperCount(wet24)}
-                      <span class="summary-card__highlight-subtle"
-                        >${this.formatDiaperCount(wet7)} in last 7 days</span
-                      >
-                    </span>
+                <div class="summary-card__metrics">
+                  <div class="summary-card__metric">
+                    <span class="summary-card__metric-label">Total changes</span>
+                    <span class="summary-card__metric-value"
+                      >${this.formatDiaperCount(total24)}</span
+                    >
                   </div>
-                  <div class="summary-card__highlight">
-                    <span class="summary-card__highlight-label">Dirty diapers</span>
-                    <span class="summary-card__highlight-value">
-                      ${this.formatDiaperCount(dirty24)}
-                      <span class="summary-card__highlight-subtle"
-                        >${this.formatDiaperCount(dirty7)} in last 7 days</span
-                      >
-                    </span>
+                  <div class="summary-card__metric">
+                    <span class="summary-card__metric-label">Wet diapers</span>
+                    <span class="summary-card__metric-value"
+                      >${this.formatDiaperCount(wet24)}</span
+                    >
                   </div>
-                  <div class="summary-card__highlight">
-                    <span class="summary-card__highlight-label">Average interval</span>
-                    <span class="summary-card__highlight-value">
-                      ${this.formatInterval(summary.averageIntervalMinutes)}
-                      <span class="summary-card__highlight-subtle">between diaper changes</span>
-                    </span>
+                  <div class="summary-card__metric">
+                    <span class="summary-card__metric-label">Dirty diapers</span>
+                    <span class="summary-card__metric-value"
+                      >${this.formatDiaperCount(dirty24)}</span
+                    >
+                  </div>
+                  <div class="summary-card__metric">
+                    <span class="summary-card__metric-label">Average interval</span>
+                    <span class="summary-card__metric-value"
+                      >${this.formatInterval(safeSummary.averageIntervalMinutes)}</span
+                    >
                   </div>
                 </div>
-
                 <div class="summary-card__metadata">
                   <div class="summary-card__metadata-item">
                     <span class="summary-card__metadata-label">Last wet diaper</span>
                     <span class="summary-card__metadata-value"
-                      >${this.formatTimestamp(summary.lastWetTime)}</span
+                      >${this.formatTimestamp(safeSummary.lastWetTime)}</span
                     >
                   </div>
                   <div class="summary-card__metadata-item">
                     <span class="summary-card__metadata-label">Last dirty diaper</span>
                     <span class="summary-card__metadata-value"
-                      >${this.formatTimestamp(summary.lastDirtyTime)}</span
+                      >${this.formatTimestamp(safeSummary.lastDirtyTime)}</span
                     >
                   </div>
                 </div>
               `
             : html`
-                <span class="summary-card__status">No diapers logged in the last 24 hours</span>
-                <div class="summary-card__empty">
-                  Log a diaper to see helpful trend insights for your pediatrician.
-                </div>
+                <div class="summary-card__empty">${empty24Message}</div>
+                <p class="summary-card__helper">
+                  Log changes to keep an eye on today's diaper activity.
+                </p>
               `}
-        </div>
+        </section>
+        <section class="summary-card" aria-label="Last 7 days">
+          <span class="summary-card__title">Last 7 days</span>
+          ${total7 > 0
+            ? html`
+                <span class="summary-card__status"
+                  >${this.formatDiaperCount(total7)} diaper changes this week</span
+                >
+                <div class="summary-card__metrics">
+                  <div class="summary-card__metric">
+                    <span class="summary-card__metric-label">Total changes</span>
+                    <span class="summary-card__metric-value"
+                      >${this.formatDiaperCount(total7)}</span
+                    >
+                  </div>
+                  <div class="summary-card__metric">
+                    <span class="summary-card__metric-label">Average per day</span>
+                    <span class="summary-card__metric-value"
+                      >${formattedAveragePerDay}</span
+                    >
+                    <span class="summary-card__metric-subtle">over the last week</span>
+                  </div>
+                  <div class="summary-card__metric">
+                    <span class="summary-card__metric-label">Wet diapers</span>
+                    <span class="summary-card__metric-value"
+                      >${this.formatDiaperCount(wet7)}</span
+                    >
+                  </div>
+                  <div class="summary-card__metric">
+                    <span class="summary-card__metric-label">Dirty diapers</span>
+                    <span class="summary-card__metric-value"
+                      >${this.formatDiaperCount(dirty7)}</span
+                    >
+                  </div>
+                </div>
+                <div class="summary-card__chart">
+                  ${hasWeeklyChartData
+                    ? html`
+                        <canvas
+                          role="img"
+                          aria-label="Diaper changes per day for the last 7 days"
+                        ></canvas>
+                        ${this.renderLegend()}
+                      `
+                    : html`
+                        <div class="summary-card__empty">
+                          Trend data will appear after a few days of tracking.
+                        </div>
+                      `}
+                </div>
+              `
+            : html`
+                <div class="summary-card__empty">${empty7Message}</div>
+                <p class="summary-card__helper">${empty7Helper}</p>
+              `}
+        </section>
       </div>
     `;
   }

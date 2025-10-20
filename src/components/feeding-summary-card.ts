@@ -8,7 +8,7 @@ type FormatNumberFn = (typeof import('../utils/feeding-summary/format-number.js'
 type ResolveNextFeedTimeFn =
   (typeof import('../utils/feeding-summary/resolve-next-feed-time.js'))['resolveNextFeedTime'];
 type DrawChartFn = (typeof import('../utils/feeding-summary/draw-chart.js'))['drawChart'];
-import './feeding-ai-summary-card.js';
+// import './feeding-ai-summary-card.js';
 
 @customElement('feeding-summary-card')
 export class FeedingSummaryCard extends LitElement {
@@ -360,7 +360,7 @@ export class FeedingSummaryCard extends LitElement {
     return html`
       <div class="summary-card" role="status" aria-live="polite">
         <div class="summary-card__section">
-          <span class="summary-card__title">Last 24 hours at a glance</span>
+          <span class="summary-card__title">Last 24 hours</span>
           ${this.loading
             ? html`<span class="summary-card__status">Loading your summary…</span>`
             : feedings > 0
@@ -419,7 +419,7 @@ export class FeedingSummaryCard extends LitElement {
                 `}
         </div>
 
-        ${this.showAiSummary
+        <!-- ${this.showAiSummary
           ? html`
               <feeding-ai-summary-card
                 class="summary-card__ai"
@@ -427,7 +427,7 @@ export class FeedingSummaryCard extends LitElement {
                 .loading=${this.loading}
               ></feeding-ai-summary-card>
             `
-          : null}
+          : null} -->
       </div>
     `;
   }
