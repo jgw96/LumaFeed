@@ -25,6 +25,7 @@ export class FeedingLogList extends LitElement {
       transition:
         box-shadow 0.2s,
         background-color 0.2s;
+      cursor: pointer;
     }
 
     .log-item:hover {
@@ -278,6 +279,18 @@ export class FeedingLogList extends LitElement {
     );
   }
 
+  private handleLogClick(log: FeedingLog) {
+    // Navigate to log detail page
+    window.history.pushState({}, '', `/log?id=${log.id}`);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  }
+
+  private handleDeleteClick(e: Event, log: FeedingLog) {
+    // Prevent navigation to detail page
+    e.stopPropagation();
+    this.handleDelete(log);
+  }
+
   render() {
     if (this.logs.length === 0) {
       return html`
@@ -338,7 +351,7 @@ export class FeedingLogList extends LitElement {
       <div class="log-list">
         ${this.logs.map(
           (log) => html`
-            <div class="log-item">
+            <div class="log-item" @click=${() => this.handleLogClick(log)}>
               <div class="log-header">
                 <div class="log-type">
                   ${log.feedType === 'formula' ? '🍼 Formula' : '🤱 Breast Milk'}
@@ -347,7 +360,7 @@ export class FeedingLogList extends LitElement {
                   <div class="log-time">${this.formatTimeRange(log)}</div>
                   <button
                     class="delete-btn"
-                    @click=${() => this.handleDelete(log)}
+                    @click=${(e: Event) => this.handleDeleteClick(e, log)}
                     title="Delete log"
                   >
                     ×
