@@ -2,6 +2,8 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { type FeedingLog, type UnitType } from '../types/feeding-log.js';
 import { feedingStorage } from '../services/feeding-storage.js';
+import '../components/app-select.js';
+import type { AppSelect, SelectOption } from '../components/app-select.js';
 
 @customElement('log-detail-page')
 export class LogDetailPage extends LitElement {
@@ -29,32 +31,22 @@ export class LogDetailPage extends LitElement {
       color: var(--md-sys-color-error);
     }
 
-    .detail-card {
-      background: var(--md-sys-color-surface-container-low);
-      border: 1px solid var(--md-sys-color-outline-variant);
-      border-radius: var(--md-sys-shape-corner-extra-large);
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .detail-header {
+    .page-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--md-sys-color-outline-variant);
+      align-items: flex-end;
+      margin-bottom: 2rem;
     }
 
     .log-type {
-      font-size: var(--md-sys-typescale-headline-medium-font-size);
-      font-weight: var(--md-sys-typescale-headline-medium-font-weight);
+      font-size: var(--md-sys-typescale-headline-small-font-size);
+      font-weight: var(--md-sys-typescale-headline-small-font-weight);
       color: var(--md-sys-color-primary);
     }
 
     .form-section {
       display: grid;
-      gap: 1.5rem;
+      gap: 2rem;
     }
 
     .form-group {
@@ -71,16 +63,13 @@ export class LogDetailPage extends LitElement {
 
     label {
       color: var(--md-sys-color-on-surface-variant);
-      font-size: var(--md-sys-typescale-label-large-font-size);
-      font-weight: var(--md-sys-typescale-label-large-font-weight);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      font-size: var(--md-sys-typescale-title-small-font-size);
+      font-weight: var(--md-sys-typescale-title-small-font-weight);
     }
 
     input[type='datetime-local'],
-    input[type='number'],
-    select {
-      padding: 0.75rem 1rem;
+    input[type='number'] {
+      padding: 0.85rem 1rem;
       border: 1px solid var(--md-sys-color-outline);
       border-radius: var(--md-sys-shape-corner-medium);
       background: var(--md-sys-color-surface);
@@ -90,8 +79,7 @@ export class LogDetailPage extends LitElement {
       transition: border-color 0.2s;
     }
 
-    input:focus,
-    select:focus {
+    input:focus {
       outline: none;
       border-color: var(--md-sys-color-primary);
       box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
@@ -101,6 +89,7 @@ export class LogDetailPage extends LitElement {
       display: flex;
       gap: 1rem;
       justify-content: flex-end;
+      flex-wrap: wrap;
       margin-top: 1.5rem;
     }
 
@@ -109,7 +98,7 @@ export class LogDetailPage extends LitElement {
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      min-height: 40px;
+      min-height: 48px;
       padding: 0 1.5rem;
       border: none;
       border-radius: var(--md-sys-shape-corner-full);
@@ -166,6 +155,32 @@ export class LogDetailPage extends LitElement {
       color: var(--md-sys-color-on-surface-variant);
       font-size: var(--md-sys-typescale-body-large-font-size);
     }
+
+    app-select {
+      width: 100%;
+    }
+
+    @media (max-width: 600px) {
+      :host {
+        padding: 1rem;
+      }
+
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      .button-group {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
   `;
 
   @state()
@@ -198,6 +213,21 @@ export class LogDetailPage extends LitElement {
 
   @state()
   private endTime = '';
+
+  private feedTypeOptions: SelectOption[] = [
+    { label: 'Formula', value: 'formula' },
+    { label: 'Breast Milk', value: 'milk' },
+  ];
+
+  private amountUnitOptions: SelectOption[] = [
+    { label: 'ml', value: 'ml' },
+    { label: 'fl oz', value: 'oz' },
+  ];
+
+  private methodOptions: SelectOption[] = [
+    { label: 'Bottle', value: 'true' },
+    { label: 'Breast', value: 'false' },
+  ];
 
   connectedCallback() {
     super.connectedCallback();
@@ -263,17 +293,17 @@ export class LogDetailPage extends LitElement {
   }
 
   private handleUnitChange(e: Event) {
-    const select = e.target as HTMLSelectElement;
+    const select = e.target as AppSelect;
     this.amountUnit = select.value as UnitType;
   }
 
   private handleFeedTypeChange(e: Event) {
-    const select = e.target as HTMLSelectElement;
+    const select = e.target as AppSelect;
     this.feedType = select.value as 'formula' | 'milk';
   }
 
   private handleBottleFedChange(e: Event) {
-    const select = e.target as HTMLSelectElement;
+    const select = e.target as AppSelect;
     this.isBottleFed = select.value === 'true';
   }
 
@@ -395,103 +425,99 @@ export class LogDetailPage extends LitElement {
 
     return html`
       <div class="container">
-        <div class="detail-card">
-          <div class="detail-header">
-            <div class="log-type">
-              ${this.feedType === 'formula' ? '🍼 Formula' : '🤱 Breast Milk'}
+        <div class="page-header">
+          <div class="log-type">
+            ${this.feedType === 'formula' ? '🍼 Formula' : '🤱 Breast Milk'}
+          </div>
+        </div>
+
+        <form class="form-section" @submit=${(e: Event) => e.preventDefault()}>
+          <div class="form-group">
+            <label id="feed-type-label" for="feed-type-select-trigger">Feed Type</label>
+            <app-select
+              id="feed-type-select"
+              aria-labelledby="feed-type-label"
+              .options=${this.feedTypeOptions}
+              .value=${this.feedType}
+              @change=${this.handleFeedTypeChange}
+            ></app-select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="amount">Amount</label>
+              <input
+                id="amount"
+                type="number"
+                step="0.1"
+                min="0"
+                .value=${this.amountValue}
+                @input=${this.handleAmountChange}
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label id="unit-label" for="unit-select-trigger">Unit</label>
+              <app-select
+                id="unit-select"
+                aria-labelledby="unit-label"
+                .options=${this.amountUnitOptions}
+                .value=${this.amountUnit}
+                @change=${this.handleUnitChange}
+              ></app-select>
             </div>
           </div>
 
-          <form class="form-section" @submit=${(e: Event) => e.preventDefault()}>
+          <div class="form-group">
+            <label id="method-label" for="method-select-trigger">Method</label>
+            <app-select
+              id="method-select"
+              aria-labelledby="method-label"
+              .options=${this.methodOptions}
+              .value=${this.isBottleFed ? 'true' : 'false'}
+              @change=${this.handleBottleFedChange}
+            ></app-select>
+          </div>
+
+          <div class="form-row">
             <div class="form-group">
-              <label for="feed-type">Feed Type</label>
-              <select
-                id="feed-type"
-                .value=${this.feedType}
-                @change=${this.handleFeedTypeChange}
-              >
-                <option value="formula">Formula</option>
-                <option value="milk">Breast Milk</option>
-              </select>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="amount">Amount</label>
-                <input
-                  id="amount"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  .value=${this.amountValue}
-                  @input=${this.handleAmountChange}
-                  required
-                />
-              </div>
-
-              <div class="form-group">
-                <label for="unit">Unit</label>
-                <select id="unit" .value=${this.amountUnit} @change=${this.handleUnitChange}>
-                  <option value="ml">ml</option>
-                  <option value="oz">fl oz</option>
-                </select>
-              </div>
+              <label for="start-time">Start Time</label>
+              <input
+                id="start-time"
+                type="datetime-local"
+                .value=${this.startTime}
+                @input=${this.handleStartTimeChange}
+                required
+              />
             </div>
 
             <div class="form-group">
-              <label for="method">Method</label>
-              <select
-                id="method"
-                .value=${this.isBottleFed ? 'true' : 'false'}
-                @change=${this.handleBottleFedChange}
-              >
-                <option value="true">Bottle</option>
-                <option value="false">Breast</option>
-              </select>
+              <label for="end-time">End Time</label>
+              <input
+                id="end-time"
+                type="datetime-local"
+                .value=${this.endTime}
+                @input=${this.handleEndTimeChange}
+                required
+              />
             </div>
+          </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label for="start-time">Start Time</label>
-                <input
-                  id="start-time"
-                  type="datetime-local"
-                  .value=${this.startTime}
-                  @input=${this.handleStartTimeChange}
-                  required
-                />
-              </div>
+          <div class="form-group">
+            <label>Duration</label>
+            <div class="readonly-value">${this.calculateDuration()} minutes</div>
+          </div>
 
-              <div class="form-group">
-                <label for="end-time">End Time</label>
-                <input
-                  id="end-time"
-                  type="datetime-local"
-                  .value=${this.endTime}
-                  @input=${this.handleEndTimeChange}
-                  required
-                />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Duration</label>
-              <div class="readonly-value">${this.calculateDuration()} minutes</div>
-            </div>
-
-            <div class="button-group">
-              <button class="btn-danger" type="button" @click=${this.handleDelete}>
-                Delete
-              </button>
-              <button class="btn-secondary" type="button" @click=${this.handleCancel}>
-                Cancel
-              </button>
-              <button class="btn-primary" type="button" @click=${this.handleSave}>
-                Save Changes
-              </button>
-            </div>
-          </form>
-        </div>
+          <div class="button-group">
+            <button class="btn-danger" type="button" @click=${this.handleDelete}>
+              Delete
+            </button>
+            <button class="btn-primary" type="button" @click=${this.handleSave}>
+              Save Changes
+            </button>
+          </div>
+        </form>
       </div>
     `;
   }
