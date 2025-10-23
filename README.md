@@ -66,8 +66,20 @@ LumaFeed is an open-source Progressive Web App built with Lit web components. If
 - Execute type checks: `npm run type-check`
 - Launch tests: `npm test`
 - Inspect bundle composition: `npm run build:analyze` (writes `bundle-analysis.html` at the repo root and opens it automatically)
+- Check bundle size: `npm run bundle:check` (ensures the JavaScript bundle stays under the size limit)
 
 See `src/app-root.ts` and `src/pages/home-page.ts` for the core experience and review `.github/copilot-instructions.md` for architectural guidance.
+
+### Bundle size gates
+
+The project includes a bundle size check to ensure the JavaScript bundle doesn't grow beyond the current baseline. The check runs automatically in CI on pull requests and pushes to main. To run it locally:
+
+```bash
+npm run build
+npm run bundle:check
+```
+
+The current size limit is hardcoded in `scripts/check-bundle-size.mjs` (337,472 bytes / 329.6 KB). If you need to update the limit after verifying the size increase is necessary, edit the `MAX_JS_SIZE_BYTES` constant in that file.
 
 ## License
 

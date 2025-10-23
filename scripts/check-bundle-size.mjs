@@ -61,7 +61,7 @@ async function main() {
 
   // Get all JavaScript files
   const jsFiles = await getAllJsFiles(DIST_DIR);
-  
+
   if (jsFiles.length === 0) {
     console.error('Error: No JavaScript files found in dist directory.');
     process.exit(1);
@@ -81,15 +81,21 @@ async function main() {
     const excess = totalSize - MAX_JS_SIZE_BYTES;
     const excessFormatted = formatBytes(excess);
     console.error(`\n❌ Bundle size check FAILED!`);
-    console.error(`   Bundle size exceeds limit by ${excessFormatted} (${excess.toLocaleString()} bytes)`);
-    console.error(`\nPlease reduce the bundle size or update the limit in scripts/check-bundle-size.mjs`);
+    console.error(
+      `   Bundle size exceeds limit by ${excessFormatted} (${excess.toLocaleString()} bytes)`
+    );
+    console.error(
+      `\nPlease reduce the bundle size or update the limit in scripts/check-bundle-size.mjs`
+    );
     process.exit(1);
   }
 
   const remaining = MAX_JS_SIZE_BYTES - totalSize;
   const remainingFormatted = formatBytes(remaining);
   console.log(`\n✅ Bundle size check PASSED!`);
-  console.log(`   ${remainingFormatted} (${remaining.toLocaleString()} bytes) remaining before limit`);
+  console.log(
+    `   ${remainingFormatted} (${remaining.toLocaleString()} bytes) remaining before limit`
+  );
   process.exit(0);
 }
 
