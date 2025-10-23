@@ -6,11 +6,13 @@ describe('Router', () => {
   let router: Router;
   let originalLocation: Location;
   let originalHistory: History;
+  let originalNavigation: unknown;
 
   beforeEach(() => {
     // Store original location and history
     originalLocation = window.location;
     originalHistory = window.history;
+    originalNavigation = (window as unknown as { navigation?: unknown }).navigation;
 
     // Mock history.pushState
     window.history.pushState = (data: any, unused: string, url?: string | URL | null) => {
@@ -34,6 +36,12 @@ describe('Router', () => {
       writable: true,
       value: originalHistory,
     });
+    const windowWithNavigation = window as typeof window & { navigation?: unknown };
+    if (typeof originalNavigation === 'undefined') {
+      delete windowWithNavigation.navigation;
+    } else {
+      windowWithNavigation.navigation = originalNavigation;
+    }
   });
 
   it('should initialize with routes', () => {
@@ -186,5 +194,73 @@ describe('Router', () => {
 
     // Should still be 1 since we unsubscribed
     expect(callCount).toBe(1);
+  });
+
+  it('should use the Navigation API when available', async () => {
+    const navigationEvents: Array<(event: NavigateEvent) => void> = [];
+    const navigateMock = vi.fn((url: string) => {
+      const controller = new AbortController();
+      const event = {
+        canIntercept: true,
+        hashChange: false,
+        downloadRequest: false,
+        formData: null,
+        navigationType: 'push' as const,
+        destination: {
+          url,
+          getState: () => undefined,
+        },
+        signal: controller.signal,
+        intercept: ({ handler }: { handler?: () => void | Promise<void> }) => {
+          if (handler) {
+            void handler();
+          }
+        },
+      } satisfies NavigateEvent;
+
+      navigationEvents.forEach((handler) => handler(event));
+
+      return {
+        committed: Promise.resolve({} as NavigationHistoryEntry),
+        finished: Promise.resolve({} as NavigationHistoryEntry),
+      };
+    });
+    const addEventListenerMock = vi.fn((_: 'navigate', handler: (event: NavigateEvent) => void) => {
+      navigationEvents.push(handler);
+    });
+
+    Object.defineProperty(window, 'navigation', {
+      configurable: true,
+      writable: true,
+      value: {
+        addEventListener: addEventListenerMock,
+        removeEventListener: vi.fn(),
+        navigate: navigateMock,
+      },
+    });
+
+    router = new Router([
+      { pattern: '/', component: 'home-page' },
+      { pattern: '/settings', component: 'settings-page' },
+    ]);
+
+    const routeChangePromise = new Promise<string>((resolve) => {
+      let unsubscribe: (() => void) | undefined;
+      unsubscribe = router.onRouteChange((route) => {
+        if (route === 'settings-page') {
+          unsubscribe?.();
+          resolve(route);
+        }
+      });
+    });
+
+    router.navigate('/settings');
+
+    const route = await routeChangePromise;
+    const expectedUrl = new URL('/settings', window.location.origin).toString();
+
+    expect(route).toBe('settings-page');
+    expect(navigateMock).toHaveBeenCalledWith(expectedUrl);
+    expect(addEventListenerMock).toHaveBeenCalledWith('navigate', expect.any(Function));
   });
 });
