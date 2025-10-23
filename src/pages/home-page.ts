@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css, nothing } from 'lit';
 import { customElement, state, query } from 'lit/decorators.js';
 
 import type { FeedingLog } from '../types/feeding-log.js';
@@ -7,7 +7,6 @@ import { settingsService } from '../services/settings-service.js';
 
 import '../components/app-toast.js';
 import '../components/feeding-log-list.js';
-import '../components/feeding-summary-card.js';
 
 import type { FeedingFormDialog } from '../components/feeding-form-dialog.js';
 import type { AppToast } from '../components/app-toast.js';
@@ -266,8 +265,15 @@ export class HomePage extends LitElement {
   @query('confirm-dialog')
   private confirmDialog!: ConfirmDialog;
 
+  @state()
   private feedingDialogLoaded = false;
+
+  @state()
   private confirmDialogLoaded = false;
+
+  @state()
+  private summaryCardLoaded = false;
+
   private readonly skeletonPlaceholders = [0, 1, 2];
 
   private readonly handleSettingsChanged = (event: Event) => {
@@ -313,6 +319,11 @@ export class HomePage extends LitElement {
 
       const loadedLogs = await feedingStorage.loadLogs();
       this.logs = loadedLogs;
+
+      // Load summary card if we have logs
+      if (loadedLogs.length > 0) {
+        void this.ensureSummaryCard();
+      }
     } catch (error) {
       console.error('Failed to load logs:', error);
     } finally {
@@ -350,6 +361,19 @@ export class HomePage extends LitElement {
 
       await customElements.whenDefined('confirm-dialog');
       this.confirmDialogLoaded = true;
+    }
+  }
+
+  private async ensureSummaryCard(): Promise<void> {
+    await this.updateComplete;
+
+    if (!this.summaryCardLoaded) {
+      if (!customElements.get('feeding-summary-card')) {
+        await import('../components/feeding-summary-card.js');
+      }
+
+      await customElements.whenDefined('feeding-summary-card');
+      this.summaryCardLoaded = true;
     }
   }
 
@@ -395,7 +419,7 @@ export class HomePage extends LitElement {
   }
 
   render() {
-    const shouldShowSummary = this.hasLoadedInitialData && this.logs.length > 0;
+    const shouldShowSummary = this.hasLoadedInitialData && this.logs.length > 0 && this.summaryCardLoaded;
     const showAiSummary = this.settings?.showAiSummaryCard !== false;
 
     return html`
@@ -408,9 +432,9 @@ export class HomePage extends LitElement {
                 .showAiSummary=${showAiSummary}
               ></feeding-summary-card>
             `
-          : null}
+          : nothing}
         <div class="logs-section">
-          ${this.logs.length > 0 ? html`<h2 class="section-title">Recent Feedings</h2>` : null}
+          ${this.logs.length > 0 ? html`<h2 class="section-title">Recent Feedings</h2>` : nothing}
           ${this.loading
             ? html`
                 <div
@@ -451,12 +475,14 @@ export class HomePage extends LitElement {
 
         ${this.logs.length > 0
           ? html`<button class="add-btn" @click=${this.handleAddClick}>Start feeding</button>`
-          : null}
+          : nothing}
 
-        <feeding-form-dialog @log-added=${this.handleLogAdded}></feeding-form-dialog>
+        ${this.feedingDialogLoaded
+          ? html`<feeding-form-dialog @log-added=${this.handleLogAdded}></feeding-form-dialog>`
+          : nothing}
       </div>
       <app-toast></app-toast>
-      <confirm-dialog></confirm-dialog>
+      ${this.confirmDialogLoaded ? html`<confirm-dialog></confirm-dialog>` : nothing}
     `;
   }
 }

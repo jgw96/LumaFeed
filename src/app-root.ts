@@ -3,7 +3,6 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { customElement, state, query } from 'lit/decorators.js';
 import { Router } from './router/router.js';
 import './components/app-header-menu.js';
-import './components/app-intro-dialog.js';
 import './components/pwa-install-prompt.js';
 import './pages/home-page.js';
 
@@ -384,7 +383,12 @@ export class AppRoot extends LitElement {
   @query('app-intro-dialog')
   private introDialog?: HTMLElementTagNameMap['app-intro-dialog'];
 
+  @state()
   private importDialogLoaded = false;
+
+  @state()
+  private introDialogLoaded = false;
+
   private introHasBeenShown = false;
   private introCompleted = false;
 
@@ -521,7 +525,7 @@ export class AppRoot extends LitElement {
     }
 
     this.introHasBeenShown = true;
-    await this.updateComplete;
+    await this.ensureIntroDialog();
     // If a view transition is currently running, wait for it to fully finish before
     // showing the intro dialog to avoid the transition overlay flashing over it.
     if (this.lastViewTransitionFinished) {
@@ -609,11 +613,13 @@ export class AppRoot extends LitElement {
           ${this.renderNavLinks()}
         </nav>
       </div>
-      <feeding-import-dialog></feeding-import-dialog>
-      <app-intro-dialog
-        @intro-complete=${this.handleIntroComplete}
-        @intro-dismissed=${this.handleIntroDismissed}
-      ></app-intro-dialog>
+      ${this.importDialogLoaded ? html`<feeding-import-dialog></feeding-import-dialog>` : nothing}
+      ${this.introDialogLoaded
+        ? html`<app-intro-dialog
+            @intro-complete=${this.handleIntroComplete}
+            @intro-dismissed=${this.handleIntroDismissed}
+          ></app-intro-dialog>`
+        : nothing}
       <pwa-install-prompt></pwa-install-prompt>
     `;
   }
@@ -773,6 +779,19 @@ export class AppRoot extends LitElement {
 
       await customElements.whenDefined('feeding-import-dialog');
       this.importDialogLoaded = true;
+    }
+  }
+
+  private async ensureIntroDialog(): Promise<void> {
+    await this.updateComplete;
+
+    if (!this.introDialogLoaded) {
+      if (!customElements.get('app-intro-dialog')) {
+        await import('./components/app-intro-dialog.js');
+      }
+
+      await customElements.whenDefined('app-intro-dialog');
+      this.introDialogLoaded = true;
     }
   }
 
