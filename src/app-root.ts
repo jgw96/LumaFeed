@@ -17,7 +17,6 @@ export class AppRoot extends LitElement {
     :host {
       display: block;
       height: 100dvh;
-      min-height: 100vh;
       overflow: hidden;
       font-family:
         'Roboto',
