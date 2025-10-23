@@ -3,8 +3,11 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { customElement, state, query } from 'lit/decorators.js';
 import { Router } from './router/router.js';
 import './components/app-header-menu.js';
+import './components/app-intro-dialog.js';
 import './components/pwa-install-prompt.js';
 import './pages/home-page.js';
+
+import { hasCompletedIntroExperience } from './utils/intro-experience.js';
 
 import type { HomePage } from './pages/home-page.js';
 
@@ -379,7 +382,12 @@ export class AppRoot extends LitElement {
   @query('feeding-import-dialog')
   private importDialog?: HTMLElementTagNameMap['feeding-import-dialog'];
 
+  @query('app-intro-dialog')
+  private introDialog?: HTMLElementTagNameMap['app-intro-dialog'];
+
   private importDialogLoaded = false;
+  private introHasBeenShown = false;
+  private introCompleted = false;
 
   private readonly navItems: Array<{
     href: string;
@@ -435,6 +443,10 @@ export class AppRoot extends LitElement {
   connectedCallback(): void {
     super.connectedCallback();
     this.addEventListener('logs-imported', this.handleLogsImported);
+  }
+
+  protected firstUpdated(): void {
+    void this.maybeShowIntroExperience();
   }
 
   private isActiveRoute(component: string): boolean {
@@ -493,6 +505,29 @@ export class AppRoot extends LitElement {
     this.removeEventListener('logs-imported', this.handleLogsImported);
     super.disconnectedCallback();
   }
+
+  private async maybeShowIntroExperience(): Promise<void> {
+    if (this.introHasBeenShown || this.introCompleted) {
+      return;
+    }
+
+    if (hasCompletedIntroExperience()) {
+      this.introCompleted = true;
+      return;
+    }
+
+    this.introHasBeenShown = true;
+    await this.updateComplete;
+    this.introDialog?.open();
+  }
+
+  private handleIntroComplete = () => {
+    this.introCompleted = true;
+  };
+
+  private handleIntroDismissed = () => {
+    // Users can revisit the intro later from other entry points if exposed.
+  };
 
   private getViewTransitionStarter():
     | ((updateCallback: () => Promise<void> | void) => { finished?: Promise<void> })
@@ -561,6 +596,10 @@ export class AppRoot extends LitElement {
         </nav>
       </div>
       <feeding-import-dialog></feeding-import-dialog>
+      <app-intro-dialog
+        @intro-complete=${this.handleIntroComplete}
+        @intro-dismissed=${this.handleIntroDismissed}
+      ></app-intro-dialog>
       <pwa-install-prompt></pwa-install-prompt>
     `;
   }
