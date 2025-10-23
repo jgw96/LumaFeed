@@ -44,14 +44,9 @@ declare global {
       options?: boolean | EventListenerOptions
     ): void;
     navigate(url: string, options?: { history?: 'auto' | 'push' | 'replace'; state?: unknown; info?: unknown }): {
-      committed: Promise<NavigationHistoryEntry>;
-      finished: Promise<NavigationHistoryEntry>;
+      committed: Promise<unknown>;
+      finished: Promise<unknown>;
     };
-  }
-
-  interface NavigationHistoryEntry {
-    url: string | null;
-    getState(): unknown;
   }
 
   interface Window {
