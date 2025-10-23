@@ -42,8 +42,8 @@ export class DiaperPage extends LitElement {
     .add-btn {
       position: fixed;
       right: 16px;
-      bottom: calc(45px + var(--bottom-nav-height, 0px));
-      z-index: 30;
+      bottom: calc(var(--bottom-nav-height, 0px) + env(safe-area-inset-bottom, 0px) + 32px);
+      z-index: 60;
 
       display: inline-flex;
       align-items: center;
@@ -91,6 +91,20 @@ export class DiaperPage extends LitElement {
       height: var(--md-comp-fab-icon-size);
       font-size: 1.5rem;
       line-height: 1;
+    }
+
+    @media (min-width: 640px) {
+      .add-btn {
+        right: 24px;
+        bottom: calc(var(--bottom-nav-height, 0px) + env(safe-area-inset-bottom, 0px) + 36px);
+      }
+    }
+
+    @media (min-width: 960px) {
+      .add-btn {
+        right: 32px;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 40px);
+      }
     }
 
     .logs-skeleton {

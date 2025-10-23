@@ -13,7 +13,9 @@ export class AppRoot extends LitElement {
   static styles = css`
     :host {
       display: block;
+      height: 100dvh;
       min-height: 100vh;
+      overflow: hidden;
       font-family:
         'Roboto',
         -apple-system,
@@ -70,6 +72,24 @@ export class AppRoot extends LitElement {
       font-size: var(--md-sys-typescale-title-large-font-size);
       font-weight: var(--md-sys-typescale-title-large-font-weight);
       line-height: var(--md-sys-typescale-title-large-line-height);
+      height: 40px;
+      min-height: 40px;
+      transform-origin: left center;
+      view-transition-name: header-brand;
+    }
+
+    .brand img {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+      object-fit: contain;
+    }
+
+    .brand span {
+      display: inline-flex;
+      align-items: center;
+      height: 28px;
+      line-height: 1;
     }
 
     .header-actions {
@@ -81,26 +101,29 @@ export class AppRoot extends LitElement {
     .layout {
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
+      height: 100%;
+      overflow: hidden;
     }
 
     .content-area {
       flex: 1;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
     .page-container {
       flex: 1;
-      padding: 0 0 calc(1.5rem + var(--bottom-nav-height));
+      padding: 0 0 1.5rem;
       position: relative;
+      view-transition-name: page-transition;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
     }
 
     .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
       display: flex;
       background: var(--md-sys-color-surface);
       box-shadow: var(--md-sys-elevation-3);
@@ -108,7 +131,12 @@ export class AppRoot extends LitElement {
       padding: 0.25rem 0.75rem;
       min-height: var(--bottom-nav-height);
       gap: 0.5rem;
-      z-index: 20;
+      z-index: 0;
+      flex-shrink: 0;
+    }
+
+    .bottom-nav.hidden {
+      display: none;
     }
 
     .side-nav {
@@ -133,6 +161,8 @@ export class AppRoot extends LitElement {
       font-weight: 500;
       letter-spacing: -0.02em;
       padding: 0.5rem 0;
+      height: auto;
+      min-height: auto;
     }
 
     .side-nav .brand::before {
@@ -315,10 +345,6 @@ export class AppRoot extends LitElement {
         gap: 1rem;
       }
 
-      .content-area {
-        flex: 1;
-      }
-
       .bottom-nav {
         display: none;
       }
@@ -328,6 +354,11 @@ export class AppRoot extends LitElement {
         font-size: inherit;
       }
     }
+
+    :host([data-detail-route]) .brand {
+      transform: translateX(8px);
+      opacity: 0.92;
+    }
   `;
 
   @state()
@@ -335,9 +366,6 @@ export class AppRoot extends LitElement {
 
   @state()
   private showBackButton = false;
-
-  @query('.page-container')
-  private pageContainer?: HTMLElement;
 
   @query('feeding-import-dialog')
   private importDialog?: HTMLElementTagNameMap['feeding-import-dialog'];
@@ -404,6 +432,12 @@ export class AppRoot extends LitElement {
     return this.currentRoute === component;
   }
 
+  private shouldShowBottomNav(): boolean {
+    // Only show bottom nav on main navigation pages
+    const mainPages = ['home-page', 'diaper-page', 'settings-page'];
+    return this.currentRoute ? mainPages.includes(this.currentRoute) : false;
+  }
+
   private handleNavClick(event: Event) {
     const target = event.target as HTMLElement;
     const link = target?.closest('a');
@@ -422,6 +456,7 @@ export class AppRoot extends LitElement {
       this.currentRoute = route;
       // Show back button for detail pages
       this.showBackButton = route === 'log-detail-page';
+      this.toggleAttribute('data-detail-route', this.showBackButton);
       await this.updateComplete;
     };
 
@@ -453,14 +488,7 @@ export class AppRoot extends LitElement {
   private getViewTransitionStarter():
     | ((updateCallback: () => Promise<void> | void) => { finished?: Promise<void> })
     | null {
-    const container = this.pageContainer as unknown as {
-      startViewTransition?: (cb: () => Promise<void> | void) => { finished?: Promise<void> };
-    };
-
-    if (container && typeof container.startViewTransition === 'function') {
-      return container.startViewTransition.bind(container);
-    }
-
+    // Fallback to document for browsers that don't support scoped transitions
     const doc = document as unknown as {
       startViewTransition?: (cb: () => Promise<void> | void) => { finished?: Promise<void> };
     };
@@ -498,12 +526,12 @@ export class AppRoot extends LitElement {
                     aria-label="Go back"
                     title="Go back"
                   >
-                    ←
+                    <svg xmlns="http://www.w3.org/2000/svg" class="ionicon" viewBox="0 0 512 512"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="48" d="M328 112L184 256l144 144"/></svg>
                   </button>
                 `
               : nothing}
-            <div class="brand">
-              <img src="/feedings-65.png" alt="LumaFeed" width="24" height="24" />
+            <div class="brand" part="header-brand">
+              <img src="/feedings-65.png" alt="LumaFeed" width="28" height="28" />
 
               <span>LumaFeed</span>
             </div>
@@ -511,18 +539,18 @@ export class AppRoot extends LitElement {
               <app-header-menu @import-feeds=${this.handleImportFeedsRequested}></app-header-menu>
             </div>
           </header>
-          <main class="page-container" style="view-transition-name: page-content;">
+          <main class="page-container" part="page-transition">
             ${this.renderCurrentPage()}
           </main>
         </div>
+        <nav
+          class="bottom-nav nav-links ${this.shouldShowBottomNav() ? '' : 'hidden'}"
+          aria-label="Primary navigation"
+          @click=${this.handleNavClick}
+        >
+          ${this.renderNavLinks()}
+        </nav>
       </div>
-      <nav
-        class="bottom-nav nav-links"
-        aria-label="Primary navigation"
-        @click=${this.handleNavClick}
-      >
-        ${this.renderNavLinks()}
-      </nav>
       <feeding-import-dialog></feeding-import-dialog>
       <pwa-install-prompt></pwa-install-prompt>
     `;
