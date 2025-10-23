@@ -18,7 +18,8 @@
     "format": "prettier --write \"**/*.{ts,js,json,html,css,md}\"",
     "format:check": "prettier --check \"**/*.{ts,js,json,html,css,md}\"",
     "optimize:images": "node ./scripts/optimize-images.mjs --verbose",
-    "optimize:check": "node ./scripts/optimize-images.mjs --dry-run --verbose"
+    "optimize:check": "node ./scripts/optimize-images.mjs --dry-run --verbose",
+    "bundle:check": "node ./scripts/check-bundle-size.mjs"
   },
   "keywords": [
     "pwa",
