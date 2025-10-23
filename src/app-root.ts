@@ -260,6 +260,15 @@ export class AppRoot extends LitElement {
         display: none;
       }
 
+      :host([data-detail-route]) header {
+        display: flex;
+      }
+
+      :host([data-detail-route]) header .brand,
+      :host([data-detail-route]) header .header-actions {
+        display: none;
+      }
+
       .layout {
         flex-direction: row;
       }
