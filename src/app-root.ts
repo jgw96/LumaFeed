@@ -400,6 +400,7 @@ export class AppRoot extends LitElement {
   ];
 
   private router: Router;
+  private lastViewTransitionFinished: Promise<void> | null = null;
 
   constructor() {
     super();
@@ -481,6 +482,7 @@ export class AppRoot extends LitElement {
     };
 
     if (this.currentRoute === null) {
+      this.lastViewTransitionFinished = null;
       void updateRoute();
       return;
     }
@@ -488,14 +490,17 @@ export class AppRoot extends LitElement {
     const startTransition = this.getViewTransitionStarter();
 
     if (!startTransition) {
+      this.lastViewTransitionFinished = null;
       void updateRoute();
       return;
     }
 
     try {
       const transition = startTransition(updateRoute);
+      this.lastViewTransitionFinished = transition?.finished ?? null;
       transition?.finished?.catch(() => {});
     } catch {
+      this.lastViewTransitionFinished = null;
       void updateRoute();
     }
   }
@@ -517,6 +522,17 @@ export class AppRoot extends LitElement {
 
     this.introHasBeenShown = true;
     await this.updateComplete;
+    // If a view transition is currently running, wait for it to fully finish before
+    // showing the intro dialog to avoid the transition overlay flashing over it.
+    if (this.lastViewTransitionFinished) {
+      try {
+        await this.lastViewTransitionFinished;
+      } catch {
+        // ignore
+      }
+      // Ensure the UA removes the overlay by the next animation frame
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+    }
     this.introDialog?.open();
   }
 
@@ -531,7 +547,6 @@ export class AppRoot extends LitElement {
   private getViewTransitionStarter():
     | ((updateCallback: () => Promise<void> | void) => { finished?: Promise<void> })
     | null {
-    // Fallback to document for browsers that don't support scoped transitions
     const doc = document as unknown as {
       startViewTransition?: (cb: () => Promise<void> | void) => { finished?: Promise<void> };
     };

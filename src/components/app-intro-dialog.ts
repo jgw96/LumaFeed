@@ -14,6 +14,7 @@ export class AppIntroDialog extends BaseModalDialog {
   static styles = css`
     :host {
       display: block;
+      z-index: 99999;
     }
 
     dialog {
@@ -34,6 +35,8 @@ export class AppIntroDialog extends BaseModalDialog {
       max-height: calc(100dvh - 3rem);
       display: flex;
       flex-direction: column;
+
+      z-index: 9999;
     }
 
     dialog[open] {
@@ -66,13 +69,13 @@ export class AppIntroDialog extends BaseModalDialog {
       background: linear-gradient(160deg, var(--md-sys-color-primary) 0%, #5ab1f8 60%, #a2d9ff 100%);
       color: var(--md-sys-color-on-primary);
       box-shadow: inset 0 0 0 1px color-mix(in srgb, white 12%, transparent);
-      overflow: hidden;
     }
 
     .hero::before {
       content: '';
       position: absolute;
       inset: 0;
+      border-radius: var(--md-sys-shape-corner-extra-large);
       background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.35), transparent 55%);
       pointer-events: none;
     }
@@ -161,7 +164,7 @@ export class AppIntroDialog extends BaseModalDialog {
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
-      padding: 0 2.5rem 2rem;
+      padding: 2.5rem 2rem;
       border-top: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 50%, transparent);
       background: linear-gradient(
         180deg,
