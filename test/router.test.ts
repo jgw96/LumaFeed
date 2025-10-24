@@ -263,4 +263,145 @@ describe('Router', () => {
     expect(navigateMock).toHaveBeenCalledWith(expectedUrl);
     expect(addEventListenerMock).toHaveBeenCalledWith('navigate', expect.any(Function));
   });
+
+  it('should save and restore scroll position on back navigation', async () => {
+    router = new Router([
+      { pattern: '/', component: 'home-page' },
+      { pattern: '/settings', component: 'settings-page' },
+    ]);
+
+    // Mock scroll container
+    const mockContainer = {
+      scrollTop: 0,
+    } as HTMLElement;
+
+    router.setScrollContainer(() => mockContainer);
+
+    // Navigate to settings and scroll down
+    const waitForSettings = new Promise<void>((resolve) => {
+      let unsubscribe: (() => void) | undefined;
+      const listener = (route: string) => {
+        if (route === 'settings-page') {
+          unsubscribe?.();
+          resolve();
+        }
+      };
+      unsubscribe = router.onRouteChange(listener);
+    });
+
+    router.navigate('/settings');
+    await waitForSettings;
+
+    // Simulate scrolling on settings page
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    mockContainer.scrollTop = 500;
+
+    // Navigate back to home
+    const waitForHome = new Promise<void>((resolve) => {
+      let unsubscribe: (() => void) | undefined;
+      const listener = (route: string) => {
+        if (route === 'home-page') {
+          unsubscribe?.();
+          resolve();
+        }
+      };
+      unsubscribe = router.onRouteChange(listener);
+    });
+
+    router.navigate('/');
+    await waitForHome;
+
+    // Scroll should be reset for new navigation
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(mockContainer.scrollTop).toBe(0);
+
+    // Navigate back to settings using popstate (simulating back button)
+    const waitForSettingsAgain = new Promise<void>((resolve) => {
+      let unsubscribe: (() => void) | undefined;
+      const listener = (route: string) => {
+        if (route === 'settings-page') {
+          unsubscribe?.();
+          resolve();
+        }
+      };
+      unsubscribe = router.onRouteChange(listener);
+    });
+
+    // Manually set location to settings
+    const settingsUrl = new URL('/settings', window.location.origin);
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: settingsUrl,
+    });
+
+    // Trigger popstate event
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    await waitForSettingsAgain;
+
+    // Scroll should be restored to saved position
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    expect(mockContainer.scrollTop).toBe(500);
+  });
+
+  it('should reset scroll position for new navigation', async () => {
+    router = new Router([
+      { pattern: '/', component: 'home-page' },
+      { pattern: '/settings', component: 'settings-page' },
+    ]);
+
+    const mockContainer = {
+      scrollTop: 0,
+    } as HTMLElement;
+
+    router.setScrollContainer(() => mockContainer);
+
+    // Set initial scroll position
+    mockContainer.scrollTop = 300;
+
+    // Navigate to a new page (push navigation)
+    const waitForSettings = new Promise<void>((resolve) => {
+      let unsubscribe: (() => void) | undefined;
+      const listener = (route: string) => {
+        if (route === 'settings-page') {
+          unsubscribe?.();
+          resolve();
+        }
+      };
+      unsubscribe = router.onRouteChange(listener);
+    });
+
+    router.navigate('/settings');
+    await waitForSettings;
+
+    // Wait for scroll restoration
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+
+    // Scroll should be reset to top for new navigation
+    expect(mockContainer.scrollTop).toBe(0);
+  });
+
+  it('should handle missing scroll container gracefully', async () => {
+    router = new Router([
+      { pattern: '/', component: 'home-page' },
+      { pattern: '/settings', component: 'settings-page' },
+    ]);
+
+    // Don't set scroll container
+    const waitForSettings = new Promise<void>((resolve) => {
+      let unsubscribe: (() => void) | undefined;
+      const listener = (route: string) => {
+        if (route === 'settings-page') {
+          unsubscribe?.();
+          resolve();
+        }
+      };
+      unsubscribe = router.onRouteChange(listener);
+    });
+
+    // Should not throw even without scroll container
+    router.navigate('/settings');
+    await waitForSettings;
+
+    expect(router.getCurrentRoute()).toBe('settings-page');
+  });
 });

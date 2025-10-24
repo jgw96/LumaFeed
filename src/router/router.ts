@@ -98,11 +98,14 @@ declare global {
 export class Router {
   private routes: Array<{ pattern: URLPattern; config: RouteConfig }> = [];
   private currentRoute: string | null = null;
+  private currentPath: string = typeof window !== 'undefined' ? window.location.pathname : '/';
   private currentParams: RouteMatch = { pathname: {}, search: {} };
   private listeners: Set<(route: string, params: RouteMatch) => void> = new Set();
   private componentLoaders: Map<string, () => Promise<unknown>> = new Map();
   private componentPromises: Map<string, Promise<void>> = new Map();
   private readonly notFound?: RouterOptions['notFound'];
+  private scrollPositions: Map<string, number> = new Map();
+  private scrollContainerGetter: (() => HTMLElement | null) | null = null;
   private readonly navigationApi =
     typeof window !== 'undefined' &&
     typeof window.navigation !== 'undefined' &&
@@ -112,7 +115,7 @@ export class Router {
       : undefined;
 
   private readonly popStateHandler = () => {
-    void this.handleRoute();
+    void this.handleRoute(undefined, undefined, 'traverse');
   };
 
   private readonly navigationHandler = (event: NavigateEvent) => {
@@ -123,8 +126,9 @@ export class Router {
     const url = new URL(event.destination.url);
 
     event.intercept({
+      scroll: 'manual',
       handler: async () => {
-        await this.handleRoute(url, event.signal);
+        await this.handleRoute(url, event.signal, event.navigationType);
       },
     });
   };
@@ -190,10 +194,18 @@ export class Router {
     await loadPromise;
   }
 
-  private async handleRoute(url = new URL(window.location.href), signal?: AbortSignal) {
+  private async handleRoute(url = new URL(window.location.href), signal?: AbortSignal, navigationType?: 'reload' | 'push' | 'replace' | 'traverse') {
     if (signal?.aborted) {
       return;
     }
+
+    // Save current scroll position before navigating away
+    if (this.currentRoute && this.currentPath) {
+      this.saveScrollPosition();
+    }
+
+    // Update current path to the new path
+    this.currentPath = url.pathname;
 
     for (const { pattern, config } of this.routes) {
       const match = pattern.exec(url);
@@ -214,6 +226,12 @@ export class Router {
         }
 
         this.notifyListeners(config.component, params);
+        
+        // Restore scroll position after route is set
+        // Use navigationType to determine if we should restore or reset scroll
+        const shouldRestore = navigationType === 'traverse' || navigationType === 'reload';
+        this.restoreScrollPosition(url.pathname, shouldRestore);
+        
         return;
       }
     }
@@ -231,6 +249,9 @@ export class Router {
     }
 
     this.notifyListeners(notFoundComponent, this.currentParams);
+    
+    // Reset scroll for 404 pages
+    this.restoreScrollPosition(url.pathname, false);
   }
 
   private notifyListeners(route: string, params: RouteMatch) {
@@ -249,7 +270,7 @@ export class Router {
       this.navigationApi.navigate(targetUrl.toString());
     } else {
       window.history.pushState({}, '', relativeTarget);
-      void this.handleRoute(targetUrl);
+      void this.handleRoute(targetUrl, undefined, 'push');
     }
   }
 
@@ -269,6 +290,61 @@ export class Router {
 
   public getCurrentRoute(): string | null {
     return this.currentRoute;
+  }
+
+  public setScrollContainer(getter: () => HTMLElement | null): void {
+    this.scrollContainerGetter = getter;
+  }
+
+  private saveScrollPosition(): void {
+    if (!this.scrollContainerGetter) {
+      return;
+    }
+
+    const container = this.scrollContainerGetter();
+    if (!container) {
+      return;
+    }
+
+    const scrollTop = container.scrollTop;
+    
+    this.scrollPositions.set(this.currentPath, scrollTop);
+    
+    // Limit stored positions to prevent memory leaks
+    // Keep only the last 20 positions
+    if (this.scrollPositions.size > 20) {
+      const firstKey = this.scrollPositions.keys().next().value;
+      if (firstKey !== undefined) {
+        this.scrollPositions.delete(firstKey);
+      }
+    }
+  }
+
+  private restoreScrollPosition(pathname: string, shouldRestore: boolean): void {
+    if (!this.scrollContainerGetter) {
+      return;
+    }
+
+    // Use requestAnimationFrame to ensure DOM is updated
+    requestAnimationFrame(() => {
+      const container = this.scrollContainerGetter?.();
+      if (!container) {
+        return;
+      }
+
+      if (shouldRestore) {
+        const savedPosition = this.scrollPositions.get(pathname);
+        if (savedPosition !== undefined) {
+          container.scrollTop = savedPosition;
+        } else {
+          // If no saved position, scroll to top
+          container.scrollTop = 0;
+        }
+      } else {
+        // For new navigations (push), always scroll to top
+        container.scrollTop = 0;
+      }
+    });
   }
 
   private shouldHandleNavigationEvent(event: NavigateEvent) {

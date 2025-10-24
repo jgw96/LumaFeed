@@ -439,6 +439,9 @@ export class AppRoot extends LitElement {
   @query('app-toast')
   private toast!: AppToast;
 
+  @query('.page-container')
+  private pageContainer?: HTMLElement;
+
   @state()
   private importDialogLoaded = false;
 
@@ -520,6 +523,9 @@ export class AppRoot extends LitElement {
   }
 
   protected firstUpdated(): void {
+    // Set up scroll container for router
+    this.router.setScrollContainer(() => this.pageContainer ?? null);
+    
     void this.maybeShowIntroExperience();
   }
 
