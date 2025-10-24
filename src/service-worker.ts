@@ -39,7 +39,9 @@ sw.addEventListener('activate', (event) => {
           )
           .filter(
             (cacheName) =>
-              cacheName !== ASSETS_CACHE && cacheName !== PAGES_CACHE && cacheName !== IMAGES_CACHE
+              cacheName !== ASSETS_CACHE &&
+              cacheName !== PAGES_CACHE &&
+              cacheName !== IMAGES_CACHE
           )
           .map((cacheName) => caches.delete(cacheName))
       );
@@ -152,7 +154,7 @@ async function networkFirst(request: Request, cacheName: string): Promise<Respon
 function isNavigationRequest(request: Request): boolean {
   return (
     request.mode === 'navigate' ||
-    (request.method === 'GET' && request.headers.get('accept')?.includes('text/html') === true)
+    (request.method === 'GET' && (request.headers.get('accept')?.includes('text/html') ?? false))
   );
 }
 
