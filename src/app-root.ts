@@ -7,15 +7,21 @@ import './components/pwa-install-prompt.js';
 // Home page will be lazy-loaded via the router loader for better chunking
 
 import { hasCompletedIntroExperience } from './utils/intro-experience.js';
+import type { VoiceControlController } from './services/voice-control.js';
 
 import type { HomePage } from './pages/home-page.js';
+import type { AppToast } from './components/app-toast.js';
+import './components/app-toast.js';
 
 @customElement('app-root')
 export class AppRoot extends LitElement {
   static styles = css`
     :host {
       display: block;
-      height: 100dvh;
+      /* Use the small viewport height to avoid content being pushed below the visible area
+         when browser UI (URL bar/toolbars) expands on mobile. This preserves confined
+         scrolling while keeping bottom nav fully visible. */
+      height: 100svh;
       overflow: hidden;
       font-family:
         'Roboto',
@@ -99,6 +105,51 @@ export class AppRoot extends LitElement {
       gap: 0.5rem;
     }
 
+    .voice-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--md-sys-color-on-surface-variant);
+      cursor: pointer;
+      transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    .voice-btn:hover,
+    .voice-btn:focus-visible {
+      background: var(--md-sys-color-surface-container);
+      color: var(--md-sys-color-on-surface);
+      outline: none;
+    }
+
+    .voice-btn:active {
+      background: var(--md-sys-color-surface-container-high);
+    }
+
+    .voice-btn.active {
+      background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%,
+      100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.7;
+      }
+    }
+
     .layout {
       display: flex;
       flex-direction: column;
@@ -115,7 +166,8 @@ export class AppRoot extends LitElement {
 
     .page-container {
       flex: 1;
-      padding: 0 0 1.5rem;
+      /* Ensure scrollable content never sits under the bottom nav on small screens */
+      padding: 0 0 calc(1.5rem + var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
       position: relative;
       view-transition-name: page-transition;
       overflow-x: hidden;
@@ -129,7 +181,8 @@ export class AppRoot extends LitElement {
       background: var(--md-sys-color-surface);
       box-shadow: var(--md-sys-elevation-3);
       border-top: 1px solid var(--md-sys-color-outline-variant);
-      padding: 0.25rem 0.75rem;
+      /* Add safe-area padding so navigation is not clipped by device cutouts */
+      padding: 0.25rem 0.75rem calc(0.25rem + env(safe-area-inset-bottom, 0px));
       min-height: var(--bottom-nav-height);
       gap: 0.5rem;
       z-index: 0;
@@ -383,6 +436,9 @@ export class AppRoot extends LitElement {
   @query('app-intro-dialog')
   private introDialog?: HTMLElementTagNameMap['app-intro-dialog'];
 
+  @query('app-toast')
+  private toast!: AppToast;
+
   @state()
   private importDialogLoaded = false;
 
@@ -397,6 +453,11 @@ export class AppRoot extends LitElement {
 
   private introHasBeenShown = false;
   private introCompleted = false;
+
+  @state()
+  private voiceControlActive = false;
+
+  private voiceController: VoiceControlController | null = null;
 
   private readonly navItems: Array<{
     href: string;
@@ -455,6 +516,7 @@ export class AppRoot extends LitElement {
     super.connectedCallback();
     this.addEventListener('logs-imported', this.handleLogsImported);
     window.addEventListener('pwa-update-available', this.handleUpdateAvailable);
+    window.addEventListener('voice-control-error', this.handleVoiceControlError as EventListener);
   }
 
   protected firstUpdated(): void {
@@ -520,6 +582,14 @@ export class AppRoot extends LitElement {
   disconnectedCallback(): void {
     this.removeEventListener('logs-imported', this.handleLogsImported);
     window.removeEventListener('pwa-update-available', this.handleUpdateAvailable);
+    window.removeEventListener('voice-control-error', this.handleVoiceControlError as EventListener);
+    
+    // Clean up voice control if active
+    if (this.voiceController) {
+      this.voiceController.stop();
+      this.voiceController = null;
+    }
+    
     super.disconnectedCallback();
   }
 
@@ -641,6 +711,31 @@ export class AppRoot extends LitElement {
               <span>LumaFeed</span>
             </div>
             <div class="header-actions">
+              <button
+                class="voice-btn ${this.voiceControlActive ? 'active' : ''}"
+                @click=${this.handleVoiceControlToggle}
+                aria-label="${this.voiceControlActive ? 'Stop voice control' : 'Start voice control'}"
+                title="${this.voiceControlActive ? 'Stop voice control' : 'Start voice control'}"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  width="24"
+                  height="24"
+                  fill="currentColor"
+                >
+                  ${this.voiceControlActive
+                    ? svg`
+                        <!-- Microphone active -->
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                      `
+                    : svg`
+                        <!-- Microphone inactive -->
+                        <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+                      `}
+                </svg>
+              </button>
               <app-header-menu @import-feeds=${this.handleImportFeedsRequested}></app-header-menu>
             </div>
           </header>
@@ -670,6 +765,7 @@ export class AppRoot extends LitElement {
             @pwa-update-applied=${this.handleUpdateDialogApplied}
           ></pwa-update-dialog>`
         : nothing}
+      <app-toast></app-toast>
     `;
   }
 
@@ -816,6 +912,44 @@ export class AppRoot extends LitElement {
     }
 
     event.stopPropagation();
+  };
+
+  private handleVoiceControlError = (event: Event) => {
+    const customEvent = event as CustomEvent<{ message: string }>;
+    const errorMessage = customEvent.detail?.message || 'Voice control error';
+
+    this.toast?.show({
+      headline: 'Voice Control Error',
+      supporting: errorMessage,
+      icon: '🎤',
+    });
+  };
+
+  private handleVoiceControlToggle = async () => {
+    if (this.voiceControlActive) {
+      // Stop voice control
+      this.voiceController?.stop();
+      this.voiceController = null;
+      this.voiceControlActive = false;
+      console.log('[app-root] Voice control stopped');
+    } else {
+      // Start voice control
+      try {
+        const { initVoiceControl } = await import('./services/voice-control.js');
+        this.voiceController = await initVoiceControl();
+        this.voiceControlActive = true;
+        console.log('[app-root] Voice control started');
+      } catch (error) {
+        console.error('[app-root] Failed to start voice control:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        
+        window.dispatchEvent(
+          new CustomEvent('voice-control-error', {
+            detail: { message: errorMessage },
+          })
+        );
+      }
+    }
   };
 
   private async ensureImportDialog(): Promise<void> {

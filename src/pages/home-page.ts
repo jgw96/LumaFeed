@@ -4,6 +4,7 @@ import { customElement, state, query } from 'lit/decorators.js';
 import type { FeedingLog } from '../types/feeding-log.js';
 import type { AppSettings } from '../services/settings-service.js';
 import { settingsService } from '../services/settings-service.js';
+import type { VoiceCommand } from '../services/voice-control.js';
 
 import '../components/app-toast.js';
 import { emptyStateStyles } from '../components/empty-state-styles.js';
@@ -293,6 +294,7 @@ export class HomePage extends LitElement {
     super.connectedCallback();
     await this.loadSettings();
     window.addEventListener('feeding-tracker-settings-changed', this.handleSettingsChanged);
+    window.addEventListener('voice-command', this.handleVoiceCommand);
     await this.loadLogs();
 
     const queryParams = new URLSearchParams(window.location.search);
@@ -313,6 +315,7 @@ export class HomePage extends LitElement {
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
+    window.removeEventListener('voice-command', this.handleVoiceCommand);
     if (this.toastElement) {
       this.toastElement.reset();
     }
@@ -401,6 +404,39 @@ export class HomePage extends LitElement {
     await this.ensureFeedingDialog();
     this.dialog?.open();
   }
+
+  private handleVoiceCommand = async (event: Event) => {
+    const customEvent = event as CustomEvent<VoiceCommand>;
+    const { command, transcript } = customEvent.detail;
+    console.log('[home-page] Voice command received:', command, transcript);
+
+    switch (command) {
+      case 'start-feeding':
+        // Open the feeding dialog and immediately start the timer
+        await this.ensureFeedingDialog();
+        this.dialog?.openAndStartTimer();
+        break;
+
+      case 'end-feeding':
+        await this.ensureFeedingDialog();
+        if (this.dialog) {
+          // Attempt to complete the active timer
+          const beforeHtmlOpen = this.dialog.shadowRoot?.querySelector('dialog')?.open ?? false;
+          this.dialog.completeTimerNow();
+          // If the dialog wasn't open, there's no active timer state to complete
+          if (!beforeHtmlOpen) {
+            this.toastElement?.show({
+              headline: 'No active feeding',
+              supporting: 'Say “start feeding” first to begin the timer.',
+            });
+          }
+        }
+        break;
+
+      default:
+        console.log('[home-page] Unknown voice command:', command);
+    }
+  };
 
   private async handleLogAdded(e: CustomEvent<FeedingLog>) {
     const { handleLogAddition } = await import('../utils/log-addition.js');

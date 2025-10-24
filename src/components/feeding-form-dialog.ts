@@ -522,6 +522,8 @@ export class FeedingFormDialog extends BaseModalDialog {
   private preferredFeedType: 'formula' | 'milk' = DEFAULT_FEED_TYPE;
   private preferredUnit: UnitType = DEFAULT_FEED_UNIT;
   private preferredBottleFed: boolean = DEFAULT_BOTTLE_FED;
+  // When true, the next open() will initialize directly into timing view
+  private startTimerOnOpen = false;
   private readonly handleSettingsChanged = (event: Event) => {
     const detail = (event as CustomEvent<AppSettings>).detail;
     if (!detail) {
@@ -569,7 +571,13 @@ export class FeedingFormDialog extends BaseModalDialog {
   }
 
   protected override resetDialogState(): void {
-    this.resetForm();
+    if (this.startTimerOnOpen) {
+      // consume the flag and start in timing mode without showing the start screen
+      this.startTimerOnOpen = false;
+      this.prepareTimingStart();
+    } else {
+      this.resetForm();
+    }
   }
 
   protected override onBeforeClose(): void {
@@ -665,6 +673,25 @@ export class FeedingFormDialog extends BaseModalDialog {
     void this.requestWakeLock();
   }
 
+  // Initializes state for immediate timing start (used during open())
+  private prepareTimingStart() {
+    // Adopt preference defaults for feed type/unit if on start view
+    this.feedType = this.preferredFeedType;
+    this.unit = this.preferredUnit;
+    this.isBottleFed = this.preferredBottleFed;
+    // Enter timing mode immediately
+    this.startFeeding();
+  }
+
+  /**
+   * Public helper to open the dialog and immediately start the timer.
+   * Intended for voice-control or quick-start entry points.
+   */
+  public async openAndStartTimer(): Promise<void> {
+    this.startTimerOnOpen = true;
+    this.open();
+  }
+
   private completeFeeding() {
     if (this.timerStartMs === null) {
       return;
@@ -690,6 +717,16 @@ export class FeedingFormDialog extends BaseModalDialog {
       endTime: this.endTime,
       duration: this.duration,
     });
+  }
+
+  /**
+   * Public helper to complete the active timer and transition to the details form.
+   * If no timer is active, this is a no-op.
+   */
+  public completeTimerNow(): void {
+    if (this.view === 'timing' && this.timerStartMs !== null) {
+      this.completeFeeding();
+    }
   }
 
   private enterManualMode() {
