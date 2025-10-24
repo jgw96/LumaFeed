@@ -313,9 +313,14 @@ export class Router {
     // Limit stored positions to prevent memory leaks
     // Keep only the last 20 positions
     if (this.scrollPositions.size > 20) {
-      const firstKey = this.scrollPositions.keys().next().value;
-      if (firstKey !== undefined) {
-        this.scrollPositions.delete(firstKey);
+      // Remove oldest entries until we have exactly 20
+      const entriesToRemove = this.scrollPositions.size - 20;
+      const iterator = this.scrollPositions.keys();
+      for (let i = 0; i < entriesToRemove; i++) {
+        const key = iterator.next().value;
+        if (key !== undefined) {
+          this.scrollPositions.delete(key);
+        }
       }
     }
   }
