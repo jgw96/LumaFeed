@@ -194,7 +194,11 @@ export class Router {
     await loadPromise;
   }
 
-  private async handleRoute(url = new URL(window.location.href), signal?: AbortSignal, navigationType?: 'reload' | 'push' | 'replace' | 'traverse') {
+  private async handleRoute(
+    url = new URL(window.location.href),
+    signal?: AbortSignal,
+    navigationType?: 'reload' | 'push' | 'replace' | 'traverse'
+  ) {
     if (signal?.aborted) {
       return;
     }
@@ -226,12 +230,12 @@ export class Router {
         }
 
         this.notifyListeners(config.component, params);
-        
+
         // Restore scroll position after route is set
         // Use navigationType to determine if we should restore or reset scroll
         const shouldRestore = navigationType === 'traverse' || navigationType === 'reload';
         this.restoreScrollPosition(url.pathname, shouldRestore);
-        
+
         return;
       }
     }
@@ -249,7 +253,7 @@ export class Router {
     }
 
     this.notifyListeners(notFoundComponent, this.currentParams);
-    
+
     // Reset scroll for 404 pages
     this.restoreScrollPosition(url.pathname, false);
   }
@@ -307,9 +311,9 @@ export class Router {
     }
 
     const scrollTop = container.scrollTop;
-    
+
     this.scrollPositions.set(this.currentPath, scrollTop);
-    
+
     // Limit stored positions to prevent memory leaks
     // Keep only the last 20 positions
     if (this.scrollPositions.size > 20) {

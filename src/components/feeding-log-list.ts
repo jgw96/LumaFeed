@@ -9,104 +9,103 @@ import { emptyStateStyles } from './empty-state-styles.js';
 export class FeedingLogList extends LitElement {
   static styles = [
     css`
-    :host {
-      display: block;
-    }
+      :host {
+        display: block;
+      }
 
-    .log-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
+      .log-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
 
-    .log-item {
-      background: var(--md-sys-color-surface-container-low);
-      border: 1px solid var(--md-sys-color-outline-variant);
-      border-radius: var(--md-sys-shape-corner-extra-large);
-      padding: 1rem 1.25rem;
-      transition:
-        box-shadow 0.2s,
-        background-color 0.2s;
-      cursor: pointer;
-    }
+      .log-item {
+        background: var(--md-sys-color-surface-container-low);
+        border: 1px solid var(--md-sys-color-outline-variant);
+        border-radius: var(--md-sys-shape-corner-extra-large);
+        padding: 1rem 1.25rem;
+        transition:
+          box-shadow 0.2s,
+          background-color 0.2s;
+        cursor: pointer;
+      }
 
-    .log-item:hover {
-      box-shadow: var(--md-sys-elevation-1);
-      background: var(--md-sys-color-surface-container);
-    }
+      .log-item:hover {
+        box-shadow: var(--md-sys-elevation-1);
+        background: var(--md-sys-color-surface-container);
+      }
 
-    .log-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.75rem;
-    }
+      .log-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+      }
 
-    .log-type {
-      font-weight: 600;
-      color: var(--md-sys-color-primary);
-      font-size: 1rem;
-      line-height: 1.5;
-    }
+      .log-type {
+        font-weight: 600;
+        color: var(--md-sys-color-primary);
+        font-size: 1rem;
+        line-height: 1.5;
+      }
 
-    .log-time {
-      color: var(--md-sys-color-on-surface-variant);
-      font-size: 0.875rem;
-    }
+      .log-time {
+        color: var(--md-sys-color-on-surface-variant);
+        font-size: 0.875rem;
+      }
 
-    .log-details {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 0.75rem;
-      margin-top: 0.75rem;
-    }
+      .log-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.75rem;
+        margin-top: 0.75rem;
+      }
 
-    .detail-item {
-      display: flex;
-      flex-direction: column;
-    }
+      .detail-item {
+        display: flex;
+        flex-direction: column;
+      }
 
-    .detail-label {
-      color: var(--md-sys-color-on-surface-variant);
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 0.25rem;
-      font-weight: 500;
-    }
+      .detail-label {
+        color: var(--md-sys-color-on-surface-variant);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.25rem;
+        font-weight: 500;
+      }
 
-    .detail-value {
-      color: var(--md-sys-color-on-surface);
-      font-weight: 500;
-      font-size: 1rem;
-    }
+      .detail-value {
+        color: var(--md-sys-color-on-surface);
+        font-weight: 500;
+        font-size: 1rem;
+      }
 
+      .delete-btn {
+        background: none;
+        border: none;
+        color: var(--md-sys-color-error);
+        cursor: pointer;
+        padding: 0.5rem;
+        font-size: 1.5rem;
+        transition:
+          opacity 0.2s ease,
+          background-color 0.2s ease;
+        border-radius: 50%;
+        width: 2.5rem;
+        height: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
 
-    .delete-btn {
-      background: none;
-      border: none;
-      color: var(--md-sys-color-error);
-      cursor: pointer;
-      padding: 0.5rem;
-      font-size: 1.5rem;
-      transition:
-        opacity 0.2s ease,
-        background-color 0.2s ease;
-      border-radius: 50%;
-      width: 2.5rem;
-      height: 2.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .delete-btn:hover,
-    .delete-btn:focus-visible {
-      background-color: var(--md-sys-color-error-container);
-      opacity: 0.9;
-      outline: none;
-    }
-  `,
+      .delete-btn:hover,
+      .delete-btn:focus-visible {
+        background-color: var(--md-sys-color-error-container);
+        opacity: 0.9;
+        outline: none;
+      }
+    `,
     emptyStateStyles,
   ];
 

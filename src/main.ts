@@ -28,7 +28,7 @@ if ('serviceWorker' in navigator) {
                     updateServiceWorker: async () => {
                       // Tell the service worker to skip waiting
                       newWorker.postMessage({ type: 'SKIP_WAITING' });
-                      
+
                       // When the new service worker takes control, reload the page
                       navigator.serviceWorker.addEventListener('controllerchange', () => {
                         window.location.reload();

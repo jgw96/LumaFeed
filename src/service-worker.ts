@@ -31,17 +31,17 @@ sw.addEventListener('activate', (event) => {
       const cacheNames = await caches.keys();
       await Promise.all(
         cacheNames
-          .filter(cacheName => 
-            cacheName.startsWith('assets-') ||
-            cacheName.startsWith('pages-') ||
-            cacheName.startsWith('images-')
+          .filter(
+            (cacheName) =>
+              cacheName.startsWith('assets-') ||
+              cacheName.startsWith('pages-') ||
+              cacheName.startsWith('images-')
           )
-          .filter(cacheName => 
-            cacheName !== ASSETS_CACHE &&
-            cacheName !== PAGES_CACHE &&
-            cacheName !== IMAGES_CACHE
+          .filter(
+            (cacheName) =>
+              cacheName !== ASSETS_CACHE && cacheName !== PAGES_CACHE && cacheName !== IMAGES_CACHE
           )
-          .map(cacheName => caches.delete(cacheName))
+          .map((cacheName) => caches.delete(cacheName))
       );
       await sw.clients.claim();
     })()
@@ -68,11 +68,11 @@ function isCacheableResponse(response: Response): boolean {
 async function trimCache(cacheName: string, maxEntries: number): Promise<void> {
   const cache = await caches.open(cacheName);
   const keys = await cache.keys();
-  
+
   if (keys.length > maxEntries) {
     // Remove oldest entries (first in the list)
     const entriesToDelete = keys.slice(0, keys.length - maxEntries);
-    await Promise.all(entriesToDelete.map(key => cache.delete(key)));
+    await Promise.all(entriesToDelete.map((key) => cache.delete(key)));
   }
 }
 
@@ -86,7 +86,7 @@ async function cacheFirst(
 ): Promise<Response> {
   const cache = await caches.open(cacheName);
   const cachedResponse = await cache.match(request);
-  
+
   if (cachedResponse) {
     // Check if cached response is expired
     const dateHeader = cachedResponse.headers.get('date');
@@ -94,7 +94,7 @@ async function cacheFirst(
       const cacheDate = new Date(dateHeader).getTime();
       const now = Date.now();
       const age = (now - cacheDate) / 1000; // age in seconds
-      
+
       if (age > config.maxAgeSeconds) {
         // Cache expired, delete and fetch from network
         await cache.delete(request);
@@ -105,46 +105,43 @@ async function cacheFirst(
       return cachedResponse;
     }
   }
-  
+
   // Fetch from network
   const response = await fetch(request);
-  
+
   // Cache if response is cacheable
   if (isCacheableResponse(response)) {
     cache.put(request, response.clone());
     // Trim cache to max entries
     await trimCache(cacheName, config.maxEntries);
   }
-  
+
   return response;
 }
 
 /**
  * Network First strategy: Try network first, fall back to cache
  */
-async function networkFirst(
-  request: Request,
-  cacheName: string
-): Promise<Response> {
+async function networkFirst(request: Request, cacheName: string): Promise<Response> {
   const cache = await caches.open(cacheName);
-  
+
   try {
     const response = await fetch(request);
-    
+
     // Cache if response is cacheable
     if (isCacheableResponse(response)) {
       cache.put(request, response.clone());
     }
-    
+
     return response;
   } catch (error) {
     // Network failed, try cache
     const cachedResponse = await cache.match(request);
-    
+
     if (cachedResponse) {
       return cachedResponse;
     }
-    
+
     throw error;
   }
 }
@@ -155,8 +152,7 @@ async function networkFirst(
 function isNavigationRequest(request: Request): boolean {
   return (
     request.mode === 'navigate' ||
-    (request.method === 'GET' &&
-      request.headers.get('accept')?.includes('text/html') === true)
+    (request.method === 'GET' && request.headers.get('accept')?.includes('text/html') === true)
   );
 }
 
@@ -168,7 +164,7 @@ function isNavigationDenylisted(url: URL): boolean {
   if (url.pathname.startsWith('/_')) {
     return true;
   }
-  
+
   // Exclude paths that look like file extensions (e.g., /file.ext)
   const hasFileExtension = /\/[^/?]+\.[^/]+$/.test(url.pathname);
   return hasFileExtension;
@@ -178,24 +174,24 @@ function isNavigationDenylisted(url: URL): boolean {
 sw.addEventListener('fetch', (event: FetchEvent) => {
   const { request } = event;
   const url = new URL(request.url);
-  
+
   // Only handle requests from same origin
   if (url.origin !== sw.location.origin) {
     return;
   }
-  
+
   // Handle navigation requests with NetworkFirst
   if (isNavigationRequest(request) && !isNavigationDenylisted(url)) {
     event.respondWith(networkFirst(request, PAGES_CACHE));
     return;
   }
-  
+
   // Handle scripts and styles with CacheFirst
   if (request.destination === 'script' || request.destination === 'style') {
     event.respondWith(cacheFirst(request, ASSETS_CACHE, CACHE_CONFIG.assets));
     return;
   }
-  
+
   // Handle images with CacheFirst
   if (request.destination === 'image') {
     event.respondWith(cacheFirst(request, IMAGES_CACHE, CACHE_CONFIG.images));

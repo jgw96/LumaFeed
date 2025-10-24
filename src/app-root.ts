@@ -525,7 +525,7 @@ export class AppRoot extends LitElement {
   protected firstUpdated(): void {
     // Set up scroll container for router
     this.router.setScrollContainer(() => this.pageContainer ?? null);
-    
+
     void this.maybeShowIntroExperience();
   }
 
@@ -588,14 +588,17 @@ export class AppRoot extends LitElement {
   disconnectedCallback(): void {
     this.removeEventListener('logs-imported', this.handleLogsImported);
     window.removeEventListener('pwa-update-available', this.handleUpdateAvailable);
-    window.removeEventListener('voice-control-error', this.handleVoiceControlError as EventListener);
-    
+    window.removeEventListener(
+      'voice-control-error',
+      this.handleVoiceControlError as EventListener
+    );
+
     // Clean up voice control if active
     if (this.voiceController) {
       this.voiceController.stop();
       this.voiceController = null;
     }
-    
+
     super.disconnectedCallback();
   }
 
@@ -720,7 +723,9 @@ export class AppRoot extends LitElement {
               <button
                 class="voice-btn ${this.voiceControlActive ? 'active' : ''}"
                 @click=${this.handleVoiceControlToggle}
-                aria-label="${this.voiceControlActive ? 'Stop voice control' : 'Start voice control'}"
+                aria-label="${this.voiceControlActive
+                  ? 'Stop voice control'
+                  : 'Start voice control'}"
                 title="${this.voiceControlActive ? 'Stop voice control' : 'Start voice control'}"
               >
                 <svg
@@ -948,7 +953,7 @@ export class AppRoot extends LitElement {
       } catch (error) {
         console.error('[app-root] Failed to start voice control:', error);
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        
+
         window.dispatchEvent(
           new CustomEvent('voice-control-error', {
             detail: { message: errorMessage },
