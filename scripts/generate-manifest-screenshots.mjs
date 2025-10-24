@@ -151,6 +151,9 @@ function registerSignalHandlers() {
 async function stubStorage(context, logs, now) {
   const logsJson = JSON.stringify(logs, null, 2);
   await context.addInitScript(({ snapshot, fixedNow }) => {
+    // Mark intro experience as completed to prevent dialog from showing
+    window.localStorage.setItem('feeding-tracker-intro-seen-v1', 'true');
+
     const storage = { 'feeding-logs.json': snapshot };
 
     class MemoryWritable {

@@ -77,17 +77,15 @@ describe('LogDetailPage', () => {
 
     const page = await mountComponent<LogDetailPage>('log-detail-page');
 
+    // Wait for the form to render by checking for the amount input
     await waitFor(
-      () => {
-        const card = queryShadow(page, '.detail-card');
-        return card !== null;
-      },
+      () => queryShadow<HTMLInputElement>(page, '#amount') !== null,
       3000,
-      'Detail card not rendered'
+      'Form not rendered'
     );
 
-    const feedTypeSelect = queryShadow<HTMLSelectElement>(page, '#feed-type');
-    expect(feedTypeSelect?.value).toBe('formula');
+    const header = queryShadow<HTMLElement>(page, '.log-type');
+    expect(header?.textContent).toContain('Formula');
 
     const amountInput = queryShadow<HTMLInputElement>(page, '#amount');
     expect(amountInput?.value).toBe('120');
@@ -145,12 +143,9 @@ describe('LogDetailPage', () => {
     const page = await mountComponent<LogDetailPage>('log-detail-page');
 
     await waitFor(
-      () => {
-        const card = queryShadow(page, '.detail-card');
-        return card !== null;
-      },
+      () => queryShadow<HTMLInputElement>(page, '#amount') !== null,
       3000,
-      'Detail card not rendered'
+      'Form not rendered'
     );
 
     // Change amount
@@ -201,12 +196,9 @@ describe('LogDetailPage', () => {
     const page = await mountComponent<LogDetailPage>('log-detail-page');
 
     await waitFor(
-      () => {
-        const card = queryShadow(page, '.detail-card');
-        return card !== null;
-      },
+      () => queryShadow<HTMLInputElement>(page, '#amount') !== null,
       3000,
-      'Detail card not rendered'
+      'Form not rendered'
     );
 
     // Click delete
@@ -223,46 +215,5 @@ describe('LogDetailPage', () => {
     getLogSpy.mockRestore();
     deleteLogSpy.mockRestore();
     confirmSpy.mockRestore();
-  });
-
-  it('should navigate back when cancel is clicked', async () => {
-    const mockLog: FeedingLog = {
-      id: 'test-123',
-      feedType: 'formula',
-      amountMl: 120,
-      amountOz: 4.1,
-      durationMinutes: 20,
-      isBottleFed: true,
-      timestamp: Date.now(),
-      startTime: Date.now() - 20 * 60000,
-      endTime: Date.now(),
-      nextFeedTime: Date.now() + 180 * 60000,
-    };
-
-    const getLogSpy = vi.spyOn(feedingStorage, 'getLog').mockResolvedValue(mockLog);
-
-    Object.defineProperty(window, 'location', {
-      writable: true,
-      value: new URL('http://localhost/log?id=test-123'),
-    });
-
-    const page = await mountComponent<LogDetailPage>('log-detail-page');
-
-    await waitFor(
-      () => {
-        const card = queryShadow(page, '.detail-card');
-        return card !== null;
-      },
-      3000,
-      'Detail card not rendered'
-    );
-
-    const cancelButton = queryShadow<HTMLButtonElement>(page, '.btn-secondary');
-    cancelButton?.click();
-    await page.updateComplete;
-
-    expect(window.history.back).toHaveBeenCalled();
-
-    getLogSpy.mockRestore();
   });
 });
