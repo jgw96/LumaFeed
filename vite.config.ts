@@ -16,7 +16,8 @@ export default defineConfig(({ mode }) => {
         type: 'module',
       },
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // Disable precache manifest injection - we're using runtime caching instead
+        injectionPoint: undefined,
         rollupFormat: 'es',
       },
       useCredentials: false,
@@ -47,7 +48,6 @@ export default defineConfig(({ mode }) => {
         if (ctx.bundle) {
           for (const [fileName, chunk] of Object.entries(ctx.bundle)) {
             if (chunk.type === 'chunk') {
-              // Preload vendor-lit, app-root, and home-page chunks
               if (
                 fileName.includes('vendor-lit') ||
                 fileName.includes('app-root') ||
