@@ -48,12 +48,18 @@ export default defineConfig(({ mode }) => {
         if (ctx.bundle) {
           for (const [fileName, chunk] of Object.entries(ctx.bundle)) {
             if (chunk.type === 'chunk') {
+              // Only preload main feeding-storage chunk (exclude lazily-loaded helpers)
+              const isFeedingStorageMain =
+                fileName.includes('feeding-storage-') &&
+                !fileName.includes('feeding-storage.add-log') &&
+                !fileName.includes('feeding-storage.update');
+
               if (
                 fileName.includes('vendor-lit') ||
                 fileName.includes('app-root') ||
                 fileName.includes('home-page') ||
-                fileName.includes('feeding-storage') ||
-                fileName.includes('app-intro') || 
+                isFeedingStorageMain ||
+                fileName.includes('app-intro') ||
                 fileName.includes('base-modal-dialog')
               ) {
                 tags.push({

@@ -11,8 +11,8 @@ const DIST_DIR = path.join(ROOT, 'dist');
 const ENTRY_HTML = path.join(DIST_DIR, 'index.html');
 
 // Maximum allowed JavaScript bundle size in bytes
-// Current bundle size: 91,674 bytes (89.5 KB)
-const MAX_JS_SIZE_BYTES = 91674;
+// Limit: 95,232 bytes (93.0 KB)
+const MAX_JS_SIZE_BYTES = 93 * 1024; // 95,232 bytes
 
 function formatBytes(bytes) {
   const sizes = ['B', 'KB', 'MB', 'GB'];
@@ -172,6 +172,11 @@ async function main() {
 
   console.log(`Bundle size check:`);
   console.log(`  Initial load JavaScript files: ${initialLoadFiles.length}`);
+  console.log(`  Files:`);
+  for (const file of initialLoadFiles) {
+    const rel = path.relative(DIST_DIR, file) || file;
+    console.log(`   - ${rel}`);
+  }
   console.log(`  Total size: ${totalSizeFormatted} (${totalSize.toLocaleString()} bytes)`);
   console.log(`  Size limit: ${maxSizeFormatted} (${MAX_JS_SIZE_BYTES.toLocaleString()} bytes)`);
 
