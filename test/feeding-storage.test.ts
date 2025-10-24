@@ -114,7 +114,9 @@ describe('FeedingStorage', () => {
       nextFeedTime: Date.now() + 180 * 60000,
     };
 
-    await expect(feedingStorage.updateLog(log)).rejects.toThrow('Log with id nonexistent not found');
+    await expect(feedingStorage.updateLog(log)).rejects.toThrow(
+      'Log with id nonexistent not found'
+    );
   });
 
   it('should delete a log', async () => {

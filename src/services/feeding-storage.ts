@@ -110,12 +110,13 @@ export class FeedingStorageService {
   async updateLog(updatedLog: FeedingLog): Promise<void> {
     const logs = await this.loadLogs();
     const index = logs.findIndex((log) => log.id === updatedLog.id);
-    
+
     if (index === -1) {
       throw new Error(`Log with id ${updatedLog.id} not found`);
     }
 
-    const baseTime = typeof updatedLog.endTime === 'number' ? updatedLog.endTime : updatedLog.timestamp;
+    const baseTime =
+      typeof updatedLog.endTime === 'number' ? updatedLog.endTime : updatedLog.timestamp;
     const defaultInterval = await settingsService.getDefaultFeedIntervalMinutes();
     const normalizedLog: FeedingLog = {
       ...updatedLog,

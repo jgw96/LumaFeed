@@ -26,8 +26,12 @@ if ('serviceWorker' in navigator) {
   if (document.readyState === 'complete') {
     void registerServiceWorker();
   } else {
-    window.addEventListener('load', () => {
-      void registerServiceWorker();
-    }, { once: true });
+    window.addEventListener(
+      'load',
+      () => {
+        void registerServiceWorker();
+      },
+      { once: true }
+    );
   }
 }

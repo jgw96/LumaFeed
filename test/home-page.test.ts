@@ -24,15 +24,12 @@ describe('HomePage', () => {
     const homePage = await mountComponent<HomePage>('home-page');
 
     await waitFor(
-      () => queryShadow(homePage, 'feeding-log-list') !== null,
+      () => queryShadow<HTMLButtonElement>(homePage, '.empty-state-action') !== null,
       3000,
-      'Feeding log list not rendered'
+      'Empty state call to action not rendered'
     );
 
-    const logList = queryShadow<HTMLElement>(homePage, 'feeding-log-list');
-    expect(logList).toBeTruthy();
-
-    const actionButton = queryShadow<HTMLButtonElement>(logList!, '.empty-state-action');
+    const actionButton = queryShadow<HTMLButtonElement>(homePage, '.empty-state-action');
     expect(actionButton).toBeTruthy();
     expect(actionButton?.textContent?.trim()).toBe('Start a feeding');
   });
@@ -59,20 +56,43 @@ describe('HomePage', () => {
     }
   });
 
-  it('should render feeding log list after loading', async () => {
-    const homePage = await mountComponent<HomePage>('home-page');
+  it('should render feeding log list after loading when logs exist', async () => {
+    const endTime = Date.now();
+    const startTime = endTime - 10 * 60_000;
+    const log: FeedingLog = {
+      id: 'has-logs',
+      feedType: 'formula',
+      amountMl: 60,
+      amountOz: 2,
+      durationMinutes: 10,
+      isBottleFed: true,
+      timestamp: endTime,
+      startTime,
+      endTime,
+      nextFeedTime: calculateNextFeedTime(endTime),
+    };
 
-    await waitFor(
-      () => {
-        const logList = queryShadow(homePage, 'feeding-log-list');
-        return logList !== null;
-      },
-      3000,
-      'Feeding log list not rendered'
-    );
+    const spy = vi
+      .spyOn(feedingStorage, 'loadLogs')
+      .mockResolvedValueOnce([log]);
 
-    const logList = queryShadow(homePage, 'feeding-log-list');
-    expect(logList).toBeTruthy();
+    try {
+      const homePage = await mountComponent<HomePage>('home-page');
+
+      await waitFor(
+        () => {
+          const logList = queryShadow(homePage, 'feeding-log-list');
+          return logList !== null;
+        },
+        3000,
+        'Feeding log list not rendered when logs exist'
+      );
+
+      const logList = queryShadow(homePage, 'feeding-log-list');
+      expect(logList).toBeTruthy();
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   it('should suppress summary card when no logs are loaded', async () => {
@@ -98,19 +118,16 @@ describe('HomePage', () => {
   it('should open dialog when add button is clicked', async () => {
     const homePage = await mountComponent<HomePage>('home-page');
 
-    await waitFor(
-      () => queryShadow(homePage, 'feeding-log-list') !== null,
-      3000,
-      'Feeding log list not rendered'
-    );
-
     await import('../src/components/feeding-form-dialog.js');
     await customElements.whenDefined('feeding-form-dialog');
 
-    const logList = queryShadow<HTMLElement>(homePage, 'feeding-log-list');
-    const addButton = logList
-      ? queryShadow<HTMLButtonElement>(logList, '.empty-state-action')
-      : null;
+    await waitFor(
+      () => queryShadow<HTMLButtonElement>(homePage, '.empty-state-action') !== null,
+      3000,
+      'Empty state call to action not rendered'
+    );
+
+    const addButton = queryShadow<HTMLButtonElement>(homePage, '.empty-state-action');
     const dialog = queryShadow<FeedingFormDialog>(homePage, 'feeding-form-dialog');
 
     const openSpy = vi.spyOn(dialog!, 'open');
@@ -221,27 +238,50 @@ describe('HomePage', () => {
   });
 
   it('should handle log-deleted event', async () => {
-    const homePage = await mountComponent<HomePage>('home-page');
+    const endTime = Date.now();
+    const startTime = endTime - 10 * 60_000;
+    const log: FeedingLog = {
+      id: 'delete-me',
+      feedType: 'milk',
+      amountMl: 90,
+      amountOz: 3,
+      durationMinutes: 10,
+      isBottleFed: true,
+      timestamp: endTime,
+      startTime,
+      endTime,
+      nextFeedTime: calculateNextFeedTime(endTime),
+    };
 
-    await waitFor(() => {
+    const spy = vi
+      .spyOn(feedingStorage, 'loadLogs')
+      .mockResolvedValueOnce([log]);
+
+    try {
+      const homePage = await mountComponent<HomePage>('home-page');
+
+      await waitFor(() => {
+        const logList = queryShadow(homePage, 'feeding-log-list');
+        return logList !== null;
+      });
+
       const logList = queryShadow(homePage, 'feeding-log-list');
-      return logList !== null;
-    });
 
-    const logList = queryShadow(homePage, 'feeding-log-list');
+      // Dispatch log-deleted event
+      const event = new CustomEvent('log-deleted', {
+        detail: 'delete-me',
+        bubbles: true,
+        composed: true,
+      });
+      logList!.dispatchEvent(event);
 
-    // Dispatch log-deleted event
-    const event = new CustomEvent('log-deleted', {
-      detail: 'test-id-123',
-      bubbles: true,
-      composed: true,
-    });
-    logList!.dispatchEvent(event);
+      // Wait for the deletion to be processed
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
-    // Wait for the deletion to be processed
-    await new Promise((resolve) => setTimeout(resolve, 200));
-
-    // The component should have processed the deletion
-    expect(logList).toBeTruthy();
+      // The component should have processed the deletion
+      expect(logList).toBeTruthy();
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

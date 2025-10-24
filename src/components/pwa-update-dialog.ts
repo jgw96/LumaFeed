@@ -157,9 +157,7 @@ export class PWAUpdateDialog extends LitElement {
   private readonly appIcon = '/maskable_icon_x128.png';
 
   private dismiss = () => {
-    this.dispatchEvent(
-      new CustomEvent('pwa-update-dismissed', { bubbles: true, composed: true })
-    );
+    this.dispatchEvent(new CustomEvent('pwa-update-dismissed', { bubbles: true, composed: true }));
   };
 
   private async applyUpdate() {
@@ -169,9 +167,7 @@ export class PWAUpdateDialog extends LitElement {
 
     try {
       await this.updateServiceWorker(true);
-      this.dispatchEvent(
-        new CustomEvent('pwa-update-applied', { bubbles: true, composed: true })
-      );
+      this.dispatchEvent(new CustomEvent('pwa-update-applied', { bubbles: true, composed: true }));
     } catch (error) {
       console.warn('Service worker update failed', error);
     }

@@ -218,7 +218,7 @@ export class AppSelect extends LitElement {
   }
 
   private get selectedIndex(): number {
-    return this.options.findIndex(option => option.value === this.value);
+    return this.options.findIndex((option) => option.value === this.value);
   }
 
   private get activeOptionId(): string | null {
@@ -255,7 +255,7 @@ export class AppSelect extends LitElement {
     const signal = this.outsideController.signal;
     window.addEventListener(
       'pointerdown',
-      event => {
+      (event) => {
         const path = event.composedPath();
         if (!path.includes(this)) {
           this.closeMenu();
@@ -302,9 +302,7 @@ export class AppSelect extends LitElement {
     this.open = false;
     if (focusTrigger) {
       this.updateComplete.then(() => {
-        const trigger = this.shadowRoot?.getElementById(this.triggerId) as
-          | HTMLButtonElement
-          | null;
+        const trigger = this.shadowRoot?.getElementById(this.triggerId) as HTMLButtonElement | null;
         trigger?.focus();
       });
     }
@@ -397,7 +395,7 @@ export class AppSelect extends LitElement {
   }
 
   private renderSelectedLabel() {
-    const selected = this.options.find(option => option.value === this.value);
+    const selected = this.options.find((option) => option.value === this.value);
     if (selected) {
       return selected.label;
     }

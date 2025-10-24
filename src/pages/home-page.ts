@@ -6,7 +6,7 @@ import type { AppSettings } from '../services/settings-service.js';
 import { settingsService } from '../services/settings-service.js';
 
 import '../components/app-toast.js';
-import '../components/feeding-log-list.js';
+import { emptyStateStyles } from '../components/empty-state-styles.js';
 
 import type { FeedingFormDialog } from '../components/feeding-form-dialog.js';
 import type { AppToast } from '../components/app-toast.js';
@@ -14,7 +14,8 @@ import type { ConfirmDialog } from '../components/confirm-dialog.js';
 
 @customElement('home-page')
 export class HomePage extends LitElement {
-  static styles = css`
+  static styles = [
+    css`
     :host {
       display: block;
       padding: 1.5rem;
@@ -242,7 +243,9 @@ export class HomePage extends LitElement {
         bottom: calc(env(safe-area-inset-bottom, 0px) + 40px);
       }
     }
-  `;
+  `,
+    emptyStateStyles,
+  ];
 
   @state()
   private logs: FeedingLog[] = [];
@@ -273,6 +276,9 @@ export class HomePage extends LitElement {
 
   @state()
   private summaryCardLoaded = false;
+
+  @state()
+  private feedingLogListLoaded = false;
 
   private readonly skeletonPlaceholders = [0, 1, 2];
 
@@ -323,6 +329,7 @@ export class HomePage extends LitElement {
       // Load summary card if we have logs
       if (loadedLogs.length > 0) {
         void this.ensureSummaryCard();
+        void this.ensureFeedingLogList();
       }
     } catch (error) {
       console.error('Failed to load logs:', error);
@@ -377,6 +384,19 @@ export class HomePage extends LitElement {
     }
   }
 
+  private async ensureFeedingLogList(): Promise<void> {
+    await this.updateComplete;
+
+    if (!this.feedingLogListLoaded) {
+      if (!customElements.get('feeding-log-list')) {
+        await import('../components/feeding-log-list.js');
+      }
+
+      await customElements.whenDefined('feeding-log-list');
+      this.feedingLogListLoaded = true;
+    }
+  }
+
   private async handleAddClick() {
     await this.ensureFeedingDialog();
     this.dialog?.open();
@@ -419,7 +439,8 @@ export class HomePage extends LitElement {
   }
 
   render() {
-    const shouldShowSummary = this.hasLoadedInitialData && this.logs.length > 0 && this.summaryCardLoaded;
+    const shouldShowSummary =
+      this.hasLoadedInitialData && this.logs.length > 0 && this.summaryCardLoaded;
     const showAiSummary = this.settings?.showAiSummaryCard !== false;
 
     return html`
@@ -464,22 +485,74 @@ export class HomePage extends LitElement {
                   )}
                 </div>
               `
-            : html`
-                <feeding-log-list
-                  .logs=${this.logs}
-                  @log-add-requested=${this.handleAddClick}
-                  @log-deleted=${this.handleLogDeleted}
-                ></feeding-log-list>
-              `}
+            : this.logs.length > 0 && this.feedingLogListLoaded
+                ? html`
+                    <feeding-log-list
+                      .logs=${this.logs}
+                      @log-add-requested=${this.handleAddClick}
+                      @log-deleted=${this.handleLogDeleted}
+                    ></feeding-log-list>
+                  `
+                : this.logs.length === 0
+                    ? html`
+                        <div class="empty-state" role="status" aria-live="polite">
+                          <div>
+                            <div class="empty-state-icon" aria-hidden="true">
+                              <img src="/feedings-65.png" alt="Feeding icon" width="48" height="48" />
+                            </div>
+                            <h3 class="empty-state-title">Start tracking feedings</h3>
+                            <p class="empty-state-description">
+                              Capture nursing or bottle sessions, keep an eye on timing, and know exactly when the
+                              next feeding is due.
+                            </p>
+                          </div>
+                          <ul class="empty-state-highlights" aria-label="Benefits of logging feedings">
+                            <li class="highlight-item">
+                              <span class="highlight-icon" aria-hidden="true">⏱️</span>
+                              <div>
+                                <div class="highlight-title">Log sessions effortlessly</div>
+                                <p class="highlight-copy">
+                                  Use the timer or quick-entry form to record start, end, and feeding amounts in
+                                  seconds.
+                                </p>
+                              </div>
+                            </li>
+                            <li class="highlight-item">
+                              <span class="highlight-icon" aria-hidden="true">🔔</span>
+                              <div>
+                                <div class="highlight-title">Stay ahead of the next feed</div>
+                                <p class="highlight-copy">
+                                  We calculate the next feeding window automatically and can remind you when it is
+                                  coming up.
+                                </p>
+                              </div>
+                            </li>
+                            <li class="highlight-item">
+                              <span class="highlight-icon" aria-hidden="true">📈</span>
+                              <div>
+                                <div class="highlight-title">Spot patterns quickly</div>
+                                <p class="highlight-copy">
+                                  Summaries highlight daily totals so you can share updates with caregivers or your
+                                  pediatrician.
+                                </p>
+                              </div>
+                            </li>
+                          </ul>
+                          <div>
+                            <button class="empty-state-action" type="button" @click=${this.handleAddClick}>
+                              Start a feeding
+                            </button>
+                          </div>
+                          <p class="empty-state-footer">You can fine-tune reminders anytime from Settings.</p>
+                        </div>
+                      `
+                    : nothing}
         </div>
 
         ${this.logs.length > 0
           ? html`<button class="add-btn" @click=${this.handleAddClick}>Start feeding</button>`
           : nothing}
-
-        ${this.feedingDialogLoaded
-          ? html`<feeding-form-dialog @log-added=${this.handleLogAdded}></feeding-form-dialog>`
-          : nothing}
+        <feeding-form-dialog @log-added=${this.handleLogAdded}></feeding-form-dialog>
       </div>
       <app-toast></app-toast>
       ${this.confirmDialogLoaded ? html`<confirm-dialog></confirm-dialog>` : nothing}

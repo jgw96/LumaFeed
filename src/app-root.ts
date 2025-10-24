@@ -4,7 +4,7 @@ import { customElement, state, query } from 'lit/decorators.js';
 import { Router } from './router/router.js';
 import './components/app-header-menu.js';
 import './components/pwa-install-prompt.js';
-import './pages/home-page.js';
+// Home page will be lazy-loaded via the router loader for better chunking
 
 import { hasCompletedIntroExperience } from './utils/intro-experience.js';
 
@@ -420,6 +420,7 @@ export class AppRoot extends LitElement {
         {
           pattern: '/',
           component: 'home-page',
+          loader: () => import('./pages/home-page.js'),
         },
         {
           pattern: '/log',
@@ -621,7 +622,16 @@ export class AppRoot extends LitElement {
                     aria-label="Go back"
                     title="Go back"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="ionicon" viewBox="0 0 512 512"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="48" d="M328 112L184 256l144 144"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="ionicon" viewBox="0 0 512 512">
+                      <path
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="48"
+                        d="M328 112L184 256l144 144"
+                      />
+                    </svg>
                   </button>
                 `
               : nothing}
@@ -634,9 +644,7 @@ export class AppRoot extends LitElement {
               <app-header-menu @import-feeds=${this.handleImportFeedsRequested}></app-header-menu>
             </div>
           </header>
-          <main class="page-container" part="page-transition">
-            ${this.renderCurrentPage()}
-          </main>
+          <main class="page-container" part="page-transition">${this.renderCurrentPage()}</main>
         </div>
         <nav
           class="bottom-nav nav-links ${this.shouldShowBottomNav() ? '' : 'hidden'}"

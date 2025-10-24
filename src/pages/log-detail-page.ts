@@ -379,9 +379,7 @@ export class LogDetailPage extends LitElement {
     if (!this.logId) return;
 
     if (
-      !confirm(
-        'Are you sure you want to delete this feeding log? This action cannot be undone.'
-      )
+      !confirm('Are you sure you want to delete this feeding log? This action cannot be undone.')
     ) {
       return;
     }
@@ -510,9 +508,7 @@ export class LogDetailPage extends LitElement {
           </div>
 
           <div class="button-group">
-            <button class="btn-danger" type="button" @click=${this.handleDelete}>
-              Delete
-            </button>
+            <button class="btn-danger" type="button" @click=${this.handleDelete}>Delete</button>
             <button class="btn-primary" type="button" @click=${this.handleSave}>
               Save Changes
             </button>

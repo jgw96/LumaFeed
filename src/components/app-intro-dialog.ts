@@ -66,7 +66,12 @@ export class AppIntroDialog extends BaseModalDialog {
       position: relative;
       padding: 2.25rem 2rem;
       border-radius: var(--md-sys-shape-corner-extra-large);
-      background: linear-gradient(160deg, var(--md-sys-color-primary) 0%, #5ab1f8 60%, #a2d9ff 100%);
+      background: linear-gradient(
+        160deg,
+        var(--md-sys-color-primary) 0%,
+        #5ab1f8 60%,
+        #a2d9ff 100%
+      );
       color: var(--md-sys-color-on-primary);
       box-shadow: inset 0 0 0 1px color-mix(in srgb, white 12%, transparent);
     }
@@ -300,7 +305,8 @@ export class AppIntroDialog extends BaseModalDialog {
     },
     {
       title: 'Understand the rhythm',
-      description: 'See trends, next feed predictions, and AI summaries built for sleep-deprived parents.',
+      description:
+        'See trends, next feed predictions, and AI summaries built for sleep-deprived parents.',
       icon: '✨',
     },
     {
@@ -360,8 +366,8 @@ export class AppIntroDialog extends BaseModalDialog {
             </span>
             <h1 id="intro-dialog-title" class="hero__title">Meet LumaFeed</h1>
             <p class="hero__description">
-              A calmer way to track feedings, diapers, and the little signals that matter most in the
-              first months.
+              A calmer way to track feedings, diapers, and the little signals that matter most in
+              the first months.
             </p>
           </section>
 

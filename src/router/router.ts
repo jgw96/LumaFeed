@@ -29,7 +29,11 @@ declare global {
       getState(): unknown;
     };
     signal: AbortSignal;
-    intercept(options?: { handler?: () => void | Promise<void>; focusReset?: 'manual' | 'after-transition'; scroll?: 'manual' | 'after-transition' }): void;
+    intercept(options?: {
+      handler?: () => void | Promise<void>;
+      focusReset?: 'manual' | 'after-transition';
+      scroll?: 'manual' | 'after-transition';
+    }): void;
   }
 
   interface Navigation {
@@ -43,7 +47,10 @@ declare global {
       listener: (event: NavigateEvent) => void,
       options?: boolean | EventListenerOptions
     ): void;
-    navigate(url: string, options?: { history?: 'auto' | 'push' | 'replace'; state?: unknown; info?: unknown }): {
+    navigate(
+      url: string,
+      options?: { history?: 'auto' | 'push' | 'replace'; state?: unknown; info?: unknown }
+    ): {
       committed: Promise<unknown>;
       finished: Promise<unknown>;
     };

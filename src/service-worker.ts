@@ -1,6 +1,10 @@
 /// <reference lib="webworker" />
 
-import { precacheAndRoute, createHandlerBoundToURL, cleanupOutdatedCaches } from 'workbox-precaching';
+import {
+  precacheAndRoute,
+  createHandlerBoundToURL,
+  cleanupOutdatedCaches,
+} from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
 
 type PrecacheEntry = string | { url: string; revision: string };
@@ -31,10 +35,7 @@ if (enablePrecache && Array.isArray(precacheManifest)) {
   // Provide SPA-style navigation fallback to the app shell while offline.
   const navigationHandler = createHandlerBoundToURL('/index.html');
   const navigationRoute = new NavigationRoute(navigationHandler, {
-    denylist: [
-      new RegExp('^/_'),
-      new RegExp('/[^/?]+\\.[^/]+$'),
-    ],
+    denylist: [new RegExp('^/_'), new RegExp('/[^/?]+\\.[^/]+$')],
   });
 
   registerRoute(navigationRoute);
