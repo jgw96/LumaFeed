@@ -72,9 +72,7 @@ describe('HomePage', () => {
       nextFeedTime: calculateNextFeedTime(endTime),
     };
 
-    const spy = vi
-      .spyOn(feedingStorage, 'loadLogs')
-      .mockResolvedValueOnce([log]);
+    const spy = vi.spyOn(feedingStorage, 'loadLogs').mockResolvedValueOnce([log]);
 
     try {
       const homePage = await mountComponent<HomePage>('home-page');
@@ -253,9 +251,7 @@ describe('HomePage', () => {
       nextFeedTime: calculateNextFeedTime(endTime),
     };
 
-    const spy = vi
-      .spyOn(feedingStorage, 'loadLogs')
-      .mockResolvedValueOnce([log]);
+    const spy = vi.spyOn(feedingStorage, 'loadLogs').mockResolvedValueOnce([log]);
 
     try {
       const homePage = await mountComponent<HomePage>('home-page');

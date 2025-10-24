@@ -43,7 +43,7 @@ export default defineConfig(({ mode }) => {
       order: 'post',
       handler(html, ctx) {
         const tags: HtmlTagDescriptor[] = [];
-        
+
         // Find critical chunks from the bundle
         if (ctx.bundle) {
           for (const [fileName, chunk] of Object.entries(ctx.bundle)) {
@@ -75,7 +75,7 @@ export default defineConfig(({ mode }) => {
             }
           }
         }
-        
+
         return tags;
       },
     },
@@ -88,10 +88,10 @@ export default defineConfig(({ mode }) => {
     transform(code, id) {
       // Only process TypeScript/JavaScript files
       if (!/\.(ts|js|tsx|jsx)$/.test(id)) return null;
-      
+
       // Only process files that likely contain Lit css`` templates
       if (!code.includes('.styles') && !code.includes('css`')) return null;
-      
+
       // Minify CSS inside css`` tagged templates
       const minified = code.replace(/css`([\s\S]*?)`/g, (match, css) => {
         const minifiedCss = css
@@ -103,11 +103,11 @@ export default defineConfig(({ mode }) => {
           .trim();
         return `css\`${minifiedCss}\``;
       });
-      
+
       if (minified !== code) {
         return { code: minified, map: null };
       }
-      
+
       return null;
     },
   });
@@ -177,7 +177,7 @@ export default defineConfig(({ mode }) => {
         keep_fnames: false,
       },
       // Ensure parallel fetching of dependent chunks across browsers
-      modulePreload: { 
+      modulePreload: {
         polyfill: true,
       },
       // Create a dedicated vendor chunk for lit so it can be fetched in parallel
