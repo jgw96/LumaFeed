@@ -4,6 +4,7 @@ import { customElement, state, query } from 'lit/decorators.js';
 import { Router } from './router/router.js';
 import './components/app-header-menu.js';
 import './components/pwa-install-prompt.js';
+import './components/pwa-update-dialog.js';
 import './pages/home-page.js';
 
 import { hasCompletedIntroExperience } from './utils/intro-experience.js';
@@ -621,6 +622,7 @@ export class AppRoot extends LitElement {
           ></app-intro-dialog>`
         : nothing}
       <pwa-install-prompt></pwa-install-prompt>
+      <pwa-update-dialog></pwa-update-dialog>
     `;
   }
 

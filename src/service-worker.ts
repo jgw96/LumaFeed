@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 
-import { precacheAndRoute } from 'workbox-precaching';
+import { precacheAndRoute, createHandlerBoundToURL, cleanupOutdatedCaches } from 'workbox-precaching';
+import { registerRoute, NavigationRoute } from 'workbox-routing';
 
 type PrecacheEntry = string | { url: string; revision: string };
 
@@ -8,8 +9,11 @@ declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<PrecacheEntry>;
 };
 
-// Enable precache only in production (not on localhost or 127.0.0.1)
-const enablePrecache = !['localhost', '127.0.0.1'].includes(self.location.hostname);
+const devServerHost = '5173';
+const isLocalDevServer =
+  ['localhost', '127.0.0.1'].includes(self.location.hostname) &&
+  self.location.port === devServerHost;
+const enablePrecache = !isLocalDevServer;
 const precacheManifest = self.__WB_MANIFEST;
 
 self.addEventListener('install', () => {
@@ -21,7 +25,19 @@ self.addEventListener('activate', (event) => {
 });
 
 if (enablePrecache && Array.isArray(precacheManifest)) {
+  cleanupOutdatedCaches();
   precacheAndRoute(precacheManifest);
+
+  // Provide SPA-style navigation fallback to the app shell while offline.
+  const navigationHandler = createHandlerBoundToURL('/index.html');
+  const navigationRoute = new NavigationRoute(navigationHandler, {
+    denylist: [
+      new RegExp('^/_'),
+      new RegExp('/[^/?]+\\.[^/]+$'),
+    ],
+  });
+
+  registerRoute(navigationRoute);
 }
 
 self.addEventListener('notificationclick', (event) => {

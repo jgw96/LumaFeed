@@ -5,14 +5,29 @@ await initializeTheme();
 await import('./app-root.js');
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
+  const registerServiceWorker = async () => {
     try {
       const { registerSW } = await import('virtual:pwa-register');
-      registerSW({
+      const updateSW = registerSW({
         immediate: true,
+        onNeedRefresh() {
+          window.dispatchEvent(
+            new CustomEvent('pwa-update-available', {
+              detail: { updateServiceWorker: updateSW },
+            })
+          );
+        },
       });
     } catch (error) {
       console.warn('Service worker registration failed', error);
     }
-  });
+  };
+
+  if (document.readyState === 'complete') {
+    void registerServiceWorker();
+  } else {
+    window.addEventListener('load', () => {
+      void registerServiceWorker();
+    }, { once: true });
+  }
 }
