@@ -81,6 +81,9 @@ npm run bundle:check
 
 The current size limit is hardcoded in `scripts/check-bundle-size.mjs` (337,472 bytes / 329.6 KB). If you need to update the limit after verifying the size increase is necessary, edit the `MAX_JS_SIZE_BYTES` constant in that file.
 
+### Latest WebPageTest
+[2.9s LCP on 3G](https://www.catchpoint.com/webpagetest/results?publicurl=https%3A%2F%2Fpublic.catchpoint.com%2FUI%2FEntry%2FWPTITP%2FARDE-D-D-B2AHqJjeEpBGd0AA-N)
+
 ## License
 
 MIT
