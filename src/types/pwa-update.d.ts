@@ -7,6 +7,11 @@ declare global {
   interface WindowEventMap {
     'pwa-update-available': CustomEvent<PWAUpdateAvailableDetail>;
   }
+
+  interface HTMLElementEventMap {
+    'pwa-update-dismissed': CustomEvent<void>;
+    'pwa-update-applied': CustomEvent<void>;
+  }
 }
 
 export {};

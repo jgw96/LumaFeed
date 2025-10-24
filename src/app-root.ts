@@ -4,7 +4,6 @@ import { customElement, state, query } from 'lit/decorators.js';
 import { Router } from './router/router.js';
 import './components/app-header-menu.js';
 import './components/pwa-install-prompt.js';
-import './components/pwa-update-dialog.js';
 import './pages/home-page.js';
 
 import { hasCompletedIntroExperience } from './utils/intro-experience.js';
@@ -390,6 +389,12 @@ export class AppRoot extends LitElement {
   @state()
   private introDialogLoaded = false;
 
+  @state()
+  private updateDialogVisible = false;
+
+  private updateDialogLoaded = false;
+  private pendingUpdateServiceWorker: ((reloadPage?: boolean) => Promise<void>) | null = null;
+
   private introHasBeenShown = false;
   private introCompleted = false;
 
@@ -448,6 +453,7 @@ export class AppRoot extends LitElement {
   connectedCallback(): void {
     super.connectedCallback();
     this.addEventListener('logs-imported', this.handleLogsImported);
+    window.addEventListener('pwa-update-available', this.handleUpdateAvailable);
   }
 
   protected firstUpdated(): void {
@@ -512,8 +518,34 @@ export class AppRoot extends LitElement {
 
   disconnectedCallback(): void {
     this.removeEventListener('logs-imported', this.handleLogsImported);
+    window.removeEventListener('pwa-update-available', this.handleUpdateAvailable);
     super.disconnectedCallback();
   }
+
+  private readonly handleUpdateAvailable = async (event: Event): Promise<void> => {
+    const customEvent = event as CustomEvent<PWAUpdateAvailableDetail>;
+    const updateServiceWorker = customEvent.detail?.updateServiceWorker;
+    if (!updateServiceWorker) {
+      return;
+    }
+
+    if (!this.updateDialogLoaded) {
+      await import('./components/pwa-update-dialog.js');
+      this.updateDialogLoaded = true;
+    }
+
+    this.pendingUpdateServiceWorker = updateServiceWorker;
+    this.updateDialogVisible = true;
+  };
+
+  private readonly handleUpdateDialogDismissed = (): void => {
+    this.updateDialogVisible = false;
+  };
+
+  private readonly handleUpdateDialogApplied = (): void => {
+    this.updateDialogVisible = false;
+    this.pendingUpdateServiceWorker = null;
+  };
 
   private async maybeShowIntroExperience(): Promise<void> {
     if (this.introHasBeenShown || this.introCompleted) {
@@ -622,7 +654,14 @@ export class AppRoot extends LitElement {
           ></app-intro-dialog>`
         : nothing}
       <pwa-install-prompt></pwa-install-prompt>
-      <pwa-update-dialog></pwa-update-dialog>
+      ${this.updateDialogLoaded && this.updateDialogVisible
+        ? html`<pwa-update-dialog
+            .open=${this.updateDialogVisible}
+            .updateServiceWorker=${this.pendingUpdateServiceWorker}
+            @pwa-update-dismissed=${this.handleUpdateDialogDismissed}
+            @pwa-update-applied=${this.handleUpdateDialogApplied}
+          ></pwa-update-dialog>`
+        : nothing}
     `;
   }
 

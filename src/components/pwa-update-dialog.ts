@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
-import '../types/pwa-update.d.js';
+import { customElement, property } from 'lit/decorators.js';
+
+type UpdateServiceWorker = (reloadPage?: boolean) => Promise<void>;
 
 @customElement('pwa-update-dialog')
 export class PWAUpdateDialog extends LitElement {
@@ -146,34 +147,19 @@ export class PWAUpdateDialog extends LitElement {
     }
   `;
 
-  @state() private visible = false;
-  private updateServiceWorker: ((reloadPage?: boolean) => Promise<void>) | null = null;
+  @property({ type: Boolean })
+  open = false;
+
+  @property({ attribute: false })
+  updateServiceWorker: UpdateServiceWorker | null = null;
+
   private readonly appName = 'LumaFeed';
   private readonly appIcon = '/maskable_icon_x128.png';
 
-  connectedCallback(): void {
-    super.connectedCallback();
-    window.addEventListener('pwa-update-available', this.handleUpdateAvailable);
-  }
-
-  disconnectedCallback(): void {
-    window.removeEventListener('pwa-update-available', this.handleUpdateAvailable);
-    super.disconnectedCallback();
-  }
-
-  private handleUpdateAvailable = (event: CustomEvent<PWAUpdateAvailableDetail>) => {
-    const updateServiceWorker = event.detail?.updateServiceWorker;
-    if (!updateServiceWorker) {
-      return;
-    }
-
-    this.updateServiceWorker = updateServiceWorker;
-    this.visible = true;
-  };
-
-  private hide = () => {
-    this.visible = false;
-    this.updateServiceWorker = null;
+  private dismiss = () => {
+    this.dispatchEvent(
+      new CustomEvent('pwa-update-dismissed', { bubbles: true, composed: true })
+    );
   };
 
   private async applyUpdate() {
@@ -181,14 +167,18 @@ export class PWAUpdateDialog extends LitElement {
       return;
     }
 
-    this.visible = false;
-    const update = this.updateServiceWorker;
-    this.updateServiceWorker = null;
-    await update(true);
+    try {
+      await this.updateServiceWorker(true);
+      this.dispatchEvent(
+        new CustomEvent('pwa-update-applied', { bubbles: true, composed: true })
+      );
+    } catch (error) {
+      console.warn('Service worker update failed', error);
+    }
   }
 
   render() {
-    if (!this.visible) {
+    if (!this.open || !this.updateServiceWorker) {
       return null;
     }
 
@@ -207,7 +197,7 @@ export class PWAUpdateDialog extends LitElement {
           </div>
         </div>
         <div class="prompt__actions">
-          <button class="prompt__button prompt__button--text" @click=${this.hide}>Later</button>
+          <button class="prompt__button prompt__button--text" @click=${this.dismiss}>Later</button>
           <button class="prompt__button prompt__button--filled" @click=${this.applyUpdate}>
             Refresh
           </button>

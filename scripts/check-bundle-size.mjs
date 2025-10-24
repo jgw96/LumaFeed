@@ -8,10 +8,11 @@ const __dirname = path.dirname(__filename);
 
 const ROOT = path.resolve(__dirname, '..');
 const DIST_DIR = path.join(ROOT, 'dist');
+const ENTRY_HTML = path.join(DIST_DIR, 'index.html');
 
 // Maximum allowed JavaScript bundle size in bytes
-// Current bundle size: 337,472 bytes (329.56 KB)
-const MAX_JS_SIZE_BYTES = 337472;
+// Current bundle size: 91,674 bytes (89.5 KB)
+const MAX_JS_SIZE_BYTES = 91674;
 
 function formatBytes(bytes) {
   const sizes = ['B', 'KB', 'MB', 'GB'];
@@ -21,24 +22,112 @@ function formatBytes(bytes) {
   return `${val.toFixed(val < 10 && i > 0 ? 2 : 1)} ${sizes[i]}`;
 }
 
-async function getAllJsFiles(dir) {
-  const files = [];
-  let entries;
-  try {
-    entries = await fs.readdir(dir, { withFileTypes: true });
-  } catch (e) {
-    throw new Error(`Failed to read directory ${dir}: ${e.message}`);
+function normalizeAssetReference(ref) {
+  if (!ref) return null;
+  const trimmed = ref.trim();
+  if (!trimmed) return null;
+
+  // Skip external resources
+  if (/^(https?:)?\/\//i.test(trimmed)) {
+    return null;
   }
 
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...(await getAllJsFiles(fullPath)));
-    } else if (entry.isFile() && entry.name.endsWith('.js')) {
-      files.push(fullPath);
+  const withoutQuery = trimmed.split(/[?#]/)[0];
+  if (!withoutQuery) return null;
+
+  const cleaned = withoutQuery.replace(/^\/+/, '');
+  const resolved = path.resolve(DIST_DIR, cleaned);
+
+  if (!resolved.startsWith(DIST_DIR)) {
+    return null;
+  }
+
+  const relative = path.relative(DIST_DIR, resolved);
+  if (!relative || relative.startsWith('..')) {
+    return null;
+  }
+
+  return {
+    relative,
+    absolute: resolved,
+  };
+}
+
+async function getInitialLoadJsFiles() {
+  let html;
+  try {
+    html = await fs.readFile(ENTRY_HTML, 'utf8');
+  } catch (e) {
+    throw new Error(`Failed to read ${ENTRY_HTML}: ${e.message}`);
+  }
+
+  const patterns = [
+    /<script\s+[^>]*type=["']module["'][^>]*src=["']([^"']+\.js)["'][^>]*>/gi,
+    /<link\s+[^>]*rel=["']modulepreload["'][^>]*href=["']([^"']+\.js)["'][^>]*>/gi,
+    /<link\s+[^>]*rel=["']preload["'][^>]*as=["']script["'][^>]*href=["']([^"']+\.js)["'][^>]*>/gi,
+  ];
+
+  const assets = new Map();
+
+  for (const pattern of patterns) {
+    let match;
+    while ((match = pattern.exec(html)) !== null) {
+      const normalized = normalizeAssetReference(match[1]);
+      if (normalized) {
+        assets.set(normalized.relative, normalized.absolute);
+      }
     }
   }
-  return files;
+
+  if (assets.size === 0) {
+    throw new Error('No initial-load JavaScript assets found in index.html.');
+  }
+
+  return Array.from(assets.values());
+}
+
+async function getImmediateEntryDeps(entryFile) {
+  let content;
+  try {
+    content = await fs.readFile(entryFile, 'utf8');
+  } catch (e) {
+    console.warn(`Warning: unable to read entry module ${entryFile}: ${e.message}`);
+    return [];
+  }
+
+  const mapMatch = content.match(/m\.f\|\|\(m\.f=\[([^\]]*)\]/);
+  if (!mapMatch) {
+    return [];
+  }
+
+  const depMatches = Array.from(mapMatch[1].matchAll(/["']([^"']+\.js)["']/g));
+  if (depMatches.length === 0) {
+    return [];
+  }
+
+  const depList = depMatches.map(([, dep]) => dep);
+
+  const firstCallMatch = content.match(/__vite__mapDeps\(\s*\[([^\]]+)\]/);
+  if (!firstCallMatch) {
+    return [];
+  }
+
+  const indexes = firstCallMatch[1]
+    .split(',')
+    .map((part) => Number.parseInt(part.trim(), 10))
+    .filter((num) => Number.isInteger(num) && num >= 0 && num < depList.length);
+
+  const deps = [];
+  for (const index of indexes) {
+    const relative = depList[index];
+    if (!relative) continue;
+    const normalized = normalizeAssetReference(relative);
+    if (normalized) {
+      deps.push(normalized.absolute);
+    }
+  }
+
+  return deps;
 }
 
 async function calculateTotalSize(files) {
@@ -60,20 +149,29 @@ async function main() {
   }
 
   // Get all JavaScript files
-  const jsFiles = await getAllJsFiles(DIST_DIR);
+  const initialLoadSet = new Set(await getInitialLoadJsFiles());
 
-  if (jsFiles.length === 0) {
-    console.error('Error: No JavaScript files found in dist directory.');
+  if (initialLoadSet.size === 0) {
+    console.error('Error: No initial-load JavaScript files found.');
     process.exit(1);
   }
 
+  // Include immediate dependencies eagerly pulled in by the entry module
+  for (const file of Array.from(initialLoadSet)) {
+    const deps = await getImmediateEntryDeps(file);
+    for (const dep of deps) {
+      initialLoadSet.add(dep);
+    }
+  }
+
   // Calculate total size
-  const totalSize = await calculateTotalSize(jsFiles);
+  const initialLoadFiles = Array.from(initialLoadSet);
+  const totalSize = await calculateTotalSize(initialLoadFiles);
   const maxSizeFormatted = formatBytes(MAX_JS_SIZE_BYTES);
   const totalSizeFormatted = formatBytes(totalSize);
 
   console.log(`Bundle size check:`);
-  console.log(`  JavaScript files: ${jsFiles.length}`);
+  console.log(`  Initial load JavaScript files: ${initialLoadFiles.length}`);
   console.log(`  Total size: ${totalSizeFormatted} (${totalSize.toLocaleString()} bytes)`);
   console.log(`  Size limit: ${maxSizeFormatted} (${MAX_JS_SIZE_BYTES.toLocaleString()} bytes)`);
 
