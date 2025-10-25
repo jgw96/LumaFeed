@@ -12,6 +12,7 @@ import type { VoiceControlController } from './services/voice-control.js';
 import type { HomePage } from './pages/home-page.js';
 import type { AppToast } from './components/app-toast.js';
 import './components/app-toast.js';
+import './pages/insights-page.js';
 
 @customElement('app-root')
 export class AppRoot extends LitElement {
@@ -470,6 +471,7 @@ export class AppRoot extends LitElement {
   }> = [
     { href: '/', component: 'home-page', label: 'Home', icon: 'home' },
     { href: '/diapers', component: 'diaper-page', label: 'Diapers', icon: 'diaper' },
+    { href: '/insights', component: 'insights-page', label: 'Insights', icon: 'insights' },
     { href: '/settings', component: 'settings-page', label: 'Settings', icon: 'settings' },
   ];
 
@@ -495,6 +497,11 @@ export class AppRoot extends LitElement {
           pattern: '/diapers',
           component: 'diaper-page',
           loader: () => import('./pages/diaper-page.js'),
+        },
+        {
+          pattern: '/insights',
+          component: 'insights-page',
+          loader: () => import('./pages/insights-page.js'),
         },
         {
           pattern: '/settings',
@@ -534,9 +541,9 @@ export class AppRoot extends LitElement {
   }
 
   private shouldShowBottomNav(): boolean {
-    // Only show bottom nav on main navigation pages
-    const mainPages = ['home-page', 'diaper-page', 'settings-page'];
-    return this.currentRoute ? mainPages.includes(this.currentRoute) : false;
+  // Only show bottom nav on main navigation pages
+  const mainPages = ['home-page', 'diaper-page', 'insights-page', 'settings-page'];
+  return this.currentRoute ? mainPages.includes(this.currentRoute) : false;
   }
 
   private handleNavClick(event: Event) {
@@ -864,6 +871,44 @@ export class AppRoot extends LitElement {
           },
         ],
       },
+      insights: {
+        outlined: [
+          {
+            d: 'M3 3v18h18',
+            fill: 'none',
+            stroke: 'currentColor',
+            strokeWidth: '1.6',
+            strokeLinecap: 'round',
+            strokeLinejoin: 'round',
+          },
+          {
+            d: 'M7 16l3.5-4.5 3 3L19 8',
+            fill: 'none',
+            stroke: 'currentColor',
+            strokeWidth: '1.6',
+            strokeLinecap: 'round',
+            strokeLinejoin: 'round',
+          },
+          {
+            d: 'M16 8h3v3',
+            fill: 'none',
+            stroke: 'currentColor',
+            strokeWidth: '1.6',
+            strokeLinecap: 'round',
+            strokeLinejoin: 'round',
+          },
+        ],
+        filled: [
+          {
+            d: 'M3 2a1 1 0 0 0-1 1v18a1 1 0 0 0 1 1h18a1 1 0 1 0 0-2H4V3a1 1 0 0 0-1-1z',
+            fill: 'currentColor',
+          },
+          {
+            d: 'M19.707 7.293l-5.5 6a1 1 0 0 1-1.414.086l-2.5-2.5-2.793 3.914a1 1 0 1 1-1.628-1.162l3.5-4.5a1 1 0 0 1 1.456-.128l2.586 2.586 4.793-5.226V7a1 1 0 1 0 2 0V4a1 1 0 0 0-1-1h-3a1 1 0 1 0 0 2h.586l-.293.293z',
+            fill: 'currentColor',
+          },
+        ],
+      },
     };
 
     const icon = icons[iconName];
@@ -1000,6 +1045,8 @@ export class AppRoot extends LitElement {
         return html`<log-detail-page></log-detail-page>`;
       case 'diaper-page':
         return html`<diaper-page></diaper-page>`;
+      case 'insights-page':
+        return html`<insights-page></insights-page>`;
       case 'settings-page':
         return html`<settings-page></settings-page>`;
       case 'not-found-page':
