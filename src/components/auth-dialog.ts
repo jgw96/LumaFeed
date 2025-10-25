@@ -46,6 +46,10 @@ export class AuthDialog extends BaseModalDialog {
         padding: 0 1.5rem 1.5rem;
       }
 
+      .dialog-actions--center {
+        justify-content: center;
+      }
+
       .btn-confirm {
         display: inline-flex;
         align-items: center;
@@ -250,15 +254,19 @@ export class AuthDialog extends BaseModalDialog {
           ${this.error ? html`<div class="error">${this.error}</div>` : ''}
         </div>
 
-        <div class="dialog-actions">
-          <button
-            type="button"
-            class="dialog-cancel-button"
-            @click=${this.handleCancel}
-            ?disabled=${this.loading}
-          >
-            Cancel
-          </button>
+        <div class="dialog-actions ${isRegisterMode ? '' : 'dialog-actions--center'}">
+          ${isRegisterMode
+            ? html`
+                <button
+                  type="button"
+                  class="dialog-cancel-button"
+                  @click=${this.handleCancel}
+                  ?disabled=${this.loading}
+                >
+                  Cancel
+                </button>
+              `
+            : ''}
           <button
             type="button"
             class="btn-confirm"

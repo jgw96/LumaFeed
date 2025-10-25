@@ -845,14 +845,6 @@ export class SettingsPage extends LitElement {
     });
   }
 
-  private handleAuthCancel(): void {
-    // If user cancelled registration while trying to enable auth
-    if (!this.hasAuthCredential && this.requireAuth) {
-      this.requireAuth = false;
-      this.requestUpdate();
-    }
-  }
-
   private renderStatus() {
     if (!this.statusMessage) {
       return null;
@@ -1228,7 +1220,6 @@ export class SettingsPage extends LitElement {
         <auth-dialog
           @auth-success=${this.handleAuthSuccess}
           @auth-registered=${this.handleAuthSuccess}
-          @auth-cancel=${this.handleAuthCancel}
         ></auth-dialog>
         <confirm-dialog></confirm-dialog>
       </div>
