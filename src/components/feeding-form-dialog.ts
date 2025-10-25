@@ -829,9 +829,9 @@ export class FeedingFormDialog extends BaseModalDialog {
 
     const startDisplay = this.timerStartMs
       ? new Date(this.timerStartMs).toLocaleTimeString(undefined, {
-        hour: 'numeric',
-        minute: '2-digit',
-      })
+          hour: 'numeric',
+          minute: '2-digit',
+        })
       : '—';
     const elapsedMinutes = Math.floor(this.timerElapsedMs / 60_000);
     const elapsedLabel = elapsedMinutes >= 1 ? `${elapsedMinutes} min` : '<1 min';
@@ -1209,9 +1209,9 @@ export class FeedingFormDialog extends BaseModalDialog {
   private renderTimingView() {
     const startDisplay = this.timerStartMs
       ? new Date(this.timerStartMs).toLocaleTimeString(undefined, {
-        hour: 'numeric',
-        minute: '2-digit',
-      })
+          hour: 'numeric',
+          minute: '2-digit',
+        })
       : '—';
     const elapsedMinutes = Math.floor(this.timerElapsedMs / 60_000);
     const elapsedLabel = elapsedMinutes >= 1 ? `${elapsedMinutes} min` : '<1 min';
@@ -1237,19 +1237,76 @@ export class FeedingFormDialog extends BaseModalDialog {
             </span>
           </div>
           ${(window as Window & { documentPictureInPicture?: unknown }).documentPictureInPicture
-        ? html`
+            ? html`
                 <button
                   type="button"
                   class="pip-button"
                   @click=${this.openPictureInPicture}
                   ?disabled=${this.isPipOpen}
-                  title=${this.isPipOpen ? 'Timer is in Picture-in-Picture' : 'Open timer in Picture-in-Picture'}
-                  aria-label=${this.isPipOpen ? 'Timer is in Picture-in-Picture' : 'Open timer in Picture-in-Picture'}
+                  title=${this.isPipOpen
+                    ? 'Timer is in Picture-in-Picture'
+                    : 'Open timer in Picture-in-Picture'}
+                  aria-label=${this.isPipOpen
+                    ? 'Timer is in Picture-in-Picture'
+                    : 'Open timer in Picture-in-Picture'}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="ionicon" viewBox="0 0 512 512"><rect x="48" y="48" width="176" height="176" rx="20" ry="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><rect x="288" y="48" width="176" height="176" rx="20" ry="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><rect x="48" y="288" width="176" height="176" rx="20" ry="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><rect x="288" y="288" width="176" height="176" rx="20" ry="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="ionicon" viewBox="0 0 512 512">
+                    <rect
+                      x="48"
+                      y="48"
+                      width="176"
+                      height="176"
+                      rx="20"
+                      ry="20"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="32"
+                    />
+                    <rect
+                      x="288"
+                      y="48"
+                      width="176"
+                      height="176"
+                      rx="20"
+                      ry="20"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="32"
+                    />
+                    <rect
+                      x="48"
+                      y="288"
+                      width="176"
+                      height="176"
+                      rx="20"
+                      ry="20"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="32"
+                    />
+                    <rect
+                      x="288"
+                      y="288"
+                      width="176"
+                      height="176"
+                      rx="20"
+                      ry="20"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="32"
+                    />
+                  </svg>
                 </button>
               `
-        : ''}
+            : ''}
         </div>
         <p class="start-intro">
           Keep the timer running while you feed. We'll capture the end time the moment you finish.
@@ -1324,12 +1381,12 @@ export class FeedingFormDialog extends BaseModalDialog {
                 step="0.1"
                 .value=${this.amount.toString()}
                 @input=${(e: Event) =>
-        (this.amount = parseFloat((e.target as HTMLInputElement).value) || 0)}
+                  (this.amount = parseFloat((e.target as HTMLInputElement).value) || 0)}
                 required
               />
               <select
                 @change=${(e: Event) =>
-        (this.unit = (e.target as HTMLSelectElement).value as UnitType)}
+                  (this.unit = (e.target as HTMLSelectElement).value as UnitType)}
                 .value=${this.unit}
               >
                 <option value="ml">ml</option>
@@ -1342,7 +1399,7 @@ export class FeedingFormDialog extends BaseModalDialog {
             <label class="form-label">Feeding Time</label>
             <div class="time-section">
               ${this.isManualMode
-        ? html`
+                ? html`
                     <div class="time-grid">
                       <div class="time-input">
                         <label for="startTime">Start</label>
@@ -1369,7 +1426,7 @@ export class FeedingFormDialog extends BaseModalDialog {
                       Duration: ${this.duration > 0 ? `${this.duration} min` : '—'}
                     </div>
                   `
-        : html`
+                : html`
                     <div class="time-summary" role="status" aria-live="polite">
                       <div class="time-summary-heading">Timer captured</div>
                       <div class="time-summary-grid">

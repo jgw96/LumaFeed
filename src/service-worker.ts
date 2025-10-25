@@ -39,9 +39,7 @@ sw.addEventListener('activate', (event) => {
           )
           .filter(
             (cacheName) =>
-              cacheName !== ASSETS_CACHE &&
-              cacheName !== PAGES_CACHE &&
-              cacheName !== IMAGES_CACHE
+              cacheName !== ASSETS_CACHE && cacheName !== PAGES_CACHE && cacheName !== IMAGES_CACHE
           )
           .map((cacheName) => caches.delete(cacheName))
       );

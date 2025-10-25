@@ -541,9 +541,9 @@ export class AppRoot extends LitElement {
   }
 
   private shouldShowBottomNav(): boolean {
-  // Only show bottom nav on main navigation pages
-  const mainPages = ['home-page', 'diaper-page', 'insights-page', 'settings-page'];
-  return this.currentRoute ? mainPages.includes(this.currentRoute) : false;
+    // Only show bottom nav on main navigation pages
+    const mainPages = ['home-page', 'diaper-page', 'insights-page', 'settings-page'];
+    return this.currentRoute ? mainPages.includes(this.currentRoute) : false;
   }
 
   private handleNavClick(event: Event) {

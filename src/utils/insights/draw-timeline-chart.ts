@@ -59,10 +59,7 @@ export function drawTimelineChart({ canvas, host, data }: DrawTimelineChartParam
   }
 
   // Find max value for scaling
-  const maxValue = Math.max(
-    ...data.map((d) => Math.max(d.feedings, d.diapers)),
-    1
-  );
+  const maxValue = Math.max(...data.map((d) => Math.max(d.feedings, d.diapers)), 1);
 
   // Draw grid lines
   context.strokeStyle = gridColor;
@@ -158,11 +155,12 @@ export function drawTimelineChart({ canvas, host, data }: DrawTimelineChartParam
     const y = topPadding + chartHeight + 8;
 
     // Format date label (show every nth label to avoid crowding)
-    const showLabel = data.length <= 7 || index % Math.ceil(data.length / 7) === 0 || index === data.length - 1;
+    const showLabel =
+      data.length <= 7 || index % Math.ceil(data.length / 7) === 0 || index === data.length - 1;
     if (showLabel) {
       const date = new Date(point.date);
       const label = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-      
+
       // Rotate text for better fit
       context.save();
       context.translate(x, y);

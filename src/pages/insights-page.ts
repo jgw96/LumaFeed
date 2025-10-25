@@ -357,7 +357,10 @@ export class InsightsPage extends LitElement {
       ...this.diaperLogs.map((log) => log.timestamp),
     ];
     const oldestTimestamp = allTimestamps.length > 0 ? Math.min(...allTimestamps) : Date.now();
-    const daysTracked = Math.max(1, Math.ceil((Date.now() - oldestTimestamp) / (1000 * 60 * 60 * 24)));
+    const daysTracked = Math.max(
+      1,
+      Math.ceil((Date.now() - oldestTimestamp) / (1000 * 60 * 60 * 24))
+    );
 
     return {
       totalFeedings,
@@ -432,7 +435,9 @@ export class InsightsPage extends LitElement {
                 <div class="stat-card">
                   <div class="stat-card__label">Total Volume</div>
                   <div class="stat-card__value">${this.formatVolume(stats.totalVolumeMl)}</div>
-                  <div class="stat-card__secondary">${this.formatVolumeOz(stats.totalVolumeMl)}</div>
+                  <div class="stat-card__secondary">
+                    ${this.formatVolumeOz(stats.totalVolumeMl)}
+                  </div>
                 </div>
                 <div class="stat-card">
                   <div class="stat-card__label">Avg per Feeding</div>
@@ -441,13 +446,19 @@ export class InsightsPage extends LitElement {
                 </div>
                 <div class="stat-card">
                   <div class="stat-card__label">Total Time</div>
-                  <div class="stat-card__value">${this.formatDuration(stats.totalFeedingMinutes)}</div>
-                  <div class="stat-card__secondary">${this.formatDurationLong(stats.totalFeedingMinutes)}</div>
+                  <div class="stat-card__value">
+                    ${this.formatDuration(stats.totalFeedingMinutes)}
+                  </div>
+                  <div class="stat-card__secondary">
+                    ${this.formatDurationLong(stats.totalFeedingMinutes)}
+                  </div>
                 </div>
                 <div class="stat-card">
                   <div class="stat-card__label">Avg Duration</div>
                   <div class="stat-card__value">
-                    ${stats.totalFeedings > 0 ? this.formatDuration(stats.totalFeedingMinutes / stats.totalFeedings) : '—'}
+                    ${stats.totalFeedings > 0
+                      ? this.formatDuration(stats.totalFeedingMinutes / stats.totalFeedings)
+                      : '—'}
                   </div>
                 </div>
               </div>
@@ -460,21 +471,27 @@ export class InsightsPage extends LitElement {
                   <div class="stat-card__label">Wet Only</div>
                   <div class="stat-card__value">${stats.wetOnly}</div>
                   <div class="stat-card__secondary">
-                    ${stats.totalDiapers > 0 ? Math.round((stats.wetOnly / stats.totalDiapers) * 100) : 0}%
+                    ${stats.totalDiapers > 0
+                      ? Math.round((stats.wetOnly / stats.totalDiapers) * 100)
+                      : 0}%
                   </div>
                 </div>
                 <div class="stat-card">
                   <div class="stat-card__label">Dirty Only</div>
                   <div class="stat-card__value">${stats.dirtyOnly}</div>
                   <div class="stat-card__secondary">
-                    ${stats.totalDiapers > 0 ? Math.round((stats.dirtyOnly / stats.totalDiapers) * 100) : 0}%
+                    ${stats.totalDiapers > 0
+                      ? Math.round((stats.dirtyOnly / stats.totalDiapers) * 100)
+                      : 0}%
                   </div>
                 </div>
                 <div class="stat-card">
                   <div class="stat-card__label">Both</div>
                   <div class="stat-card__value">${stats.both}</div>
                   <div class="stat-card__secondary">
-                    ${stats.totalDiapers > 0 ? Math.round((stats.both / stats.totalDiapers) * 100) : 0}%
+                    ${stats.totalDiapers > 0
+                      ? Math.round((stats.both / stats.totalDiapers) * 100)
+                      : 0}%
                   </div>
                 </div>
                 <div class="stat-card">
