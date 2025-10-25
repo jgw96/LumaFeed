@@ -715,8 +715,6 @@ export class AppRoot extends LitElement {
                 `
               : nothing}
             <div class="brand" part="header-brand">
-              <img src="/feedings-65.png" alt="LumaFeed" width="28" height="28" />
-
               <span>LumaFeed</span>
             </div>
             <div class="header-actions">
