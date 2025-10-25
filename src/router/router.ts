@@ -56,10 +56,6 @@ declare global {
     };
   }
 
-  interface Window {
-    navigation?: Navigation;
-  }
-
   interface Scheduler {
     postTask<T>(
       callback: () => T | Promise<T>,
@@ -72,6 +68,7 @@ declare global {
   }
 
   interface Window {
+    navigation?: Navigation;
     scheduler?: Scheduler;
   }
 
