@@ -97,103 +97,34 @@ function createSampleLogs(now = Date.now()) {
   const hour = 60 * 60 * 1000;
   const minute = 60 * 1000;
   // Create a realistic day of feeding logs (7-8 feedings typical for newborns/infants)
+  
+  // Helper to create a log entry with consistent timestamp calculations
+  const createLog = (id, feedType, amountMl, amountOz, durationMinutes, isBottleFed, hoursAgo, nextFeedHoursFromNow) => {
+    const startTime = now - hoursAgo * hour;
+    const endTime = startTime + durationMinutes * minute;
+    return {
+      id,
+      feedType,
+      amountMl,
+      amountOz,
+      durationMinutes,
+      isBottleFed,
+      startTime,
+      endTime,
+      timestamp: endTime,
+      nextFeedTime: now + nextFeedHoursFromNow * hour,
+    };
+  };
+  
   return [
-    {
-      id: 'log-1',
-      feedType: 'formula',
-      amountMl: 150,
-      amountOz: 5,
-      durationMinutes: 18,
-      isBottleFed: true,
-      startTime: now - 2 * hour,
-      endTime: now - 2 * hour + 18 * minute,
-      timestamp: now - 2 * hour + 18 * minute,
-      nextFeedTime: now + hour,
-    },
-    {
-      id: 'log-2',
-      feedType: 'milk',
-      amountMl: 120,
-      amountOz: 4,
-      durationMinutes: 22,
-      isBottleFed: false,
-      startTime: now - 4.5 * hour,
-      endTime: now - 4.5 * hour + 22 * minute,
-      timestamp: now - 4.5 * hour + 22 * minute,
-      nextFeedTime: now - hour,
-    },
-    {
-      id: 'log-3',
-      feedType: 'formula',
-      amountMl: 135,
-      amountOz: 4.5,
-      durationMinutes: 20,
-      isBottleFed: true,
-      startTime: now - 7 * hour,
-      endTime: now - 7 * hour + 20 * minute,
-      timestamp: now - 7 * hour + 20 * minute,
-      nextFeedTime: now - 3.5 * hour,
-    },
-    {
-      id: 'log-4',
-      feedType: 'milk',
-      amountMl: 105,
-      amountOz: 3.5,
-      durationMinutes: 25,
-      isBottleFed: false,
-      startTime: now - 10 * hour,
-      endTime: now - 10 * hour + 25 * minute,
-      timestamp: now - 10 * hour + 25 * minute,
-      nextFeedTime: now - 6.5 * hour,
-    },
-    {
-      id: 'log-5',
-      feedType: 'formula',
-      amountMl: 120,
-      amountOz: 4,
-      durationMinutes: 15,
-      isBottleFed: true,
-      startTime: now - 13 * hour,
-      endTime: now - 13 * hour + 15 * minute,
-      timestamp: now - 13 * hour + 15 * minute,
-      nextFeedTime: now - 9.5 * hour,
-    },
-    {
-      id: 'log-6',
-      feedType: 'milk',
-      amountMl: 150,
-      amountOz: 5,
-      durationMinutes: 28,
-      isBottleFed: false,
-      startTime: now - 16 * hour,
-      endTime: now - 16 * hour + 28 * minute,
-      timestamp: now - 16 * hour + 28 * minute,
-      nextFeedTime: now - 12.5 * hour,
-    },
-    {
-      id: 'log-7',
-      feedType: 'formula',
-      amountMl: 135,
-      amountOz: 4.5,
-      durationMinutes: 17,
-      isBottleFed: true,
-      startTime: now - 19 * hour,
-      endTime: now - 19 * hour + 17 * minute,
-      timestamp: now - 19 * hour + 17 * minute,
-      nextFeedTime: now - 15.5 * hour,
-    },
-    {
-      id: 'log-8',
-      feedType: 'milk',
-      amountMl: 120,
-      amountOz: 4,
-      durationMinutes: 24,
-      isBottleFed: false,
-      startTime: now - 22 * hour,
-      endTime: now - 22 * hour + 24 * minute,
-      timestamp: now - 22 * hour + 24 * minute,
-      nextFeedTime: now - 18.5 * hour,
-    },
+    createLog('log-1', 'formula', 150, 5, 18, true, 2, 1),
+    createLog('log-2', 'milk', 120, 4, 22, false, 4.5, -1),
+    createLog('log-3', 'formula', 135, 4.5, 20, true, 7, -3.5),
+    createLog('log-4', 'milk', 105, 3.5, 25, false, 10, -6.5),
+    createLog('log-5', 'formula', 120, 4, 15, true, 13, -9.5),
+    createLog('log-6', 'milk', 150, 5, 28, false, 16, -12.5),
+    createLog('log-7', 'formula', 135, 4.5, 17, true, 19, -15.5),
+    createLog('log-8', 'milk', 120, 4, 24, false, 22, -18.5),
   ];
 }
 
@@ -337,10 +268,30 @@ async function stubStorage(context, logs, now) {
 async function captureScreenshots() {
   const fixedNow = new Date('2024-03-15T12:00:00Z').getTime();
   const logs = createSampleLogs(fixedNow);
-  const browser = await chromium.launch({ 
-    headless: true,
-    executablePath: '/usr/bin/chromium-browser'
-  });
+  
+  // Try to use system chromium if playwright's chromium is not available
+  // This helps in CI environments where playwright install might fail
+  const launchOptions = { headless: true };
+  try {
+    // First try without explicit path (uses playwright's chromium if installed)
+    await chromium.launch({ ...launchOptions, timeout: 5000 }).then(b => b.close());
+  } catch {
+    // Fallback to system chromium if playwright's chromium is not available
+    const { execSync } = await import('node:child_process');
+    try {
+      const chromiumPath = execSync('which chromium-browser || which chromium || which google-chrome', {
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'ignore'],
+      }).trim();
+      if (chromiumPath) {
+        launchOptions.executablePath = chromiumPath;
+      }
+    } catch {
+      // If we can't find system chromium, let playwright try its default
+    }
+  }
+  
+  const browser = await chromium.launch(launchOptions);
 
   try {
     for (const target of screenshotTargets) {
