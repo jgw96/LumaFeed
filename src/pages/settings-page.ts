@@ -1227,6 +1227,7 @@ export class SettingsPage extends LitElement {
         <app-toast></app-toast>
         <auth-dialog
           @auth-success=${this.handleAuthSuccess}
+          @auth-registered=${this.handleAuthSuccess}
           @auth-cancel=${this.handleAuthCancel}
         ></auth-dialog>
         <confirm-dialog></confirm-dialog>
