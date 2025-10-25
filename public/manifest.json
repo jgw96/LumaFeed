@@ -19,18 +19,11 @@
       "label": "Mobile"
     },
     {
-      "src": "/screenshots/home-mobile-light.png",
-      "sizes": "430x932",
+      "src": "/screenshots/store-screen-two.png",
+      "sizes": "1024x1536",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Home - Mobile Light"
-    },
-    {
-      "src": "/screenshots/home-mobile-dark.png",
-      "sizes": "430x932",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Home - Mobile Dark"
+      "label": "Mobile"
     },
     {
       "src": "/screenshots/home-desktop-light.png",
