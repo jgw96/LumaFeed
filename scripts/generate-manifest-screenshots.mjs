@@ -26,6 +26,51 @@ const baseTargets = [
     isMobile: true,
     hasTouch: true,
   },
+  {
+    label: 'diapers-desktop',
+    route: '/diapers',
+    viewport: { width: 1440, height: 1024 },
+    deviceScaleFactor: 1,
+    isMobile: false,
+  },
+  {
+    label: 'diapers-mobile',
+    route: '/diapers',
+    viewport: { width: 430, height: 932 },
+    deviceScaleFactor: 1,
+    isMobile: true,
+    hasTouch: true,
+  },
+  {
+    label: 'insights-desktop',
+    route: '/insights',
+    viewport: { width: 1440, height: 1024 },
+    deviceScaleFactor: 1,
+    isMobile: false,
+  },
+  {
+    label: 'insights-mobile',
+    route: '/insights',
+    viewport: { width: 430, height: 932 },
+    deviceScaleFactor: 1,
+    isMobile: true,
+    hasTouch: true,
+  },
+  {
+    label: 'settings-desktop',
+    route: '/settings',
+    viewport: { width: 1440, height: 1024 },
+    deviceScaleFactor: 1,
+    isMobile: false,
+  },
+  {
+    label: 'settings-mobile',
+    route: '/settings',
+    viewport: { width: 430, height: 932 },
+    deviceScaleFactor: 1,
+    isMobile: true,
+    hasTouch: true,
+  },
 ];
 
 const colorThemes = [
@@ -51,6 +96,7 @@ let previewServerRef = null;
 function createSampleLogs(now = Date.now()) {
   const hour = 60 * 60 * 1000;
   const minute = 60 * 1000;
+  // Create a realistic day of feeding logs (7-8 feedings typical for newborns/infants)
   return [
     {
       id: 'log-1',
@@ -71,22 +117,82 @@ function createSampleLogs(now = Date.now()) {
       amountOz: 4,
       durationMinutes: 22,
       isBottleFed: false,
-      startTime: now - 4 * hour,
-      endTime: now - 4 * hour + 22 * minute,
-      timestamp: now - 4 * hour + 22 * minute,
+      startTime: now - 4.5 * hour,
+      endTime: now - 4.5 * hour + 22 * minute,
+      timestamp: now - 4.5 * hour + 22 * minute,
       nextFeedTime: now - hour,
     },
     {
       id: 'log-3',
       feedType: 'formula',
-      amountMl: 90,
-      amountOz: 3,
+      amountMl: 135,
+      amountOz: 4.5,
+      durationMinutes: 20,
+      isBottleFed: true,
+      startTime: now - 7 * hour,
+      endTime: now - 7 * hour + 20 * minute,
+      timestamp: now - 7 * hour + 20 * minute,
+      nextFeedTime: now - 3.5 * hour,
+    },
+    {
+      id: 'log-4',
+      feedType: 'milk',
+      amountMl: 105,
+      amountOz: 3.5,
+      durationMinutes: 25,
+      isBottleFed: false,
+      startTime: now - 10 * hour,
+      endTime: now - 10 * hour + 25 * minute,
+      timestamp: now - 10 * hour + 25 * minute,
+      nextFeedTime: now - 6.5 * hour,
+    },
+    {
+      id: 'log-5',
+      feedType: 'formula',
+      amountMl: 120,
+      amountOz: 4,
       durationMinutes: 15,
       isBottleFed: true,
-      startTime: now - 6 * hour,
-      endTime: now - 6 * hour + 15 * minute,
-      timestamp: now - 6 * hour + 15 * minute,
-      nextFeedTime: now - 3 * hour,
+      startTime: now - 13 * hour,
+      endTime: now - 13 * hour + 15 * minute,
+      timestamp: now - 13 * hour + 15 * minute,
+      nextFeedTime: now - 9.5 * hour,
+    },
+    {
+      id: 'log-6',
+      feedType: 'milk',
+      amountMl: 150,
+      amountOz: 5,
+      durationMinutes: 28,
+      isBottleFed: false,
+      startTime: now - 16 * hour,
+      endTime: now - 16 * hour + 28 * minute,
+      timestamp: now - 16 * hour + 28 * minute,
+      nextFeedTime: now - 12.5 * hour,
+    },
+    {
+      id: 'log-7',
+      feedType: 'formula',
+      amountMl: 135,
+      amountOz: 4.5,
+      durationMinutes: 17,
+      isBottleFed: true,
+      startTime: now - 19 * hour,
+      endTime: now - 19 * hour + 17 * minute,
+      timestamp: now - 19 * hour + 17 * minute,
+      nextFeedTime: now - 15.5 * hour,
+    },
+    {
+      id: 'log-8',
+      feedType: 'milk',
+      amountMl: 120,
+      amountOz: 4,
+      durationMinutes: 24,
+      isBottleFed: false,
+      startTime: now - 22 * hour,
+      endTime: now - 22 * hour + 24 * minute,
+      timestamp: now - 22 * hour + 24 * minute,
+      nextFeedTime: now - 18.5 * hour,
     },
   ];
 }
@@ -231,7 +337,10 @@ async function stubStorage(context, logs, now) {
 async function captureScreenshots() {
   const fixedNow = new Date('2024-03-15T12:00:00Z').getTime();
   const logs = createSampleLogs(fixedNow);
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ 
+    headless: true,
+    executablePath: '/usr/bin/chromium-browser'
+  });
 
   try {
     for (const target of screenshotTargets) {
@@ -256,8 +365,22 @@ async function captureScreenshots() {
       });
 
       await page.goto(target.route, { waitUntil: 'networkidle' });
-      const logListLocator = page.locator('home-page').locator('feeding-log-list');
-      await logListLocator.waitFor({ state: 'attached', timeout: 8000 });
+      
+      // Wait for the appropriate page component to be rendered based on the route
+      if (target.route === '/') {
+        const logListLocator = page.locator('home-page').locator('feeding-log-list');
+        await logListLocator.waitFor({ state: 'attached', timeout: 8000 });
+      } else if (target.route === '/diapers') {
+        const diaperPageLocator = page.locator('diaper-page');
+        await diaperPageLocator.waitFor({ state: 'attached', timeout: 8000 });
+      } else if (target.route === '/insights') {
+        const insightsPageLocator = page.locator('insights-page');
+        await insightsPageLocator.waitFor({ state: 'attached', timeout: 8000 });
+      } else if (target.route === '/settings') {
+        const settingsPageLocator = page.locator('settings-page');
+        await settingsPageLocator.waitFor({ state: 'attached', timeout: 8000 });
+      }
+      
       await page.addStyleTag({
         content: '* { animation-duration: 0s !important; transition-duration: 0s !important; }',
       });
