@@ -554,7 +554,16 @@ export class AppRoot extends LitElement {
       const url = new URL(link.href, window.location.origin);
       if (url.origin === window.location.origin) {
         event.preventDefault();
-        this.router.navigate(url.pathname);
+        
+        // Use Scheduler API with user-blocking priority if available
+        if (window.scheduler?.postTask) {
+          void window.scheduler.postTask(() => this.router.navigate(url.pathname), {
+            priority: 'user-blocking',
+          });
+        } else {
+          // Fallback for browsers without Scheduler API
+          this.router.navigate(url.pathname);
+        }
       }
     }
   }

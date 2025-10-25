@@ -60,6 +60,21 @@ declare global {
     navigation?: Navigation;
   }
 
+  interface Scheduler {
+    postTask<T>(
+      callback: () => T | Promise<T>,
+      options?: {
+        priority?: 'user-blocking' | 'user-visible' | 'background';
+        delay?: number;
+        signal?: AbortSignal;
+      }
+    ): Promise<T>;
+  }
+
+  interface Window {
+    scheduler?: Scheduler;
+  }
+
   class URLPattern {
     constructor(init?: URLPatternInit);
     exec(input: string | URL): URLPatternResult | null;
