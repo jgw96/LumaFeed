@@ -2,14 +2,18 @@ import { LitElement, html, css } from 'lit';
 import { customElement, state, query } from 'lit/decorators.js';
 
 import type { DiaperLog } from '../types/diaper-log.js';
+import { settingsService } from '../services/settings-service.js';
+import { authService } from '../services/auth-service.js';
 
 import '../components/app-toast.js';
 import '../components/diaper-log-list.js';
 import '../components/diaper-summary-card.js';
+import '../components/auth-dialog.js';
 
 import type { DiaperFormDialog } from '../components/diaper-form-dialog.js';
 import type { AppToast } from '../components/app-toast.js';
 import type { ConfirmDialog } from '../components/confirm-dialog.js';
+import type { AuthDialog } from '../components/auth-dialog.js';
 
 @customElement('diaper-page')
 export class DiaperPage extends LitElement {
@@ -201,17 +205,41 @@ export class DiaperPage extends LitElement {
   @query('app-toast')
   private toastElement?: AppToast;
 
+  @query('auth-dialog')
+  private authDialog?: AuthDialog;
+
   private formDialogLoaded = false;
   private confirmDialogLoaded = false;
 
   connectedCallback(): void {
     super.connectedCallback();
+    this.addEventListener('auth-success', this.handleAuthSuccess as EventListener);
     void this.loadLogs();
   }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.removeEventListener('auth-success', this.handleAuthSuccess as EventListener);
+  }
+
+  private readonly handleAuthSuccess = (): void => {
+    // Reload logs after successful authentication
+    void this.loadLogs();
+  };
 
   private async loadLogs(): Promise<DiaperLog[]> {
     this.loading = true;
     try {
+      // Check if auth is required
+      const settings = await settingsService.getSettings();
+      if (settings.requireAuth && !authService.isSessionAuthenticated()) {
+        // Show auth dialog and wait for authentication
+        this.authDialog?.showAuthenticate();
+        this.loading = false;
+        this.hasLoadedInitialData = true;
+        return [];
+      }
+
       const { diaperStorage } = await import('../services/diaper-storage.js');
       this.logs = await diaperStorage.loadLogs();
     } catch (error) {
@@ -373,6 +401,7 @@ export class DiaperPage extends LitElement {
         <diaper-form-dialog @log-added=${this.handleLogAdded}></diaper-form-dialog>
       </div>
       <app-toast></app-toast>
+      <auth-dialog></auth-dialog>
       <confirm-dialog></confirm-dialog>
     `;
   }

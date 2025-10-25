@@ -12,6 +12,7 @@ import {
   DEFAULT_SHOW_AI_SUMMARY_CARD,
   DEFAULT_THEME_COLOR,
   DEFAULT_THEME_PREFERENCE,
+  DEFAULT_REQUIRE_AUTH,
   type ThemePreference,
 } from '../services/settings-service.js';
 import type { AppSettings } from '../services/settings-service.js';
@@ -19,6 +20,11 @@ import type { AppToast } from '../components/app-toast.js';
 import '../components/app-toast.js';
 import { DEFAULT_NEXT_FEED_INTERVAL_MINUTES, type UnitType } from '../types/feeding-log.js';
 import { setThemeColor, setThemePreference } from '../utils/theme/apply-theme.js';
+import { authService, isWebAuthnSupported } from '../services/auth-service.js';
+import '../components/auth-dialog.js';
+import type { AuthDialog } from '../components/auth-dialog.js';
+import '../components/confirm-dialog.js';
+import type { ConfirmDialog } from '../components/confirm-dialog.js';
 
 @customElement('settings-page')
 export class SettingsPage extends LitElement {
@@ -510,8 +516,20 @@ export class SettingsPage extends LitElement {
   @state()
   private systemPrefersDark = false;
 
+  @state()
+  private requireAuth = DEFAULT_REQUIRE_AUTH;
+
+  @state()
+  private hasAuthCredential = false;
+
   @query('app-toast')
   private toastElement?: AppToast;
+
+  @query('auth-dialog')
+  private authDialog?: AuthDialog;
+
+  @query('confirm-dialog')
+  private confirmDialog?: ConfirmDialog;
 
   private pendingUpdate: Partial<AppSettings> = {};
   private saveTimeoutId: number | null = null;
@@ -533,6 +551,7 @@ export class SettingsPage extends LitElement {
       media.addListener?.(this.handleSystemSchemeChange);
     }
     this.loadSettings();
+    this.checkAuthCredential();
   }
 
   disconnectedCallback(): void {
@@ -580,7 +599,12 @@ export class SettingsPage extends LitElement {
     this.showAiSummaryCard = settings.showAiSummaryCard;
     this.themeColor = settings.themeColor ?? DEFAULT_THEME_COLOR;
     this.themePreference = settings.themePreference ?? DEFAULT_THEME_PREFERENCE;
+    this.requireAuth = settings.requireAuth ?? DEFAULT_REQUIRE_AUTH;
     setThemePreference(this.themePreference);
+  }
+
+  private checkAuthCredential(): void {
+    this.hasAuthCredential = authService.hasCredential();
   }
 
   private scheduleSave(partial: Partial<AppSettings>): void {
@@ -746,6 +770,79 @@ export class SettingsPage extends LitElement {
       this.defaultBottleFed = input.value === 'true';
       this.scheduleSave({ defaultBottleFed: this.defaultBottleFed });
     }
+  }
+
+  private handleRequireAuthToggle(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const newValue = input.checked;
+
+    // If turning on and no credential exists, show registration dialog
+    if (newValue && !this.hasAuthCredential) {
+      this.authDialog?.showRegister();
+      // Don't save yet, wait for successful registration
+      return;
+    }
+
+    this.requireAuth = newValue;
+    this.scheduleSave({ requireAuth: newValue });
+
+    // Clear session auth when disabling
+    if (!newValue) {
+      authService.clearSession();
+    }
+  }
+
+  private handleRegisterPasskey(): void {
+    this.authDialog?.showRegister();
+  }
+
+  private async handleRemovePasskey(): Promise<void> {
+    if (!this.confirmDialog) {
+      return;
+    }
+
+    const confirmed = await this.confirmDialog.show({
+      headline: 'Remove Biometric Credential',
+      supportingText:
+        'Are you sure you want to remove your biometric credential? You will need to set it up again to use authentication.',
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      confirmDestructive: true,
+    });
+
+    if (confirmed) {
+      authService.removeCredential();
+      this.hasAuthCredential = false;
+
+      // Also disable auth requirement
+      if (this.requireAuth) {
+        this.requireAuth = false;
+        this.scheduleSave({ requireAuth: false });
+      }
+
+      authService.clearSession();
+
+      this.toastElement?.show({
+        headline: 'Credential removed',
+        supporting: 'Biometric authentication has been removed',
+      });
+    }
+  }
+
+  private handleAuthSuccess(): void {
+    this.hasAuthCredential = true;
+
+    // If this was triggered by enabling auth, now save the setting
+    if (!this.requireAuth) {
+      this.requireAuth = true;
+      this.scheduleSave({ requireAuth: true });
+    }
+
+    this.toastElement?.show({
+      headline: 'Biometric auth registered',
+      supporting: 'Your data is now protected',
+      icon: '🔐',
+    });
   }
 
   private renderStatus() {
@@ -1039,6 +1136,80 @@ export class SettingsPage extends LitElement {
               </span>
             </label>
           </section> -->
+
+          <section class="section">
+            <div class="section__header">
+              <h2 class="section__title">Security</h2>
+              <p class="section__description">
+                Protect your feeding and diaper logs with biometric authentication (Face ID, Touch
+                ID, Windows Hello, etc.).
+              </p>
+            </div>
+
+            ${!isWebAuthnSupported()
+              ? html`
+                  <div class="helper-text" style="color: var(--md-sys-color-error);">
+                    ⚠️ WebAuthn is not supported in this browser. Biometric authentication is not
+                    available.
+                  </div>
+                `
+              : html`
+                  <label
+                    class="switch"
+                    ?data-checked=${this.requireAuth}
+                    ?data-disabled=${this.loading}
+                  >
+                    <span class="switch__label">
+                      <span class="switch__title">Require biometric authentication</span>
+                      <span class="switch__supporting"
+                        >Lock your data behind your device's biometric authentication.</span
+                      >
+                    </span>
+                    <span class="switch__control">
+                      <input
+                        class="switch__input"
+                        type="checkbox"
+                        name="require-auth"
+                        .checked=${this.requireAuth}
+                        @change=${this.handleRequireAuthToggle}
+                        ?disabled=${this.loading}
+                      />
+                      <span class="switch__track"></span>
+                      <span class="switch__thumb"></span>
+                    </span>
+                  </label>
+
+                  <div class="form-group" style="gap: 0.75rem;">
+                    ${this.hasAuthCredential
+                      ? html`
+                          <p class="helper-text" style="color: var(--md-sys-color-tertiary);">
+                            ✓ Biometric credential registered and ready to use.
+                          </p>
+                          <button
+                            type="button"
+                            class="theme-color__reset"
+                            @click=${this.handleRemovePasskey}
+                            ?disabled=${this.loading}
+                          >
+                            Remove Credential
+                          </button>
+                        `
+                      : html`
+                          <p class="helper-text">
+                            No biometric credential registered. Set one up to enable authentication.
+                          </p>
+                          <button
+                            type="button"
+                            class="theme-color__reset"
+                            @click=${this.handleRegisterPasskey}
+                            ?disabled=${this.loading}
+                          >
+                            Setup Biometric Auth
+                          </button>
+                        `}
+                  </div>
+                `}
+          </section>
         </form>
 
         ${this.loading
@@ -1046,6 +1217,11 @@ export class SettingsPage extends LitElement {
           : null}
 
         <app-toast></app-toast>
+        <auth-dialog
+          @auth-success=${this.handleAuthSuccess}
+          @auth-registered=${this.handleAuthSuccess}
+        ></auth-dialog>
+        <confirm-dialog></confirm-dialog>
       </div>
     `;
   }

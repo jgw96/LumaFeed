@@ -4,14 +4,17 @@ import { customElement, state, query } from 'lit/decorators.js';
 import type { FeedingLog } from '../types/feeding-log.js';
 import type { AppSettings } from '../services/settings-service.js';
 import { settingsService } from '../services/settings-service.js';
+import { authService } from '../services/auth-service.js';
 import type { VoiceCommand } from '../services/voice-control.js';
 
 import '../components/app-toast.js';
 import { emptyStateStyles } from '../components/empty-state-styles.js';
+import '../components/auth-dialog.js';
 
 import type { FeedingFormDialog } from '../components/feeding-form-dialog.js';
 import type { AppToast } from '../components/app-toast.js';
 import type { ConfirmDialog } from '../components/confirm-dialog.js';
+import type { AuthDialog } from '../components/auth-dialog.js';
 
 @customElement('home-page')
 export class HomePage extends LitElement {
@@ -269,6 +272,9 @@ export class HomePage extends LitElement {
   @query('confirm-dialog')
   private confirmDialog!: ConfirmDialog;
 
+  @query('auth-dialog')
+  private authDialog?: AuthDialog;
+
   @state()
   private feedingDialogLoaded = false;
 
@@ -295,6 +301,7 @@ export class HomePage extends LitElement {
     await this.loadSettings();
     window.addEventListener('feeding-tracker-settings-changed', this.handleSettingsChanged);
     window.addEventListener('voice-command', this.handleVoiceCommand);
+    this.addEventListener('auth-success', this.handleAuthSuccess as EventListener);
     await this.loadLogs();
 
     const queryParams = new URLSearchParams(window.location.search);
@@ -316,14 +323,30 @@ export class HomePage extends LitElement {
   disconnectedCallback(): void {
     super.disconnectedCallback();
     window.removeEventListener('voice-command', this.handleVoiceCommand);
+    this.removeEventListener('auth-success', this.handleAuthSuccess as EventListener);
     if (this.toastElement) {
       this.toastElement.reset();
     }
   }
 
+  private readonly handleAuthSuccess = (): void => {
+    // Reload logs after successful authentication
+    void this.loadLogs();
+  };
+
   private async loadLogs(): Promise<FeedingLog[]> {
     this.loading = true;
     try {
+      // Check if auth is required
+      const settings = await settingsService.getSettings();
+      if (settings.requireAuth && !authService.isSessionAuthenticated()) {
+        // Show auth dialog and wait for authentication
+        this.authDialog?.showAuthenticate();
+        this.loading = false;
+        this.hasLoadedInitialData = true;
+        return [];
+      }
+
       const { feedingStorage } = await import('../services/feeding-storage.js');
 
       const loadedLogs = await feedingStorage.loadLogs();
@@ -597,6 +620,7 @@ export class HomePage extends LitElement {
         <feeding-form-dialog @log-added=${this.handleLogAdded}></feeding-form-dialog>
       </div>
       <app-toast></app-toast>
+      <auth-dialog></auth-dialog>
       ${this.confirmDialogLoaded ? html`<confirm-dialog></confirm-dialog>` : nothing}
     `;
   }

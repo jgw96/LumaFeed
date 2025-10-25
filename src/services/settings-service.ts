@@ -9,6 +9,7 @@ export interface AppSettings {
   showAiSummaryCard: boolean;
   themeColor: string;
   themePreference: ThemePreference;
+  requireAuth: boolean;
 }
 
 export const MIN_FEED_INTERVAL_MINUTES = 60;
@@ -23,6 +24,7 @@ export const DEFAULT_SHOW_AI_SUMMARY_CARD = true;
 export type ThemePreference = 'system' | 'light' | 'dark';
 export const DEFAULT_THEME_COLOR = '#0061a6';
 export const DEFAULT_THEME_PREFERENCE: ThemePreference = 'system';
+export const DEFAULT_REQUIRE_AUTH = false;
 
 const SETTINGS_STORAGE_KEY = 'feeding-tracker-settings';
 
@@ -53,6 +55,7 @@ class SettingsService {
       showAiSummaryCard: DEFAULT_SHOW_AI_SUMMARY_CARD,
       themeColor: DEFAULT_THEME_COLOR,
       themePreference: DEFAULT_THEME_PREFERENCE,
+      requireAuth: DEFAULT_REQUIRE_AUTH,
     };
   }
 
@@ -119,6 +122,7 @@ class SettingsService {
           parsed.themePreference,
           DEFAULT_THEME_PREFERENCE
         ),
+        requireAuth: this.normalizeBoolean(parsed.requireAuth, DEFAULT_REQUIRE_AUTH),
       } satisfies AppSettings;
     } catch (error) {
       console.error('Failed to parse settings from storage, resetting to defaults.', error);
@@ -188,6 +192,7 @@ class SettingsService {
         partial.themePreference,
         current.themePreference ?? DEFAULT_THEME_PREFERENCE
       ),
+      requireAuth: this.normalizeBoolean(partial.requireAuth, current.requireAuth),
     };
 
     this.cache = next;

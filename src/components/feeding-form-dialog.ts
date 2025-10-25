@@ -10,6 +10,7 @@ import {
 import type { AppSettings } from '../services/settings-service.js';
 import { BaseModalDialog } from './base-modal-dialog.js';
 import { dialogCancelButtonStyles, dialogHeaderStyles } from './dialog-shared-styles.js';
+import '../types/document-picture-in-picture.d.js';
 
 interface WakeLockSentinelLike extends EventTarget {
   released: boolean;
@@ -125,6 +126,43 @@ export class FeedingFormDialog extends BaseModalDialog {
         font-size: var(--md-sys-typescale-label-small-font-size);
         text-transform: uppercase;
         letter-spacing: 0.05em;
+      }
+
+      .pip-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        padding: 0;
+        border: none;
+        border-radius: var(--md-sys-shape-corner-full);
+        background: transparent;
+        color: var(--md-sys-color-on-secondary-container);
+        cursor: pointer;
+        transition: background 0.2s;
+
+        position: absolute;
+        align-self: end;
+      }
+
+      .pip-button:hover:not(:disabled) {
+        background: rgba(0, 0, 0, 0.08);
+      }
+
+      .pip-button:active:not(:disabled) {
+        background: rgba(0, 0, 0, 0.12);
+      }
+
+      .pip-button:disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
+      }
+
+      .pip-button svg {
+        width: 24px;
+        height: 24px;
+        fill: currentColor;
       }
 
       .timer-actions,
@@ -511,6 +549,9 @@ export class FeedingFormDialog extends BaseModalDialog {
   @state()
   private isManualMode = false;
 
+  @state()
+  private isPipOpen = false;
+
   private timerStartMs: number | null = null;
 
   private timerIntervalId: number | null = null;
@@ -518,6 +559,8 @@ export class FeedingFormDialog extends BaseModalDialog {
   private wakeLockSentinel: WakeLockSentinelLike | null = null;
 
   private wakeLockVisibilityListenerAttached = false;
+
+  private pipWindow: Window | null = null;
 
   private preferredFeedType: 'formula' | 'milk' = DEFAULT_FEED_TYPE;
   private preferredUnit: UnitType = DEFAULT_FEED_UNIT;
@@ -594,6 +637,10 @@ export class FeedingFormDialog extends BaseModalDialog {
         return;
       }
       this.timerElapsedMs = Date.now() - this.timerStartMs;
+      // Update PiP window if it's open
+      if (this.pipWindow) {
+        this.updatePipContent();
+      }
     }, 1000);
   }
 
@@ -609,6 +656,7 @@ export class FeedingFormDialog extends BaseModalDialog {
     this.timerStartMs = null;
     this.timerElapsedMs = 0;
     void this.releaseWakeLock();
+    this.closePictureInPicture();
   }
 
   private attachWakeLockVisibilityListener() {
@@ -658,6 +706,160 @@ export class FeedingFormDialog extends BaseModalDialog {
       await sentinel.release();
     } catch (error) {
       console.warn('[feeding-form-dialog] Failed to release screen wake lock', error);
+    }
+  }
+
+  private async openPictureInPicture(): Promise<void> {
+    if (!window.documentPictureInPicture) {
+      console.warn('[feeding-form-dialog] Document Picture-in-Picture API not supported');
+      return;
+    }
+
+    if (this.pipWindow) {
+      // Already open, focus it
+      this.pipWindow.focus();
+      return;
+    }
+
+    try {
+      const pipWindow = await window.documentPictureInPicture.requestWindow({
+        width: 400,
+        height: 300,
+      });
+
+      this.pipWindow = pipWindow;
+      this.isPipOpen = true;
+
+      // Copy styles to the PiP window
+      const stylesheets = Array.from(document.styleSheets);
+      const pipDocument = pipWindow.document;
+
+      // Add base styles
+      const baseStyle = pipDocument.createElement('style');
+      baseStyle.textContent = `
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
+        body {
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          background: var(--md-sys-color-secondary-container, #e8def8);
+          color: var(--md-sys-color-on-secondary-container, #1d192b);
+          padding: 1rem;
+        }
+        .pip-timer {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1rem;
+          text-align: center;
+        }
+        .pip-timer-display {
+          font-size: clamp(2rem, 10vw, 3rem);
+          letter-spacing: 0.08em;
+          font-weight: 600;
+          font-variant-numeric: tabular-nums;
+        }
+        .pip-timer-metadata {
+          display: flex;
+          gap: 1.5rem;
+          font-size: 0.875rem;
+        }
+        .pip-timer-metadata span {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.25rem;
+        }
+        .pip-timer-metadata .label {
+          opacity: 0.8;
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+      `;
+      pipDocument.head.appendChild(baseStyle);
+
+      // Copy CSS custom properties from the main document
+      try {
+        for (const sheet of stylesheets) {
+          if (sheet.href === null) {
+            const styleElement = pipDocument.createElement('style');
+            let cssText = '';
+            try {
+              cssText = Array.from(sheet.cssRules)
+                .map((rule) => rule.cssText)
+                .join('\n');
+            } catch (e) {
+              // Skip sheets we can't access
+              continue;
+            }
+            styleElement.textContent = cssText;
+            pipDocument.head.appendChild(styleElement);
+          }
+        }
+      } catch (error) {
+        console.warn('[feeding-form-dialog] Failed to copy some styles to PiP window', error);
+      }
+
+      // Create the timer display in PiP
+      this.updatePipContent();
+
+      // Handle PiP window close
+      pipWindow.addEventListener('pagehide', () => {
+        this.pipWindow = null;
+        this.isPipOpen = false;
+        this.requestUpdate();
+      });
+    } catch (error) {
+      console.error('[feeding-form-dialog] Failed to open Picture-in-Picture window', error);
+      this.isPipOpen = false;
+    }
+  }
+
+  private updatePipContent(): void {
+    if (!this.pipWindow) {
+      return;
+    }
+
+    const startDisplay = this.timerStartMs
+      ? new Date(this.timerStartMs).toLocaleTimeString(undefined, {
+          hour: 'numeric',
+          minute: '2-digit',
+        })
+      : '—';
+    const elapsedMinutes = Math.floor(this.timerElapsedMs / 60_000);
+    const elapsedLabel = elapsedMinutes >= 1 ? `${elapsedMinutes} min` : '<1 min';
+
+    this.pipWindow.document.body.innerHTML = `
+      <div class="pip-timer">
+        <div class="pip-timer-display">
+          ${this.formatElapsed(this.timerElapsedMs)}
+        </div>
+        <div class="pip-timer-metadata">
+          <span>
+            <span class="label">Started</span>
+            <span>${startDisplay}</span>
+          </span>
+          <span>
+            <span class="label">Elapsed</span>
+            <span>${elapsedLabel}</span>
+          </span>
+        </div>
+      </div>
+    `;
+  }
+
+  private closePictureInPicture(): void {
+    if (this.pipWindow) {
+      this.pipWindow.close();
+      this.pipWindow = null;
+      this.isPipOpen = false;
     }
   }
 
@@ -1034,6 +1236,77 @@ export class FeedingFormDialog extends BaseModalDialog {
               <span>${elapsedLabel}</span>
             </span>
           </div>
+          ${(window as Window & { documentPictureInPicture?: unknown }).documentPictureInPicture
+            ? html`
+                <button
+                  type="button"
+                  class="pip-button"
+                  @click=${this.openPictureInPicture}
+                  ?disabled=${this.isPipOpen}
+                  title=${this.isPipOpen
+                    ? 'Timer is in Picture-in-Picture'
+                    : 'Open timer in Picture-in-Picture'}
+                  aria-label=${this.isPipOpen
+                    ? 'Timer is in Picture-in-Picture'
+                    : 'Open timer in Picture-in-Picture'}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="ionicon" viewBox="0 0 512 512">
+                    <rect
+                      x="48"
+                      y="48"
+                      width="176"
+                      height="176"
+                      rx="20"
+                      ry="20"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="32"
+                    />
+                    <rect
+                      x="288"
+                      y="48"
+                      width="176"
+                      height="176"
+                      rx="20"
+                      ry="20"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="32"
+                    />
+                    <rect
+                      x="48"
+                      y="288"
+                      width="176"
+                      height="176"
+                      rx="20"
+                      ry="20"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="32"
+                    />
+                    <rect
+                      x="288"
+                      y="288"
+                      width="176"
+                      height="176"
+                      rx="20"
+                      ry="20"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="32"
+                    />
+                  </svg>
+                </button>
+              `
+            : ''}
         </div>
         <p class="start-intro">
           Keep the timer running while you feed. We'll capture the end time the moment you finish.
