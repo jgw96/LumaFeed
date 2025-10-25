@@ -12,7 +12,7 @@ import type { VoiceControlController } from './services/voice-control.js';
 import type { HomePage } from './pages/home-page.js';
 import type { AppToast } from './components/app-toast.js';
 import './components/app-toast.js';
-import './pages/insights-page.js';
+// insights-page will be lazy-loaded via the router loader
 
 @customElement('app-root')
 export class AppRoot extends LitElement {
