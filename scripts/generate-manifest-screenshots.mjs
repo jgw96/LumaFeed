@@ -26,6 +26,51 @@ const baseTargets = [
     isMobile: true,
     hasTouch: true,
   },
+  {
+    label: 'diapers-desktop',
+    route: '/diapers',
+    viewport: { width: 1440, height: 1024 },
+    deviceScaleFactor: 1,
+    isMobile: false,
+  },
+  {
+    label: 'diapers-mobile',
+    route: '/diapers',
+    viewport: { width: 430, height: 932 },
+    deviceScaleFactor: 1,
+    isMobile: true,
+    hasTouch: true,
+  },
+  {
+    label: 'insights-desktop',
+    route: '/insights',
+    viewport: { width: 1440, height: 1024 },
+    deviceScaleFactor: 1,
+    isMobile: false,
+  },
+  {
+    label: 'insights-mobile',
+    route: '/insights',
+    viewport: { width: 430, height: 932 },
+    deviceScaleFactor: 1,
+    isMobile: true,
+    hasTouch: true,
+  },
+  {
+    label: 'settings-desktop',
+    route: '/settings',
+    viewport: { width: 1440, height: 1024 },
+    deviceScaleFactor: 1,
+    isMobile: false,
+  },
+  {
+    label: 'settings-mobile',
+    route: '/settings',
+    viewport: { width: 430, height: 932 },
+    deviceScaleFactor: 1,
+    isMobile: true,
+    hasTouch: true,
+  },
 ];
 
 const colorThemes = [
@@ -51,43 +96,35 @@ let previewServerRef = null;
 function createSampleLogs(now = Date.now()) {
   const hour = 60 * 60 * 1000;
   const minute = 60 * 1000;
+  // Create a realistic day of feeding logs (7-8 feedings typical for newborns/infants)
+  
+  // Helper to create a log entry with consistent timestamp calculations
+  const createLog = (id, feedType, amountMl, amountOz, durationMinutes, isBottleFed, hoursAgo, nextFeedHoursFromNow) => {
+    const startTime = now - hoursAgo * hour;
+    const endTime = startTime + durationMinutes * minute;
+    return {
+      id,
+      feedType,
+      amountMl,
+      amountOz,
+      durationMinutes,
+      isBottleFed,
+      startTime,
+      endTime,
+      timestamp: endTime,
+      nextFeedTime: now + nextFeedHoursFromNow * hour,
+    };
+  };
+  
   return [
-    {
-      id: 'log-1',
-      feedType: 'formula',
-      amountMl: 150,
-      amountOz: 5,
-      durationMinutes: 18,
-      isBottleFed: true,
-      startTime: now - 2 * hour,
-      endTime: now - 2 * hour + 18 * minute,
-      timestamp: now - 2 * hour + 18 * minute,
-      nextFeedTime: now + hour,
-    },
-    {
-      id: 'log-2',
-      feedType: 'milk',
-      amountMl: 120,
-      amountOz: 4,
-      durationMinutes: 22,
-      isBottleFed: false,
-      startTime: now - 4 * hour,
-      endTime: now - 4 * hour + 22 * minute,
-      timestamp: now - 4 * hour + 22 * minute,
-      nextFeedTime: now - hour,
-    },
-    {
-      id: 'log-3',
-      feedType: 'formula',
-      amountMl: 90,
-      amountOz: 3,
-      durationMinutes: 15,
-      isBottleFed: true,
-      startTime: now - 6 * hour,
-      endTime: now - 6 * hour + 15 * minute,
-      timestamp: now - 6 * hour + 15 * minute,
-      nextFeedTime: now - 3 * hour,
-    },
+    createLog('log-1', 'formula', 150, 5, 18, true, 2, 1),
+    createLog('log-2', 'milk', 120, 4, 22, false, 4.5, -1),
+    createLog('log-3', 'formula', 135, 4.5, 20, true, 7, -3.5),
+    createLog('log-4', 'milk', 105, 3.5, 25, false, 10, -6.5),
+    createLog('log-5', 'formula', 120, 4, 15, true, 13, -9.5),
+    createLog('log-6', 'milk', 150, 5, 28, false, 16, -12.5),
+    createLog('log-7', 'formula', 135, 4.5, 17, true, 19, -15.5),
+    createLog('log-8', 'milk', 120, 4, 24, false, 22, -18.5),
   ];
 }
 
@@ -231,7 +268,30 @@ async function stubStorage(context, logs, now) {
 async function captureScreenshots() {
   const fixedNow = new Date('2024-03-15T12:00:00Z').getTime();
   const logs = createSampleLogs(fixedNow);
-  const browser = await chromium.launch({ headless: true });
+  
+  // Try to use system chromium if playwright's chromium is not available
+  // This helps in CI environments where playwright install might fail
+  const launchOptions = { headless: true };
+  try {
+    // First try without explicit path (uses playwright's chromium if installed)
+    await chromium.launch({ ...launchOptions, timeout: 5000 }).then(b => b.close());
+  } catch {
+    // Fallback to system chromium if playwright's chromium is not available
+    const { execSync } = await import('node:child_process');
+    try {
+      const chromiumPath = execSync('which chromium-browser || which chromium || which google-chrome', {
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'ignore'],
+      }).trim();
+      if (chromiumPath) {
+        launchOptions.executablePath = chromiumPath;
+      }
+    } catch {
+      // If we can't find system chromium, let playwright try its default
+    }
+  }
+  
+  const browser = await chromium.launch(launchOptions);
 
   try {
     for (const target of screenshotTargets) {
@@ -256,8 +316,22 @@ async function captureScreenshots() {
       });
 
       await page.goto(target.route, { waitUntil: 'networkidle' });
-      const logListLocator = page.locator('home-page').locator('feeding-log-list');
-      await logListLocator.waitFor({ state: 'attached', timeout: 8000 });
+      
+      // Wait for the appropriate page component to be rendered based on the route
+      if (target.route === '/') {
+        const logListLocator = page.locator('home-page').locator('feeding-log-list');
+        await logListLocator.waitFor({ state: 'attached', timeout: 8000 });
+      } else if (target.route === '/diapers') {
+        const diaperPageLocator = page.locator('diaper-page');
+        await diaperPageLocator.waitFor({ state: 'attached', timeout: 8000 });
+      } else if (target.route === '/insights') {
+        const insightsPageLocator = page.locator('insights-page');
+        await insightsPageLocator.waitFor({ state: 'attached', timeout: 8000 });
+      } else if (target.route === '/settings') {
+        const settingsPageLocator = page.locator('settings-page');
+        await settingsPageLocator.waitFor({ state: 'attached', timeout: 8000 });
+      }
+      
       await page.addStyleTag({
         content: '* { animation-duration: 0s !important; transition-duration: 0s !important; }',
       });
