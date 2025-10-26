@@ -56,8 +56,20 @@ declare global {
     };
   }
 
+  interface Scheduler {
+    postTask<T>(
+      callback: () => T | Promise<T>,
+      options?: {
+        priority?: 'user-blocking' | 'user-visible' | 'background';
+        delay?: number;
+        signal?: AbortSignal;
+      }
+    ): Promise<T>;
+  }
+
   interface Window {
     navigation?: Navigation;
+    scheduler?: Scheduler;
   }
 
   class URLPattern {
